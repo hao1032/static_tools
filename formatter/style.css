@@ -140,7 +140,8 @@ body {
 .tree {
   min-height: 420px;
   max-height: 70vh;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 16px;
@@ -148,6 +149,8 @@ body {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 13px;
   line-height: 1.7;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .tree-empty { color: var(--muted); padding: 8px 2px; }
 .tree-node { position: relative; }
@@ -158,6 +161,12 @@ body {
   padding: 1px 0;
   cursor: default;
 }
+.tree-label {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 .tree-row:hover { background: var(--accent-soft); border-radius: 6px; }
 .tree-toggle {
   cursor: pointer;
@@ -167,7 +176,7 @@ body {
   user-select: none;
   text-align: center;
 }
-.tree-children { margin-left: 14px; border-left: 1px dashed var(--border); padding-left: 8px; }
+.tree-children { margin-left: 12px; border-left: 1px dashed var(--border); padding-left: 8px; }
 .tree-key { color: var(--accent); }
 .tree-tag { color: #7c3aed; font-weight: 600; }
 .tree-attr { color: #b45309; }
