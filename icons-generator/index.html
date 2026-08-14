@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ICO 文字图标生成器</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="back" href="../">← 返回工具箱</a>
+    <h1>ICO 文字图标生成器</h1>
+  </header>
+
+  <main class="layout">
+    <!-- 左侧：控制面板 -->
+    <section class="panel">
+      <!-- 图标基础设置 -->
+      <div class="card">
+        <h2>图标设置</h2>
+        <div class="row">
+          <label class="check">
+            <input type="checkbox" id="transparent" />
+            <span>透明背景</span>
+          </label>
+        </div>
+        <div class="row">
+          <label>背景颜色</label>
+          <input type="color" id="bgColor" value="#2563eb" />
+        </div>
+        <div class="row">
+          <label>圆角大小 <span class="val" id="radiusVal">0</span></label>
+          <input type="range" id="cornerRadius" min="0" max="128" value="0" />
+        </div>
+        <p class="hint">圆角仅在“非透明背景”时生效，单位为 256×256 画布基准像素。</p>
+      </div>
+
+      <!-- 图层 -->
+      <div class="card">
+        <div class="card-head">
+          <h2>文字图层</h2>
+          <button id="addLayer" class="btn btn-primary" type="button">+ 添加图层</button>
+        </div>
+        <div id="layers"></div>
+        <p class="hint">列表越靠上的图层显示在越上层，可拖动 ⠿ 调整顺序。在右侧预览里按住文字即可直接拖动改位置。每层可输入多个字母，支持中文。</p>
+      </div>
+
+      <!-- 导出 -->
+      <div class="card">
+        <h2>导出</h2>
+        <div class="row">
+          <label>文件名</label>
+          <input type="text" id="fileName" value="icon" class="text-input" />
+          <span class="ext">.ico</span>
+        </div>
+        <div class="row col">
+          <label>尺寸与下载</label>
+          <div id="sizeList" class="size-list"></div>
+        </div>
+        <button id="download" class="btn btn-primary btn-block" type="button">生成并下载（全部勾选尺寸）</button>
+      </div>
+    </section>
+
+    <!-- 右侧：实时预览 -->
+    <aside class="preview-pane">
+      <div class="preview-stage">
+        <div class="checker"></div>
+        <canvas id="preview" width="512" height="512"></canvas>
+      </div>
+      <div class="preview-meta">
+        <span id="previewLabel">预览 256×256</span>
+        <div class="preview-tiles" id="tiles"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
