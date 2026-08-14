@@ -32,7 +32,21 @@
           <label>圆角大小 <span class="val" id="radiusVal">0</span></label>
           <input type="range" id="cornerRadius" min="0" max="128" value="0" />
         </div>
-        <p class="hint">圆角仅在“非透明背景”时生效，单位为 256×256 画布基准像素。</p>
+        <div class="row">
+          <label class="check">
+            <input type="checkbox" id="border" />
+            <span>边框</span>
+          </label>
+        </div>
+        <div class="row">
+          <label>边框宽度 <span class="val" id="borderWidthVal">16</span></label>
+          <input type="range" id="borderWidth" min="1" max="64" value="16" />
+        </div>
+        <div class="row">
+          <label>边框颜色</label>
+          <input type="color" id="borderColor" value="#111827" />
+        </div>
+        <p class="hint">圆角同时作用于背景与边框，单位为 256×256 画布基准像素。勾选“边框”后，即使在透明背景下也能生成带圆角边框的镂空图标。</p>
       </div>
 
       <!-- 图层 -->

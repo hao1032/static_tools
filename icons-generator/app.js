@@ -25,6 +25,9 @@
     background: "#2563eb",
     transparent: false,
     cornerRadius: 0,
+    border: false,
+    borderWidth: 16,
+    borderColor: "#111827",
     fileName: "icon",
     sizes: EXPORT_SIZES.slice(),
     layers: [
@@ -103,6 +106,19 @@
       roundRect(ctx, 0, 0, size, size, state.cornerRadius * scale);
       ctx.fillStyle = state.background;
       ctx.fill();
+    }
+
+    // 边框：勾选后绘制，支持透明背景（仅边框环）；圆角沿用 cornerRadius
+    if (state.border) {
+      var bw = state.borderWidth * scale;
+      var inset = bw / 2;
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = state.borderColor;
+      ctx.lineWidth = bw;
+      roundRect(ctx, inset, inset, size - bw, size - bw, state.cornerRadius * scale);
+      ctx.stroke();
+      ctx.restore();
     }
 
     // 列表越靠上的图层，绘制在越上层（倒序遍历，layer[0] 最后绘制=最顶）
@@ -538,6 +554,10 @@
     var transparent = $("transparent");
     var cornerRadius = $("cornerRadius");
     var radiusVal = $("radiusVal");
+    var border = $("border");
+    var borderWidth = $("borderWidth");
+    var borderWidthVal = $("borderWidthVal");
+    var borderColor = $("borderColor");
     var fileName = $("fileName");
 
     transparent.addEventListener("change", function () {
@@ -552,6 +572,19 @@
     cornerRadius.addEventListener("input", function () {
       state.cornerRadius = parseFloat(cornerRadius.value);
       radiusVal.textContent = cornerRadius.value;
+      drawPreview();
+    });
+    border.addEventListener("change", function () {
+      state.border = border.checked;
+      drawPreview();
+    });
+    borderWidth.addEventListener("input", function () {
+      state.borderWidth = parseFloat(borderWidth.value);
+      borderWidthVal.textContent = borderWidth.value;
+      drawPreview();
+    });
+    borderColor.addEventListener("input", function () {
+      state.borderColor = borderColor.value;
       drawPreview();
     });
     fileName.addEventListener("input", function () {
