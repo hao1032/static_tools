@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>代码格式化工具 · JSON / HTML / XML</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="back" href="../">← 返回工具箱</a>
+    <h1>代码格式化工具</h1>
+  </header>
+
+  <main class="layout">
+    <!-- 工具栏 -->
+    <section class="panel">
+      <div class="card">
+        <h2>设置</h2>
+        <div class="row">
+          <label>格式类型</label>
+          <select id="type">
+            <option value="auto">自动检测</option>
+            <option value="json">JSON</option>
+            <option value="html">HTML</option>
+            <option value="xml">XML</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>模式</label>
+          <div class="seg" id="modeSeg">
+            <button type="button" class="seg-btn on" data-mode="format">格式化</button>
+            <button type="button" class="seg-btn" data-mode="minify">压缩</button>
+          </div>
+        </div>
+        <div class="row" id="indentRow">
+          <label>缩进</label>
+          <select id="indent">
+            <option value="2">2 空格</option>
+            <option value="4">4 空格</option>
+            <option value="tab">Tab</option>
+          </select>
+        </div>
+        <p class="hint">自动检测会先尝试 JSON，失败再按标签判断 HTML / XML。压缩模式下忽略缩进设置。</p>
+      </div>
+
+      <div class="card">
+        <h2>输入</h2>
+        <textarea id="input" class="editor" spellcheck="false" placeholder="在此粘贴 JSON、HTML 或 XML 代码…"></textarea>
+        <div class="actions">
+          <button id="format" class="btn btn-primary" type="button">格式化</button>
+          <button id="clear" class="btn" type="button">清空</button>
+          <button id="sample" class="btn" type="button">示例</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 输出 -->
+    <aside class="output-pane">
+      <div class="card">
+        <div class="card-head">
+          <h2>输出</h2>
+          <div class="actions">
+            <button id="copy" class="btn" type="button">复制</button>
+            <button id="download" class="btn" type="button">下载</button>
+          </div>
+        </div>
+        <textarea id="output" class="editor" spellcheck="false" readonly placeholder="格式化结果将显示在这里…"></textarea>
+        <div id="status" class="status"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
