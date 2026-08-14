@@ -46,7 +46,17 @@ body {
   grid-template-rows: minmax(0, 1fr);
   gap: 28px;
 }
-.panel { display: flex; flex-direction: column; gap: 20px; min-height: 0; }
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100vh;
+  overflow-y: auto;
+}
 
 .card {
   background: var(--card);
