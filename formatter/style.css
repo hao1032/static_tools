@@ -34,9 +34,8 @@ body {
 
 /* 布局 */
 .layout {
-  max-width: 1180px;
   margin: 0 auto;
-  padding: 28px 24px 64px;
+  padding: 28px 40px 48px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 28px;
