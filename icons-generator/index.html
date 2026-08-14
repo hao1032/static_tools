@@ -58,21 +58,6 @@
         <div id="layers"></div>
         <p class="hint">列表越靠上的图层显示在越上层，可拖动 ⠿ 调整顺序。在右侧预览里按住文字即可直接拖动改位置。每层可输入多个字母，支持中文。</p>
       </div>
-
-      <!-- 导出 -->
-      <div class="card">
-        <h2>导出</h2>
-        <div class="row">
-          <label>文件名</label>
-          <input type="text" id="fileName" value="icon" class="text-input" />
-          <span class="ext">.ico</span>
-        </div>
-        <div class="row col">
-          <label>尺寸与下载</label>
-          <div id="sizeList" class="size-list"></div>
-        </div>
-        <button id="download" class="btn btn-primary btn-block" type="button">生成并下载（全部勾选尺寸）</button>
-      </div>
     </section>
 
     <!-- 右侧：实时预览 -->
@@ -84,6 +69,21 @@
       <div class="preview-meta">
         <span id="previewLabel">预览 256×256</span>
         <div class="preview-tiles" id="tiles"></div>
+      </div>
+
+      <!-- 导出 -->
+      <div class="card export-card">
+        <h2>导出</h2>
+        <div class="row">
+          <label>文件名</label>
+          <input type="text" id="fileName" value="icon" class="text-input" />
+          <span class="ext">.ico</span>
+        </div>
+        <div class="row col">
+          <label>尺寸与下载</label>
+          <div id="sizeList" class="size-list"></div>
+        </div>
+        <button id="download" class="btn btn-primary btn-block" type="button">生成并下载（全部勾选尺寸）</button>
       </div>
     </aside>
   </main>

@@ -200,6 +200,7 @@ input[type="color"] {
   cursor: grab; touch-action: none;
 }
 .preview-meta { margin-top: 14px; color: var(--muted); font-size: 13px; }
+.export-card { margin-top: 16px; }
 .preview-tiles { display: flex; gap: 12px; margin-top: 10px; align-items: flex-end; }
 .tile {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
