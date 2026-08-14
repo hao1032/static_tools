@@ -83,6 +83,36 @@ body {
 .btn-primary:hover { background: #1d4ed8; color: #fff; }
 .actions { display: flex; gap: 10px; margin-top: 14px; }
 
+/* 示例下拉菜单 */
+.dropdown { position: relative; }
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: none;
+  min-width: 140px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+.dropdown-menu.open { display: block; }
+.dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: #fff;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.dropdown-item:hover { background: var(--accent-soft); color: var(--accent); }
+
 /* 编辑框 */
 .editor {
   width: 100%;

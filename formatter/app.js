@@ -396,10 +396,45 @@
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(a.href);
   });
-  $("sample").addEventListener("click", function () {
-    inputEl.value = '{"name":"静态工具箱","tools":[{"id":1,"title":"ICO生成器"},{"id":2,"title":"格式化工具"}],"ok":true,"count":2}';
-    typeEl.value = "auto";
-    runFormat();
+  // ---------- 示例（可切换多个实例）----------
+  var SAMPLES = [
+    {
+      label: "JSON 示例",
+      code: '{"name":"静态工具箱","tools":[{"id":1,"title":"ICO生成器"},{"id":2,"title":"格式化工具"}],"ok":true,"count":2}'
+    },
+    {
+      label: "HTML 示例",
+      code: '<!DOCTYPE html><html><head><title>示例</title></head><body><div class="card"><h2>标题</h2><p>这是一段<strong>加粗</strong>文字。</p><ul><li>项目一</li><li>项目二</li></ul></div></body></html>'
+    },
+    {
+      label: "XML 示例",
+      code: '<?xml version="1.0" encoding="UTF-8"?><note id="1"><to>张三</to><from>李四</from><body>会议改到下午三点</body><items><item>笔记本</item><item>水杯</item></items></note>'
+    }
+  ];
+
+  var sampleMenu = $("sampleMenu");
+  SAMPLES.forEach(function (s, i) {
+    var item = document.createElement("button");
+    item.type = "button";
+    item.className = "dropdown-item";
+    item.textContent = s.label;
+    item.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      inputEl.value = s.code;
+      typeEl.value = "auto";
+      sampleMenu.classList.remove("open");
+      runFormat();
+    });
+    sampleMenu.appendChild(item);
+  });
+
+  var sampleBtn = $("sample");
+  sampleBtn.addEventListener("click", function (ev) {
+    ev.stopPropagation();
+    sampleMenu.classList.toggle("open");
+  });
+  document.addEventListener("click", function () {
+    sampleMenu.classList.remove("open");
   });
 
   // 初始默认树视图
