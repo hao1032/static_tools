@@ -37,7 +37,7 @@ body {
   margin: 0 auto;
   padding: 28px 40px 48px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 2.1fr);
   gap: 28px;
   align-items: start;
 }
