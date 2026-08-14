@@ -80,8 +80,12 @@
     ctx.fillStyle = layer.color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.font = (layer.bold ? "bold " : "") + (layer.fontSize * scale) + "px " + (layer.font || "sans-serif");
-    var cx = layer.x * scale, cy = layer.y * scale;
+    // 字号取整，避免非整数字体大小导致模糊
+    var fSize = Math.round(layer.fontSize * scale);
+    ctx.font = (layer.bold ? "bold " : "") + fSize + "px " + (layer.font || "sans-serif");
+    // 坐标取整，避免亚像素抗锯齿模糊
+    var cx = Math.round(layer.x * scale);
+    var cy = Math.round(layer.y * scale);
     if (layer.rotation) {
       ctx.translate(cx, cy);
       ctx.rotate(layer.rotation * Math.PI / 180);
@@ -112,10 +116,35 @@
     }
   }
 
+  // 超采样倍率：小尺寸用更高倍率渲染再缩小，提升清晰度
+  function superSampleFactor(size) {
+    if (size <= 16) return 4;
+    if (size <= 48) return 2;
+    return 1;
+  }
+
   function drawToCanvas(canvas, size) {
+    var factor = superSampleFactor(size);
+    var renderSize = size * factor;
     canvas.width = size;
     canvas.height = size;
-    drawScene(canvas.getContext("2d"), size);
+
+    if (factor === 1) {
+      // 大尺寸直接渲染
+      drawScene(canvas.getContext("2d"), size);
+    } else {
+      // 超采样：在高分辨率画布上绘制，再高质量缩小到目标尺寸
+      var offscreen = document.createElement("canvas");
+      offscreen.width = renderSize;
+      offscreen.height = renderSize;
+      var offCtx = offscreen.getContext("2d");
+      drawScene(offCtx, renderSize);
+
+      var ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(offscreen, 0, 0, size, size);
+    }
   }
 
   function drawPreview() {
