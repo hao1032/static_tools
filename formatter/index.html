@@ -61,11 +61,16 @@
         <div class="card-head">
           <h2>输出</h2>
           <div class="actions">
+            <div class="seg" id="viewSeg">
+              <button type="button" class="seg-btn on" data-view="tree">树视图</button>
+              <button type="button" class="seg-btn" data-view="text">文本</button>
+            </div>
             <button id="copy" class="btn" type="button">复制</button>
             <button id="download" class="btn" type="button">下载</button>
           </div>
         </div>
         <textarea id="output" class="editor" spellcheck="false" readonly placeholder="格式化结果将显示在这里…"></textarea>
+        <div id="tree" class="tree" style="display:none;"></div>
         <div id="status" class="status"></div>
       </div>
     </aside>

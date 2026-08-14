@@ -106,6 +106,50 @@ body {
 .status.ok { color: #16a34a; }
 .status.err { color: #dc2626; }
 
+/* 树视图 */
+.tree {
+  min-height: 420px;
+  max-height: 70vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: #fbfcfe;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.tree-empty { color: var(--muted); padding: 8px 2px; }
+.tree-node { position: relative; }
+.tree-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 1px 0;
+  cursor: default;
+}
+.tree-row:hover { background: var(--accent-soft); border-radius: 6px; }
+.tree-toggle {
+  cursor: pointer;
+  color: var(--muted);
+  width: 14px;
+  flex-shrink: 0;
+  user-select: none;
+  text-align: center;
+}
+.tree-children { margin-left: 14px; border-left: 1px dashed var(--border); padding-left: 8px; }
+.tree-key { color: var(--accent); }
+.tree-tag { color: #7c3aed; font-weight: 600; }
+.tree-attr { color: #b45309; }
+.tree-punc { color: var(--muted); }
+.tree-bracket { color: var(--muted); }
+.tree-count { color: var(--muted); font-style: italic; }
+.tree-value.string { color: #16a34a; }
+.tree-value.number { color: #d97706; }
+.tree-value.boolean, .tree-value.null { color: #dc2626; }
+.tree-text { color: #334155; }
+.tree-comment { color: #94a3b8; font-style: italic; }
+
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }
   .output-pane { order: 2; }
