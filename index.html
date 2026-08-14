@@ -74,6 +74,14 @@
       border-radius: 6px;
       font-size: 13px;
     }
+    footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    footer .version { color: var(--accent); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -101,5 +109,9 @@
       每个工具独立放在自己的文件夹中，根目录 <code>index.html</code> 作为导航入口。
     </section>
   </main>
+
+  <footer>
+    静态工具箱 · <span class="version">v1.0.0</span>
+  </footer>
 </body>
 </html>
