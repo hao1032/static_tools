@@ -17,6 +17,9 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.55;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 顶部栏 */
@@ -34,14 +37,16 @@ body {
 
 /* 布局 */
 .layout {
+  flex: 1;
+  min-height: 0;
   margin: 0 auto;
   padding: 28px 40px 48px;
   display: grid;
   grid-template-columns: minmax(280px, 0.9fr) minmax(0, 2.1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 28px;
-  align-items: start;
 }
-.panel { display: flex; flex-direction: column; gap: 20px; }
+.panel { display: flex; flex-direction: column; gap: 20px; min-height: 0; }
 
 .card {
   background: var(--card);
@@ -115,7 +120,7 @@ body {
 /* 编辑框 */
 .editor {
   width: 100%;
-  min-height: 420px;
+  min-height: 240px;
   resize: vertical;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -128,17 +133,25 @@ body {
   tab-size: 2;
 }
 .editor:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
-#output { background: #fbfcfe; color: #0f172a; }
+#output { background: #fbfcfe; color: #0f172a; flex: 1; min-height: 240px; }
+
+/* 输入卡片与文本框随栏高拉伸 */
+.panel > .card:last-child { display: flex; flex-direction: column; min-height: 0; }
+#input { flex: 1; min-height: 200px; }
 
 /* 状态 */
 .status { margin-top: 12px; font-size: 13px; min-height: 20px; }
 .status.ok { color: #16a34a; }
 .status.err { color: #dc2626; }
 
+/* 输出区（预览）撑满栏高 */
+.output-pane { display: flex; flex-direction: column; min-height: 0; }
+.output-pane > .card { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
 /* 树视图 */
 .tree {
-  min-height: 420px;
-  max-height: 70vh;
+  flex: 1;
+  min-height: 240px;
   overflow-x: hidden;
   overflow-y: auto;
   border: 1px solid var(--border);
