@@ -403,12 +403,24 @@
       code: '{"name":"静态工具箱","tools":[{"id":1,"title":"ICO生成器"},{"id":2,"title":"格式化工具"}],"ok":true,"count":2}'
     },
     {
+      label: "JSON 复杂",
+      code: '{"app":{"name":"静态工具箱","version":"1.0.0","author":{"name":"hao","email":"hao@example.com","links":["github.com/hao1032"]},"features":{"formatter":true,"ico":true},"tools":[{"id":1,"title":"ICO生成器","layers":[{"text":"字","fontSize":150,"color":"#fff","opacity":1,"rotation":0},{"text":"NEW","fontSize":40,"color":"#f59e0b","opacity":1,"rotation":0}]},{"id":2,"title":"格式化工具","formats":["json","html","xml"],"options":{"indent":[2,4,"tab"],"mode":["format","minify"]}}],"stats":{"users":1280,"active":true,"tags":["tool","web"]}},"ok":true}'
+    },
+    {
       label: "HTML 示例",
       code: '<!DOCTYPE html><html><head><title>示例</title></head><body><div class="card"><h2>标题</h2><p>这是一段<strong>加粗</strong>文字。</p><ul><li>项目一</li><li>项目二</li></ul></div></body></html>'
     },
     {
+      label: "HTML 复杂",
+      code: '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>复杂示例</title><link rel="stylesheet" href="style.css"></head><body><header class="topbar"><nav><a href="/">首页</a><a href="/tools">工具</a></nav></header><main><section class="grid"><article class="card" data-id="1"><h3>ICO 生成器</h3><p>多层文字组合生成图标，支持<strong>透明</strong>、圆角与边框。</p><ul><li>字号/颜色/透明度</li><li>位置/旋转</li></ul><button type="button">使用</button></article><article class="card" data-id="2"><h3>格式化工具</h3><p>支持 JSON、HTML、XML 的格式化与压缩。</p><table><thead><tr><th>格式</th><th>说明</th></tr></thead><tbody><tr><td>JSON</td><td>结构化数据</td></tr><tr><td>XML</td><td>标记语言</td></tr></tbody></table></article></section></main></body></html>'
+    },
+    {
       label: "XML 示例",
       code: '<?xml version="1.0" encoding="UTF-8"?><note id="1"><to>张三</to><from>李四</from><body>会议改到下午三点</body><items><item>笔记本</item><item>水杯</item></items></note>'
+    },
+    {
+      label: "XML 复杂",
+      code: '<?xml version="1.0" encoding="UTF-8"?><catalog><book id="bk1" category="tech"><title>前端工程化</title><author><name>王五</name><email>wang@example.com</email></author><price currency="CNY">89.00</price><tags><tag>webpack</tag><tag>vite</tag><tag>构建</tag></tags><chapters><chapter num="1">入门</chapter><chapter num="2">进阶</chapter></chapters></book><book id="bk2" category="lang"><title>XML 实战</title><author><name>赵六</name></author><price currency="CNY">59.00</price><tags><tag>xml</tag><tag>schema</tag></tags></book></catalog>'
     }
   ];
 
