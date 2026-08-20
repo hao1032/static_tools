@@ -16,6 +16,61 @@
 
 > 新增工具：在根目录建一个带 `index.html` 的文件夹（如 `qr-generator/`），然后在根目录 `index.html` 复制一张导航卡片链接过去即可。
 
+## 本地开发预览
+
+本站点为纯静态页面，无需构建。但由于 `clsf-viewer` 等工具使用了 **ES 模块**（`import` / `importmap`），浏览器安全策略禁止在 `file://` 协议下加载模块，因此必须通过 **HTTP 本地服务器** 预览，不能直接双击 `index.html` 打开。
+
+### 快速启动（任选其一）
+
+**方式一：Python（推荐）**
+
+```bash
+cd D:/code/static_tools
+python -m http.server 8765
+```
+
+然后在浏览器访问：<http://localhost:8765/>
+
+**方式二：Node.js**
+
+```bash
+cd D:/code/static_tools
+npx serve -p 8765
+# 或
+npx http-server -p 8765
+```
+
+**方式三：VS Code Live Server 插件**
+
+安装 Live Server 插件后，右键根目录 `index.html` → **Open with Live Server**。
+
+### 预览各工具
+
+| 工具 | 地址 |
+| --- | --- |
+| 首页导航 | <http://localhost:8765/> |
+| ICO 文字图标生成器 | <http://localhost:8765/icons-generator/> |
+| CLSF 刀轨 3D 预览 | <http://localhost:8765/clsf-viewer/> |
+
+> 启动服务器时如果提示端口被占用，可用 `--bind 0.0.0.0` 或换一个端口（如 `8080`），并相应更新访问地址。
+>
+> 修改文件后刷新浏览器即可看到效果；如遇缓存，按 **Ctrl+F5** 强制刷新。
+
+### 一键重启服务器（Windows）
+
+仓库根目录提供了 `restart-server.bat`，双击即可**自动关闭占用 8765 端口的旧进程并重新启动服务器**，无需手动结束任务。
+
+```
+双击 restart-server.bat
+```
+
+脚本会：
+1. 查找并终止所有占用端口 8765 的进程（解决端口冲突 / 旧服务器残留）
+2. 在仓库根目录启动 Python HTTP 服务器（`0.0.0.0:8765`）
+3. 终端窗口保持打开，显示服务器日志；**Ctrl+C** 或关闭窗口即可停止
+
+> 如需修改端口或 Python 路径，编辑 `restart-server.bat` 顶部的 `PORT` 和 `PYTHON` 变量即可。
+
 ## 工具一：ICO 文字图标生成器
 
 把文字（支持中文、多个字母）渲染成 `.ico` 图标，完全在浏览器本地完成，不上传任何数据。

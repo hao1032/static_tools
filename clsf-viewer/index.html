@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CLSF 刀轨预览</title>
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./style.css?v=5" />
   <script type="importmap">
   {
     "imports": {
@@ -18,86 +18,25 @@
   <header class="topbar">
     <a class="back" href="../">&larr; 返回工具箱</a>
     <h1>CLSF 刀轨预览</h1>
-    <span class="topbar-hint">解析 NX CLSF 文件，3D 可视化刀轨</span>
+    <span class="topbar-hint">解析 NX CLSF 文件，3D 可视化刀轨，支持多刀轨叠加</span>
   </header>
 
   <main class="layout">
     <!-- 左侧控制面板 -->
     <section class="panel">
-      <!-- 文件输入 -->
-      <div class="card">
-        <h2>输入</h2>
-        <div id="dropZone" class="drop-zone">
-          <div class="drop-icon">&#128194;</div>
-          <p>拖拽 .cls / .clsf 文件到此处</p>
-          <p class="drop-sub">或</p>
-          <button id="fileBtn" class="btn btn-primary" type="button">选择文件</button>
-          <input type="file" id="fileInput" accept=".cls,.clsf,.txt" hidden />
-        </div>
-        <div class="row" style="margin-top:12px;">
-          <button id="pasteBtn" class="btn" type="button">粘贴文本</button>
-          <button id="sampleBtn" class="btn" type="button">加载示例</button>
-          <button id="clearBtn" class="btn" type="button">清空</button>
-        </div>
-        <div id="pasteArea" class="paste-area" style="display:none;">
-          <textarea id="pasteText" placeholder="将 CLSF 文本粘贴到此处..." rows="6"></textarea>
-          <button id="parsePasteBtn" class="btn btn-primary btn-block" type="button" style="margin-top:8px;">解析</button>
-        </div>
-        <p id="fileStatus" class="hint" style="margin-top:8px;"></p>
-      </div>
-
-      <!-- 路径列表 -->
+      <!-- CLSF 输入（支持多个刀轨） -->
       <div class="card">
         <div class="card-head">
-          <h2>刀轨路径</h2>
-          <span id="pathCount" class="badge">0</span>
+          <h2>CLSF 输入</h2>
+          <span id="clsfCount" class="badge">0</span>
         </div>
-        <div id="pathList" class="path-list">
-          <p class="hint">尚未加载文件</p>
-        </div>
-      </div>
-
-      <!-- 显示选项 -->
-      <div class="card">
-        <h2>显示选项</h2>
-        <div class="row check-row">
-          <label class="check"><input type="checkbox" id="showRapid" checked /> <span class="legend rapid"></span> 快进</label>
-          <label class="check"><input type="checkbox" id="showApproach" checked /> <span class="legend approach"></span> 逼近/移刀/离开</label>
-          <label class="check"><input type="checkbox" id="showEngage" checked /> <span class="legend engage"></span> 进刀</label>
-        </div>
-        <div class="row check-row">
-          <label class="check"><input type="checkbox" id="showStepover" checked /> <span class="legend stepover"></span> 步进</label>
-          <label class="check"><input type="checkbox" id="showCut" checked /> <span class="legend cut"></span> 切削</label>
-          <label class="check"><input type="checkbox" id="showRetract" checked /> <span class="legend retract"></span> 退刀</label>
-        </div>
-        <div class="row check-row">
-          <label class="check"><input type="checkbox" id="showGrid" checked /> <span>网格</span></label>
-          <label class="check"><input type="checkbox" id="transparentPlane" checked /> <span>透明平面</span></label>
-          <label class="check"><input type="checkbox" id="showAxes" checked /> <span>坐标轴</span></label>
-          <label class="check"><input type="checkbox" id="autoRotate" /> <span>自动旋转</span></label>
-        </div>
-        <div class="row">
-          <label>线条粗细</label>
-          <input type="range" id="lineWidth" min="1" max="6" step="0.5" value="2" />
-          <span class="val" id="lineWidthVal">2</span>
-        </div>
-        <div class="row">
-          <button id="fitBtn" class="btn btn-block" type="button">适配视角</button>
+        <div id="clsfList" class="clsf-list"></div>
+        <div class="row" style="margin-top:12px;">
+          <button id="addClsfBtn" class="btn" type="button" style="flex:1;">＋ 添加 CLSF</button>
+          <button id="clearAllBtn" class="btn" type="button">清空全部</button>
         </div>
       </div>
 
-      <!-- 统计信息 -->
-      <div class="card">
-        <h2>统计</h2>
-        <div id="stats" class="stats">
-          <div class="stat-row"><span>路径数</span><span id="statPaths">—</span></div>
-          <div class="stat-row"><span>运动段数</span><span id="statMoves">—</span></div>
-          <div class="stat-row"><span>采样点数</span><span id="statPoints">—</span></div>
-          <div class="stat-row"><span>快进/逼近/进刀/步进/切削/退刀</span><span id="statBreakdown">—</span></div>
-          <div class="stat-row"><span>刀具</span><span id="statTools">—</span></div>
-          <div class="stat-row"><span>包围盒范围</span><span id="statBounds">—</span></div>
-        </div>
-      </div>
     </section>
 
     <!-- 右侧 3D 预览 -->
@@ -105,8 +44,8 @@
       <div class="viewer-stage">
         <canvas id="canvas3d"></canvas>
         <div id="viewerHint" class="viewer-hint">
-          <p>加载 CLSF 文件以预览刀轨</p>
-          <p class="viewer-hint-sub">支持 GOTO / CIRCLE / CYCLE / RAPID 等指令</p>
+          <p>粘贴 CLSF 内容并点击「解析」以预览刀轨</p>
+          <p class="viewer-hint-sub">支持 GOTO / CIRCLE / CYCLE / RAPID 等指令，可添加多个 CLSF 叠加显示</p>
         </div>
         <div id="coordDisplay" class="coord-display" style="display:none;"></div>
       </div>
@@ -145,7 +84,7 @@
       }
     })();
   </script>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=5"></script>
   <script>
     // 兜底：若 3 秒后模块仍未初始化成功，给出明确错误提示
     setTimeout(function () {

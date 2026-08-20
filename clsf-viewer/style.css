@@ -94,7 +94,6 @@ body {
 input[type="range"] { flex: 1; min-width: 80px; accent-color: var(--accent); }
 .check { display: flex; align-items: center; gap: 6px; color: var(--text); font-size: 13px; cursor: pointer; }
 .check input { accent-color: var(--accent); }
-.check-row { gap: 14px; }
 
 /* 按钮 */
 .btn {
@@ -116,26 +115,37 @@ input[type="range"] { flex: 1; min-width: 80px; accent-color: var(--accent); }
 .btn-primary:disabled:hover { background: var(--accent); }
 .btn-block { width: 100%; }
 
-/* 拖拽区 */
-.drop-zone {
-  border: 2px dashed var(--border);
-  border-radius: 12px;
-  padding: 24px 16px;
-  text-align: center;
-  transition: border-color .2s, background .2s;
-  cursor: pointer;
+/* 多 CLSF 输入 */
+.clsf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
-.drop-zone.drag-over {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+.clsf-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: #fbfcfe;
 }
-.drop-zone:hover { border-color: var(--accent); }
-.drop-icon { font-size: 32px; margin-bottom: 8px; }
-.drop-zone p { margin: 4px 0; color: var(--muted); font-size: 13px; }
-.drop-sub { font-size: 12px !important; }
 
-.paste-area { margin-top: 12px; }
-.paste-area textarea {
+.clsf-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.clsf-head .clsf-remove {
+  margin-left: auto;  /* 删除按钮推到最右 */
+}
+.btn-icon {
+  padding: 2px 9px;
+  font-size: 15px;
+  line-height: 1.3;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.btn-icon:hover { color: #dc2626; border-color: #dc2626; }
+.clsf-text {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--border);
@@ -144,10 +154,39 @@ input[type="range"] { flex: 1; min-width: 80px; accent-color: var(--accent); }
   font-family: "SFMono-Regular", Consolas, monospace;
   resize: vertical;
   outline: none;
+  background: #fff;
 }
-.paste-area textarea:focus { border-color: var(--accent); }
+.clsf-text:focus { border-color: var(--accent); }
+.clsf-btns { margin-top: 8px; }
+.clsf-colors {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+.color-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+}
+.color-name {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.2;
+}
+.color-item input[type="color"] {
+  width: 100%;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+.color-item input[type="color"]:hover { border-color: var(--accent); }
 
-/* 路径列表 */
 .badge {
   background: var(--accent-soft);
   color: var(--accent);
@@ -156,67 +195,8 @@ input[type="range"] { flex: 1; min-width: 80px; accent-color: var(--accent); }
   font-size: 12px;
   font-weight: 600;
 }
-.path-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 260px;
-  overflow-y: auto;
-}
-.path-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fbfcfe;
-  cursor: pointer;
-  transition: border-color .15s;
-}
-.path-item:hover { border-color: var(--accent); }
-.path-item.active { border-color: var(--accent); background: var(--accent-soft); }
-.path-item input[type="checkbox"] { accent-color: var(--accent); flex-shrink: 0; }
-.path-name {
-  font-size: 12px;
-  font-weight: 500;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.path-meta { font-size: 11px; color: var(--muted); flex-shrink: 0; }
 
-/* 图例 */
-.legend {
-  display: inline-block;
-  width: 14px;
-  height: 3px;
-  border-radius: 2px;
-  vertical-align: middle;
-}
-.legend.rapid { background: var(--rapid); }
-.legend.approach { background: var(--approach); }
-.legend.engage { background: var(--engage); }
-.legend.stepover { background: var(--stepover); }
-.legend.cut { background: var(--cut); }
-.legend.retract { background: var(--retract); }
-
-/* 统计 */
-.stats { display: flex; flex-direction: column; gap: 6px; }
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  padding: 4px 0;
-  border-bottom: 1px solid #f0f1f5;
-}
-.stat-row:last-child { border-bottom: none; }
-.stat-row span:first-child { color: var(--muted); }
-.stat-row span:last-child { font-weight: 500; }
-
-/* 右侧 3D 预览 */
+/* 3D 预览区 */
 .viewer-pane {
   display: flex;
   flex-direction: column;

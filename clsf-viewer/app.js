@@ -29,19 +29,25 @@ function normalize(v) {
 // ================================================================
 
 // CLSF PAINT/COLOR 颜色 → 运动类型（与 NX 刀轨显示颜色对齐）
+// 186/211 均为 RAPID 移刀：186=逼近、211=移刀/逼近，按用户习惯统一为「逼近移刀」(蓝、虚线)
 var COLOR_TO_MOVE_TYPE = {
-  186: "rapid",     // 快进
-  211: "approach",  // 逼近 / 移刀 / 离开
-  42:  "engage",    // 进刀
-  33:  "firstcut",  // 第一刀切削
-  36:  "stepover",  // 步进
-  31:  "cut",       // 切削 / 第一刀切削 / 最后一刀切削
-  37:  "retract",   // 退刀
+  186: "approach",  // 逼近 — 蓝（虚线）
+  211: "approach",  // 移刀 / 逼近 — 蓝（虚线）
+  42:  "engage",    // 进刀 — 橙（虚线，非切削）
+  33:  "firstcut",  // 第一刀切削 — 黄（实线，切削）
+  36:  "stepover",  // 步进 — 绿（实线，切削）
+  31:  "cut",       // 切削 — 青（实线，切削）
+  37:  "retract",   // 退刀 — 粉红（虚线，非切削）
 };
 
 function classify(geom) {
-  if (geom.type === "line" && geom.rapid) return "rapid";
-  if (geom.color != null) return COLOR_TO_MOVE_TYPE[geom.color] || "cut";
+  // NX 语义：PAINT/COLOR 决定显示类型（颜色优先），RAPID 仅是运动指令。
+  // 退刀(37)/进刀(42)/切削(31) 等即使带 RAPID 标志，仍按各自颜色归类；
+  // 只有无颜色时才以 RAPID 兜底为快进。
+  if (geom.color != null) {
+    return COLOR_TO_MOVE_TYPE[geom.color] || (geom.rapid ? "rapid" : "cut");
+  }
+  if (geom.rapid) return "rapid";
   return "cut";
 }
 
@@ -451,31 +457,48 @@ MoveSampler.prototype._sampleCycle = function (cyc) {
 // ================================================================
 //  Three.js 场景
 // ================================================================
-var MOVE_COLORS = {
-  rapid:    0xff0000, // 快进 — 红
-  approach: 0x0000ff, // 逼近 / 移刀 / 离开 — 蓝
-  engage:   0xff8000, // 进刀 — 橙
-  firstcut: 0xffff00, // 第一刀切削 — 黄
-  stepover: 0x00ff00, // 步进 — 绿
-  cut:      0x00ffff, // 切削 — 青
-  retract:  0xff80c0, // 退刀 — 粉红
+var MOVE_TYPES = ["rapid", "approach", "engage", "firstcut", "stepover", "cut", "retract"];
+// 简短标签（颜色选择器内使用），完整说明见 title 提示
+var MOVE_TYPE_LABELS = {
+  rapid: "快进", approach: "逼近", engage: "进刀",
+  firstcut: "第一刀", stepover: "步进", cut: "切削", retract: "退刀",
 };
+var MOVE_TYPE_TIPS = {
+  rapid: "快进（红，虚线）", approach: "逼近/移刀/离开（蓝，虚线）", engage: "进刀（橙，虚线）",
+  firstcut: "第一刀切削（黄，实线）", stepover: "步进（绿，实线）", cut: "切削（青，实线）", retract: "退刀（粉红，虚线）",
+};
+// 非切削（虚线）类型
+var DASHED_TYPES = { rapid: true, approach: true, engage: true, retract: true };
+// 默认配色（与 NX 刀轨显示颜色对齐），每个 CLSF 可独立覆盖
+var DEFAULT_COLORS = {
+  rapid: "#ff0000",
+  approach: "#0000ff",
+  engage: "#ff8000",
+  firstcut: "#ffff00",
+  stepover: "#00ff00",
+  cut: "#00ffff",
+  retract: "#ff80c0",
+};
+function zeroMoveCounts() {
+  return { rapid: 0, approach: 0, engage: 0, firstcut: 0, stepover: 0, cut: 0, retract: 0 };
+}
 
 var scene, camera, renderer, controls;
 var autoRotateEnabled = false;   // 自动旋转（手动实现，TrackballControls 无该属性）
 var userInteracting = false;     // 用户正在拖动/缩放/平移
 var gridHelper, axesHelper;
-var axisLabels = [];     // 坐标轴文字标签 [X, Y, Z]
-var pathGroups = [];     // [{ group, path, moveGroups: {rapid,approach,engage,firstcut,stepover,cut,retract}, visible }]
-var allSampledPoints = []; // [{ pos, color, pathIdx }] 用于动画
-var toolGroup = null;     // 刀具示意组（刀尖球 + 刀体 + 夹头），沿刀轴方向绘制
-var toolTip = null;       // 刀尖/接触点指示球（位于 GOTO）
-var toolCutter = null;    // 刀体（铣刀圆柱）
-var toolHolder = null;    // 夹头（顶部略宽短圆柱）
+var axisLabels = [];             // 坐标轴文字标签 [X, Y, Z]
+var clsfEntries = [];            // 多刀轨条目 [{ id, name, text, visible, colors, paths, rootGroup, pathGroups, moveCounts, sampled, el }]
+var entrySeq = 0;                // 条目自增 id
+var allSampledPoints = [];       // [{ pos, axis, tool, moveType }] 用于动画（仅可见条目）
+var toolGroup = null;            // 刀具示意组（刀尖球 + 刀体 + 夹头），沿刀轴方向绘制
+var toolTip = null;              // 刀尖/接触点指示球（位于 GOTO）
+var toolCutter = null;           // 刀体（铣刀圆柱）
+var toolHolder = null;           // 夹头（顶部略宽短圆柱）
 var trailLine = null;
 var trailPoints = [];
 var trailMaxLen = 200;
-var modelMaxDim = 100;    // 当前模型包围盒最大尺寸（用于刀具尺寸归一化）
+var modelMaxDim = 100;           // 当前模型包围盒最大尺寸（用于刀具尺寸归一化）
 var UP = new THREE.Vector3(0, 1, 0);
 
 var animState = {
@@ -485,7 +508,28 @@ var animState = {
   rafId: null,
 };
 
-var bounds = null;  // { min: [x,y,z], max: [x,y,z] }
+var bounds = null;  // { min: [x,y,z], max: [x,y,z] }（仅统计可见条目）
+
+// 纯色坐标轴（红X / 绿Y / 蓝Z，无渐变）
+function createSolidAxes(length) {
+  var group = new THREE.Group();
+  var axes = [
+    { color: 0xff0000, dir: [1, 0, 0] },
+    { color: 0x00ff00, dir: [0, 1, 0] },
+    { color: 0x0000ff, dir: [0, 0, 1] },
+  ];
+  axes.forEach(function (a) {
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(
+      new Float32Array([0, 0, 0, a.dir[0] * length, a.dir[1] * length, a.dir[2] * length]), 3
+    ));
+    var mat = new THREE.LineBasicMaterial({ color: a.color });
+    var line = new THREE.Line(geo, mat);
+    line.frustumCulled = false;
+    group.add(line);
+  });
+  return group;
+}
 
 function initScene() {
   var canvas = document.getElementById("canvas3d");
@@ -517,8 +561,8 @@ function initScene() {
   scene.add(gridHelper);
   applyGridStyle();
 
-  // 坐标轴 (X=红, Y=绿, Z=蓝)
-  axesHelper = new THREE.AxesHelper(80);
+  // 坐标轴 (X=红, Y=绿, Z=蓝，纯色无渐变)
+  axesHelper = createSolidAxes(80);
   scene.add(axesHelper);
   updateAxisLabels(80);
 
@@ -589,52 +633,236 @@ function animate3D() {
 }
 
 // ================================================================
-//  渲染刀轨
+//  多刀轨条目管理
 // ================================================================
-function clearScene() {
-  pathGroups.forEach(function (pg) {
-    scene.remove(pg.group);
-    pg.group.traverse(function (obj) {
-      if (obj.geometry) obj.geometry.dispose();
-      if (obj.material) obj.material.dispose();
-    });
-  });
-  pathGroups = [];
-  allSampledPoints = [];
-  // 清理坐标轴标签
-  axisLabels.forEach(function (sp) {
-    scene.remove(sp);
-    if (sp.material.map) sp.material.map.dispose();
-    sp.material.dispose();
-  });
-  axisLabels = [];
-  toolGroup.visible = false;
-  trailLine.geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(0), 3));
-  trailPoints = [];
-  bounds = null;
+function addEntry(name, text) {
+  entrySeq++;
+  var entry = {
+    id: entrySeq,
+    name: name || ("CLSF " + entrySeq),
+    text: text || "",
+    visible: true,
+    transparent: false,
+    colors: Object.assign({}, DEFAULT_COLORS),
+    paths: null,        // 解析出的路径数组
+    rootGroup: null,    // 该条目所有路径的 3D 根组
+    pathGroups: [],     // [{ group, path, moveGroups }]
+    moveCounts: zeroMoveCounts(),
+    sampled: [],        // 该条目采样点 [{ pos, axis, tool, moveType }]
+    el: null,
+  };
+  entry.el = createEntryElement(entry);
+  document.getElementById("clsfList").appendChild(entry.el);
+  wireEntryEvents(entry);
+  clsfEntries.push(entry);
+  updateClsfCount();
+  return entry;
 }
 
-function renderPaths(paths) {
-  clearScene();
-  var sampler = new MoveSampler({ arcSteps: 48, helixStepsPerTurn: 60 });
-  var moveCounts = {
-    rapid: 0, approach: 0, engage: 0, firstcut: 0,
-    stepover: 0, cut: 0, retract: 0,
-  };
+function createEntryElement(entry) {
+  var div = document.createElement("div");
+  div.className = "clsf-item";
+  div.dataset.id = entry.id;
 
-  for (var pi = 0; pi < paths.length; pi++) {
-    var path = paths[pi];
+  // 头部：显示勾选 + 透明勾选 + 删除
+  var head = document.createElement("div");
+  head.className = "clsf-head";
+
+  var visLabel = document.createElement("label");
+  visLabel.className = "check";
+  visLabel.title = "是否在 3D 视图中显示此 CLSF";
+  var visCb = document.createElement("input");
+  visCb.type = "checkbox";
+  visCb.checked = true;
+  visCb.className = "clsf-visible";
+  visLabel.appendChild(visCb);
+  visLabel.appendChild(document.createTextNode(" 显示"));
+  head.appendChild(visLabel);
+
+  var hlLabel = document.createElement("label");
+  hlLabel.className = "check";
+  hlLabel.title = "将此 CLSF 的刀路设为半透明";
+  var hlCb = document.createElement("input");
+  hlCb.type = "checkbox";
+  hlCb.checked = false;
+  hlCb.className = "clsf-transparent";
+  hlLabel.appendChild(hlCb);
+  hlLabel.appendChild(document.createTextNode(" 透明"));
+  head.appendChild(hlLabel);
+
+  var rm = document.createElement("button");
+  rm.type = "button";
+  rm.className = "btn btn-icon clsf-remove";
+  rm.title = "删除此 CLSF";
+  rm.innerHTML = "&times;";
+  head.appendChild(rm);
+
+  div.appendChild(head);
+
+  // 输入区
+  var ta = document.createElement("textarea");
+  ta.className = "clsf-text";
+  ta.rows = 4;
+  ta.placeholder = "在此粘贴 CLSF 内容，点击「解析」显示刀轨";
+  ta.value = entry.text || "";
+  div.appendChild(ta);
+
+  // 操作按钮
+  var btns = document.createElement("div");
+  btns.className = "row clsf-btns";
+  var parseBtn = document.createElement("button");
+  parseBtn.type = "button";
+  parseBtn.className = "btn btn-primary clsf-parse";
+  parseBtn.textContent = "解析";
+  btns.appendChild(parseBtn);
+  var sampleBtn = document.createElement("button");
+  sampleBtn.type = "button";
+  sampleBtn.className = "btn clsf-sample";
+  sampleBtn.textContent = "示例";
+  btns.appendChild(sampleBtn);
+  div.appendChild(btns);
+
+  // 刀轨类型颜色（每个 CLSF 独立）
+  var colorsEl = document.createElement("div");
+  colorsEl.className = "clsf-colors";
+  MOVE_TYPES.forEach(function (mt) {
+    var label = document.createElement("label");
+    label.className = "color-item";
+    label.title = MOVE_TYPE_TIPS[mt];
+    var span = document.createElement("span");
+    span.className = "color-name";
+    span.textContent = MOVE_TYPE_LABELS[mt];
+    var input = document.createElement("input");
+    input.type = "color";
+    input.value = entry.colors[mt];
+    input.dataset.type = mt;
+    input.className = "clsf-color";
+    label.appendChild(span);
+    label.appendChild(input);
+    colorsEl.appendChild(label);
+  });
+  div.appendChild(colorsEl);
+
+  return div;
+}
+
+function wireEntryEvents(entry) {
+  var el = entry.el;
+  var ta = el.querySelector(".clsf-text");
+
+  el.querySelector(".clsf-parse").addEventListener("click", function () {
+    entry.text = ta.value;
+    parseEntry(entry);
+  });
+
+  el.querySelector(".clsf-sample").addEventListener("click", function () {
+    ta.value = SAMPLE_CLSF;
+    entry.text = SAMPLE_CLSF;
+    parseEntry(entry);
+  });
+
+  el.querySelector(".clsf-visible").addEventListener("change", function (e) {
+    setEntryVisible(entry, e.target.checked);
+  });
+
+  el.querySelector(".clsf-remove").addEventListener("click", function () {
+    removeEntry(entry);
+  });
+
+  // 透明 checkbox：只控制当前 CLSF，不影响其他条目
+  el.querySelector(".clsf-transparent").addEventListener("change", function (e) {
+    setEntryTransparent(entry, e.target.checked);
+  });
+
+  ta.addEventListener("input", function () { entry.text = ta.value; });
+
+  el.querySelectorAll(".clsf-color").forEach(function (input) {
+    function apply() { setEntryColor(entry, input.dataset.type, input.value); }
+    input.addEventListener("input", apply);   // 取色过程实时预览
+    input.addEventListener("change", apply);  // 最终确认
+  });
+}
+
+function setEntryStatus(entry, msg, isError) {
+  // 卡片上不再显示状态文字，错误用弹窗提示
+  if (isError) alert(msg);
+}
+
+function parseEntry(entry) {
+  var text = (entry.text || "").trim();
+  if (!text) {
+    setEntryStatus(entry, "请输入 CLSF 内容", true);
+    return;
+  }
+  try {
+    var parser = new CLSFParser();
+    var paths = parser.parseContent(text);
+    if (paths.length === 0) {
+      setEntryStatus(entry, "未解析到刀轨路径", true);
+      return;
+    }
+    entry.paths = paths;
+    renderEntry(entry);
+    setEntryStatus(entry, "已解析 " + paths.length + " 条路径", false);
+  } catch (e) {
+    setEntryStatus(entry, "解析失败: " + e.message, true);
+    console.error(e);
+  }
+}
+
+function removeEntry(entry) {
+  removeEntryFromScene(entry);
+  clsfEntries = clsfEntries.filter(function (e) { return e.id !== entry.id; });
+  if (entry.el && entry.el.parentNode) entry.el.parentNode.removeChild(entry.el);
+  applyAllEntryTransparency();
+  updateClsfCount();
+  ensureDefaultEntry();
+  recomputeBounds();
+  rebuildAnimationData();
+  fitCamera();
+}
+
+function clearAllEntries() {
+  clsfEntries.slice().forEach(function (e) { removeEntryFromScene(e); });
+  clsfEntries = [];
+  document.getElementById("clsfList").innerHTML = "";
+  updateClsfCount();
+  bounds = null;
+  rebuildAnimationData();
+  resetAnimation();
+  ensureDefaultEntry();
+  updateViewerPlaceholder();
+}
+
+function ensureDefaultEntry() {
+  // 保持「默认至少一个输入框」的约定
+  if (clsfEntries.length === 0) addEntry("CLSF 1", "");
+}
+
+function updateClsfCount() {
+  document.getElementById("clsfCount").textContent = clsfEntries.length;
+}
+
+// ================================================================
+//  渲染刀轨
+// ================================================================
+function renderEntry(entry) {
+  removeEntryFromScene(entry);
+
+  var sampler = new MoveSampler({ arcSteps: 48, helixStepsPerTurn: 60 });
+  var moveCounts = zeroMoveCounts();
+  var rootGroup = new THREE.Group();
+  var pathGroups = [];
+  var entryPoints = [];
+
+  for (var pi = 0; pi < entry.paths.length; pi++) {
+    var path = entry.paths[pi];
     var group = new THREE.Group();
-    var moveGroups = {
-      rapid: new THREE.Group(),
-      approach: new THREE.Group(),
-      engage: new THREE.Group(),
-      firstcut: new THREE.Group(),
-      stepover: new THREE.Group(),
-      cut: new THREE.Group(),
-      retract: new THREE.Group(),
-    };
-    Object.values(moveGroups).forEach(function (g) { group.add(g); });
+    var moveGroups = {};
+    MOVE_TYPES.forEach(function (mt) {
+      moveGroups[mt] = new THREE.Group();
+      group.add(moveGroups[mt]);
+    });
 
     for (var mi = 0; mi < path.moves.length; mi++) {
       var move = path.moves[mi];
@@ -651,14 +879,10 @@ function renderPaths(paths) {
         positions[k*3+1] = pts[k][1];
         positions[k*3+2] = pts[k][2];
 
-        // 更新包围盒
-        updateBounds(pts[k]);
-
         // 收集采样点用于动画（携带刀轴与刀具尺寸）
-        if (k > 0 || allSampledPoints.length === 0) {
-          allSampledPoints.push({
+        if (k > 0 || entryPoints.length === 0) {
+          entryPoints.push({
             pos: pts[k].slice(),
-            pathIdx: pi,
             moveType: mt,
             axis: move.geometry.axis || [0, 0, 1],
             tool: path.tool || null,
@@ -668,42 +892,127 @@ function renderPaths(paths) {
 
       var geo = new THREE.BufferGeometry();
       geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      var mat = new THREE.LineBasicMaterial({
-        color: MOVE_COLORS[mt],
-        transparent: true,
-        opacity: 1.0,
-      });
-      var line = new THREE.Line(geo, mat);
+
+      // 切削(实线) / 非切削(虚线)，颜色取该 CLSF 独立配色
+      var isCutMove = (mt === "cut" || mt === "firstcut" || mt === "stepover");
+      var line;
+      if (isCutMove) {
+        line = new THREE.Line(geo, new THREE.LineBasicMaterial({
+          color: entry.colors[mt],
+          transparent: true,
+          opacity: 1.0,
+          // 刀路在选中高亮时会降低透明度；透明对象不能写深度，
+          // 否则重叠的刀路可能仍以不透明的颜色覆盖在最上面。
+          depthWrite: false,
+        }));
+      } else {
+        var dmat = new THREE.LineDashedMaterial({
+          color: entry.colors[mt],
+          transparent: true,
+          opacity: 1.0,
+          depthWrite: false,
+        });
+        line = new THREE.Line(geo, dmat);
+        line.computeLineDistances();
+        // 按各段实际长度取虚线密度，保证无论长短都呈虚线观感
+        var ldAttr = geo.getAttribute("lineDistance");
+        var totalLen = ldAttr ? ldAttr.array[ldAttr.count - 1] : 0;
+        var dash = Math.max(totalLen / 14, 0.05);
+        dmat.dashSize = dash;
+        dmat.gapSize = dash * 0.5;
+      }
       line.frustumCulled = false;
       moveGroups[mt].add(line);
     }
 
-    scene.add(group);
+    rootGroup.add(group);
     pathGroups.push({
       group: group,
       path: path,
       moveGroups: moveGroups,
-      visible: true,
     });
   }
 
-  // 隐藏提示
-  document.getElementById("viewerHint").style.display = "none";
-  document.getElementById("coordDisplay").style.display = "block";
+  entry.rootGroup = rootGroup;
+  entry.pathGroups = pathGroups;
+  entry.moveCounts = moveCounts;
+  entry.sampled = entryPoints;
+  scene.add(rootGroup);
+  rootGroup.visible = entry.visible;
 
+  recomputeBounds();
+  rebuildAnimationData();
   fitCamera();
-  updateStats(paths, moveCounts);
-  updatePathList(paths);
-  updateMoveTypeVisibility();
-
-  // 启用动画
-  document.getElementById("playBtn").disabled = allSampledPoints.length === 0;
-  document.getElementById("resetBtn").disabled = allSampledPoints.length === 0;
-  document.getElementById("progress").disabled = allSampledPoints.length === 0;
-  document.getElementById("progress").max = Math.max(1, allSampledPoints.length - 1);
+  applyAllEntryTransparency();
+  updateViewerPlaceholder();
 }
 
-function updateBounds(pos) {  if (!bounds) {
+function removeEntryFromScene(entry) {
+  if (entry.rootGroup) {
+    scene.remove(entry.rootGroup);
+    entry.rootGroup.traverse(function (obj) {
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) obj.material.dispose();
+    });
+  }
+  entry.rootGroup = null;
+  entry.pathGroups = [];
+  entry.moveCounts = zeroMoveCounts();
+  entry.sampled = [];
+}
+
+function applyEntryColors(entry) {
+  entry.pathGroups.forEach(function (pg) {
+    MOVE_TYPES.forEach(function (mt) {
+      pg.moveGroups[mt].children.forEach(function (line) {
+        if (line.material) line.material.color.set(entry.colors[mt]);
+      });
+    });
+  });
+}
+
+function setEntryVisible(entry, v) {
+  entry.visible = v;
+  if (entry.rootGroup) entry.rootGroup.visible = v;
+  recomputeBounds();
+  rebuildAnimationData();
+}
+
+function setEntryColor(entry, mt, hex) {
+  entry.colors[mt] = hex;
+  applyEntryColors(entry);
+  applyAllEntryTransparency();
+}
+
+// ---- 单条目透明度 ----
+function setEntryTransparent(entry, on) {
+  entry.transparent = on;
+  applyEntryTransparency(entry);
+}
+
+function applyEntryTransparency(entry) {
+  if (!entry.rootGroup) return;
+  var opacity = entry.transparent ? 0.20 : 1.0;
+  entry.pathGroups.forEach(function (pg) {
+      MOVE_TYPES.forEach(function (mt) {
+        pg.moveGroups[mt].children.forEach(function (line) {
+          if (!line.material) return;
+          line.material.color.set(entry.colors[mt]);
+          line.material.opacity = opacity;
+          line.material.transparent = true;
+          line.material.depthWrite = false;
+          line.material.needsUpdate = true;
+        });
+      });
+    });
+}
+
+function applyAllEntryTransparency() {
+  clsfEntries.forEach(applyEntryTransparency);
+}
+
+function updateBounds(pos) {
+  if (!bounds) {
     bounds = { min: pos.slice(), max: pos.slice() };
   } else {
     for (var i = 0; i < 3; i++) {
@@ -713,10 +1022,34 @@ function updateBounds(pos) {  if (!bounds) {
   }
 }
 
+// 重新统计包围盒（仅可见条目）
+function recomputeBounds() {
+  bounds = null;
+  clsfEntries.forEach(function (e) {
+    if (!e.visible || !e.sampled) return;
+    e.sampled.forEach(function (p) { updateBounds(p.pos); });
+  });
+}
+
+// 重新聚合动画采样点（仅可见条目）
+function rebuildAnimationData() {
+  allSampledPoints = [];
+  clsfEntries.forEach(function (e) {
+    if (e.visible && e.sampled) allSampledPoints = allSampledPoints.concat(e.sampled);
+  });
+
+  var has = allSampledPoints.length > 0;
+  document.getElementById("playBtn").disabled = !has;
+  document.getElementById("resetBtn").disabled = !has;
+  document.getElementById("progress").disabled = !has;
+  document.getElementById("progress").max = Math.max(1, allSampledPoints.length - 1);
+  if (animState.currentIdx >= allSampledPoints.length) resetAnimation();
+}
+
 // 应用网格平面透明度（默认透明，避免遮挡刀路）
 function applyGridStyle() {
   if (!gridHelper) return;
-  var transparent = document.getElementById("transparentPlane").checked;
+  var transparent = true;  // 默认透明（UI 已移除切换）
   gridHelper.material.transparent = true;
   gridHelper.material.opacity = transparent ? 0.22 : 0.9;
   gridHelper.material.depthWrite = !transparent;
@@ -752,7 +1085,7 @@ function fitCamera() {
     var divisions = Math.max(20, Math.round(gridSize / 10));
     gridHelper = new THREE.GridHelper(gridSize, divisions, 0x3a404c, 0x2d323c);
     gridHelper.rotation.x = Math.PI / 2;
-    gridHelper.visible = document.getElementById("showGrid").checked;
+    gridHelper.visible = true;
     scene.add(gridHelper);
     applyGridStyle();
   }
@@ -760,8 +1093,12 @@ function fitCamera() {
   // 更新坐标轴大小
   if (axesHelper) {
     scene.remove(axesHelper);
-    axesHelper = new THREE.AxesHelper(Math.max(30, maxDim * 0.15));
-    axesHelper.visible = document.getElementById("showAxes").checked;
+    axesHelper.traverse(function (obj) {
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) obj.material.dispose();
+    });
+    axesHelper = createSolidAxes(Math.max(30, maxDim * 0.15));
+    axesHelper.visible = true;
     scene.add(axesHelper);
   }
 
@@ -798,12 +1135,12 @@ function updateAxisLabels(length) {
   axisLabels = [];
 
   var labels = [
-    { text: "X", color: 0xff3b30, pos: [length * 1.12, 0, 0] },
-    { text: "Y", color: 0x34c759, pos: [0, length * 1.12, 0] },
-    { text: "Z", color: 0x0a84ff, pos: [0, 0, length * 1.12] },
+    { text: "X", color: 0xff0000, pos: [length * 1.12, 0, 0] },
+    { text: "Y", color: 0x00ff00, pos: [0, length * 1.12, 0] },
+    { text: "Z", color: 0x0000ff, pos: [0, 0, length * 1.12] },
   ];
-  var show = document.getElementById("showAxes").checked;
-  var labelScale = Math.max(6, length * 0.1);
+  var show = true;
+  var labelScale = 4;  // 固定小字号，不随模型缩放
   labels.forEach(function (lb) {
     var sp = makeTextSprite(lb.text, lb.color);
     sp.scale.set(labelScale, labelScale, labelScale);
@@ -915,129 +1252,10 @@ function resetAnimation() {
 // ================================================================
 //  UI 更新
 // ================================================================
-function updatePathList(paths) {
-  var listEl = document.getElementById("pathList");
-  var countEl = document.getElementById("pathCount");
-  countEl.textContent = paths.length;
-  listEl.innerHTML = "";
-
-  paths.forEach(function (path, i) {
-    var item = document.createElement("div");
-    item.className = "path-item";
-    item.dataset.idx = i;
-
-    var name = path.name.replace("TOOL PATH/", "").trim();
-    var toolName = path.tool ? path.tool.name : "—";
-    var moveCount = path.moves.length;
-
-    item.innerHTML =
-      '<input type="checkbox" checked />' +
-      '<span class="path-name" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</span>' +
-      '<span class="path-meta">' + moveCount + ' 段</span>';
-
-    var cb = item.querySelector("input");
-    cb.addEventListener("change", function () {
-      if (i < pathGroups.length) {
-        pathGroups[i].group.visible = cb.checked;
-        pathGroups[i].visible = cb.checked;
-      }
-    });
-
-    listEl.appendChild(item);
-  });
-}
-
-function updateStats(paths, moveCounts) {
-  document.getElementById("statPaths").textContent = paths.length;
-  var totalMoves = paths.reduce(function (s, p) { return s + p.moves.length; }, 0);
-  document.getElementById("statMoves").textContent = totalMoves;
-  document.getElementById("statPoints").textContent = allSampledPoints.length;
-  document.getElementById("statBreakdown").textContent =
-    [moveCounts.rapid, moveCounts.approach, moveCounts.engage,
-     moveCounts.firstcut, moveCounts.stepover, moveCounts.cut, moveCounts.retract]
-    .map(function (n) { return n || 0; }).join(" / ");
-
-  // 刀具
-  var tools = {};
-  paths.forEach(function (p) {
-    if (p.tool) {
-      var key = p.tool.name + " (D" + p.tool.diameter.toFixed(1) + ")";
-      tools[key] = (tools[key] || 0) + 1;
-    }
-  });
-  var toolStr = Object.keys(tools).length > 0
-    ? Object.keys(tools).map(function (k) { return k; }).join(", ")
-    : "—";
-  document.getElementById("statTools").textContent = toolStr;
-
-  // 包围盒
-  if (bounds) {
-    var sx = (bounds.max[0]-bounds.min[0]).toFixed(1);
-    var sy = (bounds.max[1]-bounds.min[1]).toFixed(1);
-    var sz = (bounds.max[2]-bounds.min[2]).toFixed(1);
-    document.getElementById("statBounds").textContent = sx + " \u00d7 " + sy + " \u00d7 " + sz;
-  } else {
-    document.getElementById("statBounds").textContent = "—";
-  }
-}
-
-function updateMoveTypeVisibility() {
-  var show = {
-    rapid:    document.getElementById("showRapid").checked,
-    approach: document.getElementById("showApproach").checked,
-    engage:   document.getElementById("showEngage").checked,
-    stepover: document.getElementById("showStepover").checked,
-    cut:      document.getElementById("showCut").checked,
-    retract:  document.getElementById("showRetract").checked,
-    firstcut: true,
-  };
-  var lw = parseFloat(document.getElementById("lineWidth").value);
-  var allTypes = ["rapid", "approach", "engage", "firstcut", "stepover", "cut", "retract"];
-
-  pathGroups.forEach(function (pg) {
-    allTypes.forEach(function (mt) {
-      pg.moveGroups[mt].visible = show[mt];
-      pg.moveGroups[mt].children.forEach(function (line) {
-        if (line.material) {
-          line.material.linewidth = lw;
-        }
-      });
-    });
-  });
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-// ================================================================
-//  文件处理
-// ================================================================
-function loadCLSFContent(content, fileName) {
-  try {
-    var parser = new CLSFParser();
-    var paths = parser.parseContent(content);
-
-    if (paths.length === 0) {
-      showStatus("未解析到任何刀轨路径，请检查文件格式", true);
-      return;
-    }
-
-    renderPaths(paths);
-    resetAnimation();
-
-    var totalMoves = paths.reduce(function (s, p) { return s + p.moves.length; }, 0);
-    showStatus("已加载: " + (fileName || "粘贴文本") + " — " + paths.length + " 条路径, " + totalMoves + " 段运动", false);
-  } catch (e) {
-    showStatus("解析失败: " + e.message, true);
-    console.error(e);
-  }
-}
-
-function showStatus(msg, isError) {
-  var el = document.getElementById("fileStatus");
-  el.textContent = msg;
-  el.style.color = isError ? "#dc2626" : "var(--muted)";
+function updateViewerPlaceholder() {
+  var hasContent = allSampledPoints.length > 0;
+  document.getElementById("viewerHint").style.display = hasContent ? "none" : "flex";
+  document.getElementById("coordDisplay").style.display = hasContent ? "block" : "none";
 }
 
 // ================================================================
@@ -1116,90 +1334,11 @@ var SAMPLE_CLSF = [
 //  事件绑定
 // ================================================================
 function bindEvents() {
-  // 文件选择
-  var fileInput = document.getElementById("fileInput");
-  var fileBtn = document.getElementById("fileBtn");
-  var dropZone = document.getElementById("dropZone");
-
-  fileBtn.addEventListener("click", function () { fileInput.click(); });
-  dropZone.addEventListener("click", function () { fileInput.click(); });
-
-  fileInput.addEventListener("change", function (e) {
-    if (e.target.files.length > 0) {
-      readFile(e.target.files[0]);
-    }
+  // 多 CLSF：添加 / 清空
+  document.getElementById("addClsfBtn").addEventListener("click", function () {
+    addEntry("CLSF " + (entrySeq + 1), "");
   });
-
-  // 拖拽
-  dropZone.addEventListener("dragover", function (e) {
-    e.preventDefault();
-    dropZone.classList.add("drag-over");
-  });
-  dropZone.addEventListener("dragleave", function () {
-    dropZone.classList.remove("drag-over");
-  });
-  dropZone.addEventListener("drop", function (e) {
-    e.preventDefault();
-    dropZone.classList.remove("drag-over");
-    if (e.dataTransfer.files.length > 0) {
-      readFile(e.dataTransfer.files[0]);
-    }
-  });
-
-  // 粘贴
-  var pasteBtn = document.getElementById("pasteBtn");
-  var pasteArea = document.getElementById("pasteArea");
-  pasteBtn.addEventListener("click", function () {
-    pasteArea.style.display = pasteArea.style.display === "none" ? "block" : "none";
-  });
-  document.getElementById("parsePasteBtn").addEventListener("click", function () {
-    var text = document.getElementById("pasteText").value;
-    if (text.trim()) loadCLSFContent(text, "粘贴文本");
-  });
-
-  // 示例
-  document.getElementById("sampleBtn").addEventListener("click", function () {
-    loadCLSFContent(SAMPLE_CLSF, "示例文件");
-    document.getElementById("pasteText").value = SAMPLE_CLSF;
-  });
-
-  // 清空
-  document.getElementById("clearBtn").addEventListener("click", function () {
-    clearScene();
-    document.getElementById("viewerHint").style.display = "flex";
-    document.getElementById("coordDisplay").style.display = "none";
-    document.getElementById("pathList").innerHTML = '<p class="hint">尚未加载文件</p>';
-    document.getElementById("pathCount").textContent = "0";
-    document.getElementById("fileInput").value = "";
-    document.getElementById("pasteText").value = "";
-    showStatus("", false);
-    resetAnimation();
-    document.getElementById("playBtn").disabled = true;
-    document.getElementById("resetBtn").disabled = true;
-    document.getElementById("progress").disabled = true;
-    updateStats([], { rapid: 0, approach: 0, engage: 0, firstcut: 0, stepover: 0, cut: 0, retract: 0 });
-  });
-
-  // 显示选项
-  ["showRapid", "showApproach", "showEngage", "showStepover", "showCut", "showRetract"].forEach(function (id) {
-    document.getElementById(id).addEventListener("change", updateMoveTypeVisibility);
-  });
-  document.getElementById("showGrid").addEventListener("change", function (e) {
-    gridHelper.visible = e.target.checked;
-  });
-  document.getElementById("transparentPlane").addEventListener("change", applyGridStyle);
-  document.getElementById("showAxes").addEventListener("change", function (e) {
-    axesHelper.visible = e.target.checked;
-    axisLabels.forEach(function (sp) { sp.visible = e.target.checked; });
-  });
-  document.getElementById("autoRotate").addEventListener("change", function (e) {
-    autoRotateEnabled = e.target.checked;
-  });
-  document.getElementById("lineWidth").addEventListener("input", function (e) {
-    document.getElementById("lineWidthVal").textContent = e.target.value;
-    updateMoveTypeVisibility();
-  });
-  document.getElementById("fitBtn").addEventListener("click", fitCamera);
+  document.getElementById("clearAllBtn").addEventListener("click", clearAllEntries);
 
   // 动画
   document.getElementById("playBtn").addEventListener("click", playAnimation);
@@ -1215,25 +1354,36 @@ function bindEvents() {
   });
 }
 
-function readFile(file) {
-  var reader = new FileReader();
-  reader.onload = function (e) {
-    loadCLSFContent(e.target.result, file.name);
-  };
-  reader.onerror = function () {
-    showStatus("文件读取失败", true);
-  };
-  reader.readAsText(file);
-}
-
 // ================================================================
 //  初始化
 // ================================================================
 initScene();
 bindEvents();
+// 默认一个 CLSF 输入框
+addEntry("CLSF 1", "");
 
 // 确保画布尺寸正确
 setTimeout(resize, 100);
 
 // 标记初始化成功（供加载兜底脚本检测）
 window.__clsfReady = true;
+
+// 调试钩子（测试用）
+window.__clsfDebug = {
+  opacities: function () {
+    return clsfEntries.map(function (e) {
+      if (!e.rootGroup) return { id: e.id, parsed: false };
+      var ops = [];
+      e.rootGroup.traverse(function (obj) {
+        if (obj.material) ops.push(obj.material.opacity);
+      });
+      return {
+        id: e.id,
+        visible: e.visible,
+        groupVisible: e.rootGroup.visible,
+        count: ops.length,
+        min: ops.length ? Math.min.apply(null, ops) : null,
+      };
+    });
+  },
+};
