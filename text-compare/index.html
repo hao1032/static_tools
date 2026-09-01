@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>文本对比工具 · Diff & 代码高亮</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="back" href="../">← 返回工具箱</a>
+    <h1>文本对比工具</h1>
+  </header>
+
+  <main class="wrap">
+    <!-- 工具栏 -->
+    <section class="toolbar">
+      <div class="field">
+        <label>语言</label>
+        <select id="lang">
+          <option value="auto">自动检测</option>
+          <option value="javascript">JavaScript</option>
+          <option value="json">JSON</option>
+          <option value="html">HTML</option>
+          <option value="css">CSS</option>
+          <option value="python">Python</option>
+          <option value="sql">SQL</option>
+          <option value="xml">XML</option>
+          <option value="bash">Bash / Shell</option>
+          <option value="markdown">Markdown</option>
+          <option value="plaintext">纯文本</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>粒度</label>
+        <div class="seg" id="granSeg">
+          <button type="button" class="seg-btn on" data-gran="line">行级</button>
+          <button type="button" class="seg-btn" data-gran="word">词级</button>
+        </div>
+      </div>
+
+      <label class="check"><input type="checkbox" id="igws" /> 忽略空白</label>
+
+      <div class="spacer"></div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="dropdown">
+        <button class="btn" id="sampleBtn" type="button">示例 ▾</button>
+        <div class="dropdown-menu" id="sampleMenu"></div>
+      </div>
+      <button id="copyD" class="btn" type="button">复制</button>
+      <button id="downloadD" class="btn" type="button">下载 .diff</button>
+    </section>
+
+    <!-- 编辑区：差异直接显示在编辑器内 -->
+    <section class="io-grid">
+      <div class="io">
+        <div class="io-head">
+          <h2>原始文本 <span class="side-tag">(A) · 删除行标红</span></h2>
+          <div class="io-actions">
+            <button class="btn" id="loadA" type="button">上传</button>
+            <button class="btn" id="clearA" type="button">清空</button>
+          </div>
+        </div>
+        <div class="editor-wrap" id="wrapA">
+          <div class="hl" id="hlA"></div>
+          <textarea id="taA" class="editor" spellcheck="false" placeholder="在此粘贴原始文本或代码（A）…&#10;下方将以红色标出被删除 / 修改的行。"></textarea>
+        </div>
+        <input type="file" id="fileA" class="hidden-file" accept=".txt,.js,.ts,.jsx,.json,.html,.css,.py,.sql,.xml,.md,.sh" />
+      </div>
+
+      <div class="io">
+        <div class="io-head">
+          <h2>对比文本 <span class="side-tag">(B) · 新增行标绿</span></h2>
+          <div class="io-actions">
+            <button class="btn" id="loadB" type="button">上传</button>
+            <button class="btn" id="clearB" type="button">清空</button>
+          </div>
+        </div>
+        <div class="editor-wrap" id="wrapB">
+          <div class="hl" id="hlB"></div>
+          <textarea id="taB" class="editor" spellcheck="false" placeholder="在此粘贴修改后的文本或代码（B）…&#10;下方将以绿色标出新增 / 修改的行。"></textarea>
+        </div>
+        <input type="file" id="fileB" class="hidden-file" accept=".txt,.js,.ts,.jsx,.json,.html,.css,.py,.sql,.xml,.md,.sh" />
+      </div>
+    </section>
+
+    <p class="footer-note">差异实时显示在编辑器中：A 栏被删除 / 修改的行标红，B 栏新增 / 修改的行标绿；词级粒度下改动词以内联红删 / 绿增标出。零依赖，可直接部署到 Cloudflare Pages。</p>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
