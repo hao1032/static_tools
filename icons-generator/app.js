@@ -31,7 +31,7 @@
     fileName: "icon",
     sizes: EXPORT_SIZES.slice(),
     layers: [
-      { text: "字", fontSize: 150, color: "#ffffff", opacity: 1, x: 128, y: 128, rotation: 0, bold: true, font: FONT_OPTIONS[0].value }
+      { mode: "text", text: "字", scale: 75, color: "#ffffff", opacity: 1, x: 128, y: 128, rotation: 0, bold: true, font: FONT_OPTIONS[0].value, img: null, src: "", imgName: "" }
     ]
   };
 
@@ -58,10 +58,62 @@
     return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
-  // 图层标题：用文字内容命名，而非序号
-  function layerName(text) {
-    var t = (text || "").trim();
-    return "图层（" + (t ? t : "空") + "）";
+  // 图层标题：按当前内容类型命名（文字 / 图片互斥）
+  function layerName(layer) {
+    if (layer.mode === "image") {
+      return "层（图片 · " + (layer.imgName || (hasImage(layer) ? "已导入" : "未导入")) + "）";
+    }
+    var t = (layer.text || "").trim();
+    return "层（" + (t ? t : "空") + "）";
+  }
+
+  // 该层是否真的有可绘制内容（文字模式需有文字，图片模式需已导入图片）
+  function hasContent(layer) {
+    if (layer.mode === "image") return hasImage(layer);
+    return !!layer.text;
+  }
+
+  function hasImage(layer) {
+    var s = imgSize(layer.img);
+    return !!layer.img && s.w > 0 && s.h > 0;
+  }
+
+  // 图片实际尺寸；部分 SVG 没有内在宽高，兜底 300×300
+  function imgSize(img) {
+    if (!img) return { w: 0, h: 0 };
+    var w = img.naturalWidth || img.width || 0;
+    var h = img.naturalHeight || img.height || 0;
+    if (w > 0 && h > 0) return { w: w, h: h };
+    return { w: 300, h: 300 };
+  }
+
+  function thumbHtml(layer) {
+    if (layer.src) return '<img class="layer-thumb" src="' + escapeAttr(layer.src) + '" alt="" />';
+    return '<span class="layer-thumb layer-thumb-empty">未导入</span>';
+  }
+
+  // 读取本地图片文件到图层（dataURL，不上传、不联网）
+  function loadImageFile(layer, file) {
+    if (!file || !/^image\//.test(file.type || "")) {
+      alert("请选择图片文件（PNG / JPG / SVG 等）。");
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        layer.img = img;
+        layer.src = String(reader.result);
+        layer.imgName = file.name;
+        if (!layer.scale) layer.scale = 100;
+        renderLayers();
+        drawPreview();
+      };
+      img.onerror = function () { alert("图片解析失败，请换一张试试。"); };
+      img.src = String(reader.result);
+    };
+    reader.onerror = function () { alert("图片读取失败，请重试。"); };
+    reader.readAsDataURL(file);
   }
 
   // ---- 绘图 ----
@@ -77,25 +129,42 @@
     ctx.closePath();
   }
 
+  // 文字层：缩放百分比 → 画布像素字号（100% = 200px）
+  function textPx(layer) { return (layer.scale || 100) * 2; }
+
   // 在任意 ctx 上以 size 为边长绘制整张图标
-  // 绘制单层文字，可绕锚点 (x,y) 旋转。alpha 由调用方设置。
-  function paintLayerCore(ctx, layer, scale) {
-    ctx.fillStyle = layer.color;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    // 字号取整，避免非整数字体大小导致模糊
-    var fSize = Math.round(layer.fontSize * scale);
-    ctx.font = (layer.bold ? "bold " : "") + fSize + "px " + (layer.font || "sans-serif");
+  // 绘制单层内容（文字与图片互斥，由 layer.mode 决定）。alpha 由调用方设置。
+  function paintLayerCore(ctx, layer, s) {
     // 坐标取整，避免亚像素抗锯齿模糊
-    var cx = Math.round(layer.x * scale);
-    var cy = Math.round(layer.y * scale);
-    if (layer.rotation) {
-      ctx.translate(cx, cy);
-      ctx.rotate(layer.rotation * Math.PI / 180);
+    var cx = Math.round(layer.x * s);
+    var cy = Math.round(layer.y * s);
+    ctx.save();
+    ctx.translate(cx, cy);
+    if (layer.rotation) ctx.rotate(layer.rotation * Math.PI / 180);
+
+    if (layer.mode === "image") {
+      if (!hasImage(layer)) { ctx.restore(); return; }
+      // 图片：等比居中于锚点
+      var dim = imgSize(layer.img);
+      // 缩放 100% = 等比铺满 256 画布（按较长边计算），保持原始宽高比
+      var kb = (BASE * (layer.scale || 100) / 100) / Math.max(dim.w, dim.h);
+      var w = dim.w * kb * s;
+      var h = dim.h * kb * s;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(layer.img, -w / 2, -h / 2, w, h);
+    } else if (layer.text) {
+      // 文字：居中于锚点
+      ctx.fillStyle = layer.color;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      // 字号取整，避免非整数字体大小导致模糊
+      var fSize = Math.round(textPx(layer) * s);
+      ctx.font = (layer.bold ? "bold " : "") + fSize + "px " + (layer.font || "sans-serif");
       ctx.fillText(layer.text, 0, 0);
-    } else {
-      ctx.fillText(layer.text, cx, cy);
     }
+
+    ctx.restore();
   }
 
   function drawScene(ctx, size) {
@@ -124,7 +193,7 @@
     // 列表越靠上的图层，绘制在越上层（倒序遍历，layer[0] 最后绘制=最顶）
     for (var i = state.layers.length - 1; i >= 0; i--) {
       var layer = state.layers[i];
-      if (!layer.text) continue;
+      if (!hasContent(layer)) continue;
       ctx.save();
       ctx.globalAlpha = layer.opacity;
       paintLayerCore(ctx, layer, scale);
@@ -189,65 +258,72 @@
     }).join("");
   }
 
+  // ---- 字段块 HTML 构造（统一“标签在上、控件在下”的版式）----
+  function fieldHtml(label, ctl, opts) {
+    opts = opts || {};
+    var cls = "field" + (opts.span2 ? " span2" : "");
+    return '<div class="' + cls + '"' + (opts.hidden ? " hidden" : "") +
+      (opts.slot ? ' data-slot="' + opts.slot + '"' : "") + '>' +
+      '<label>' + label + '</label><div class="ctl">' + ctl + '</div></div>';
+  }
+
+  function sliderHtml(label, key, min, max, step, value, valText, slot) {
+    return fieldHtml(label,
+      '<input type="range" min="' + min + '" max="' + max + '" step="' + step + '" data-f="' + key + '" value="' + value + '" />' +
+      '<span class="val">' + valText + '</span>',
+      { slot: slot });
+  }
+
+  // 内容区（文字输入 / 图片导入），互斥
+  function contentHtml(layer) {
+    if (layer.mode === "image") {
+      return fieldHtml("图片",
+        '<span class="img-ctl">' + thumbHtml(layer) +
+        '<span class="img-btns">' +
+          '<button class="btn btn-mini" data-act="pick" type="button">' + (layer.src ? "更换图片" : "导入图片") + '</button>' +
+          (layer.src ? '<button class="btn-mini btn-remove" data-act="clearimg" type="button">移除</button>' : "") +
+        '</span>' +
+        '<input type="file" accept="image/*" data-file="1" hidden />' +
+        '</span>',
+        { span2: true, slot: "content" });
+    }
+    return fieldHtml("文字",
+      '<input type="text" class="text-input" data-f="text" value="' + escapeAttr(layer.text || "") + '" placeholder="输入文字，支持中文" />',
+      { span2: true, slot: "content" });
+  }
+
+  // 主尺寸：文字/图片统一用「缩放」百分比
+  function sizeHtml(layer) {
+    return sliderHtml("缩放", "scale", 5, 300, 1, (layer.scale || 100), (layer.scale || 100) + "%", "size");
+  }
+
   function renderLayers() {
     layersEl.innerHTML = "";
     state.layers.forEach(function (layer, i) {
+      var isImg = layer.mode === "image";
       var card = document.createElement("div");
-      card.className = "layer-card" + (i === selectedLayerIndex ? " selected" : "");
+      card.className = "layer-card" + (layer === selectedLayerRef ? " selected" : "");
+
       card.innerHTML =
         '<div class="layer-head">' +
-          '<span class="layer-title"><span class="drag-handle" draggable="true" title="按住拖动调整顺序" data-handle="1">⠿</span> <span class="layer-name">' + escapeAttr(layerName(layer.text)) + '</span></span>' +
+          '<span class="layer-title"><span class="drag-handle" draggable="true" title="按住拖动调整顺序" data-handle="1">⠿</span> <span class="layer-name">' + escapeAttr(layerName(layer)) + '</span></span>' +
           '<span class="layer-actions">' +
+            '<span class="seg">' +
+              '<button type="button" data-mode="text" class="' + (isImg ? "" : "on") + '">文字</button>' +
+              '<button type="button" data-mode="image" class="' + (isImg ? "on" : "") + '">图片</button>' +
+            '</span>' +
             '<button class="btn-del" data-act="del" type="button">删除</button>' +
           '</span>' +
         '</div>' +
-        '<div class="layer-field">' +
-          '<label>文字</label>' +
-          '<input type="text" data-f="text" value="' + escapeAttr(layer.text) + '" />' +
-        '</div>' +
-        '<div class="layer-field">' +
-          '<label>字号</label>' +
-          '<input type="range" min="8" max="256" step="1" data-f="fontSize" value="' + layer.fontSize + '" />' +
-          '<span class="val">' + layer.fontSize + '</span>' +
-        '</div>' +
-        '<div class="layer-grid">' +
-          '<div class="layer-field">' +
-            '<label>颜色</label>' +
-            '<input type="color" data-f="color" value="' + layer.color + '" />' +
-          '</div>' +
-          '<div class="layer-field">' +
-            '<label>透明度</label>' +
-            '<input type="range" min="0" max="1" step="0.01" data-f="opacity" value="' + layer.opacity + '" />' +
-            '<span class="val">' + Math.round(layer.opacity * 100) + '%</span>' +
-          '</div>' +
-          '<div class="layer-field">' +
-            '<label>位置 X</label>' +
-            '<input type="range" min="0" max="256" step="1" data-f="x" value="' + layer.x + '" />' +
-            '<span class="val">' + layer.x + '</span>' +
-          '</div>' +
-          '<div class="layer-field">' +
-            '<label>位置 Y</label>' +
-            '<input type="range" min="0" max="256" step="1" data-f="y" value="' + layer.y + '" />' +
-            '<span class="val">' + layer.y + '</span>' +
-          '</div>' +
-        '</div>' +
-        '<div class="layer-field">' +
-          '<label>旋转</label>' +
-          '<input type="range" min="-180" max="180" step="1" data-f="rotation" value="' + (layer.rotation || 0) + '" />' +
-          '<span class="val">' + (layer.rotation || 0) + '°</span>' +
-        '</div>' +
-        '<div class="layer-field">' +
-          '<label>字体</label>' +
-          '<select data-f="font">' + buildFontOptions(layer.font) + '</select>' +
-        '</div>' +
-        '<div class="layer-field">' +
-          '<label class="check"><input type="checkbox" data-f="bold"' + (layer.bold ? " checked" : "") + ' /> <span>加粗</span></label>' +
+        '<div class="layer-body">' +
+          contentHtml(layer) +
+          fieldHtml("字体", '<select data-f="font">' + buildFontOptions(layer.font) + '</select>', { span2: true, slot: "font", hidden: isImg }) +
+          fieldHtml("颜色", '<input type="color" data-f="color" value="' + layer.color + '" />', { slot: "color", hidden: isImg }) +
+          fieldHtml("加粗", '<label class="check"><input type="checkbox" data-f="bold"' + (layer.bold ? " checked" : "") + ' /> <span>启用</span></label>', { slot: "bold", hidden: isImg }) +
         '</div>';
 
-      // 拖拽排序 + 删除
+      // 拖拽排序
       var handle = card.querySelector('[data-handle]');
-      var delBtn = card.querySelector('[data-act="del"]');
-
       handle.addEventListener("dragstart", function (e) {
         dragIndex = i;
         card.classList.add("dragging");
@@ -274,42 +350,114 @@
         moveLayer(dragIndex, i);
       });
 
-      delBtn.addEventListener("click", function () {
-        state.layers.splice(i, 1);
-        renderLayers();
-        drawPreview();
+      // 点击卡片任意处即选中该层（便于预览拖拽与定位）
+      card.addEventListener("pointerdown", function () { setSelectedLayer(i); });
+
+      // 点击委托：删除 / 导入 / 切换类型
+      card.addEventListener("click", function (e) {
+        var modeBtn = e.target.closest("[data-mode]");
+        if (modeBtn) { switchMode(card, layer, modeBtn.getAttribute("data-mode")); return; }
+        var actEl = e.target.closest("[data-act]");
+        if (actEl) {
+          var a = actEl.getAttribute("data-act");
+          if (a === "del") {
+            state.layers.splice(i, 1);
+            if (selectedLayerRef === layer) selectedLayerRef = state.layers[Math.min(i, state.layers.length - 1)] || null;
+            renderLayers(); drawPreview(); renderProps();
+          }
+          else if (a === "pick") { var fi = card.querySelector("[data-file]"); if (fi) fi.click(); }
+          else if (a === "clearimg") { layer.img = null; layer.src = ""; layer.imgName = ""; renderLayers(); drawPreview(); }
+        }
       });
 
-      // 字段绑定
-      Array.prototype.forEach.call(card.querySelectorAll("[data-f]"), function (input) {
-        var field = input.getAttribute("data-f");
-        var handler = function () {
-          if (input.type === "checkbox") {
-            layer[field] = input.checked;
-          } else if (input.type === "range") {
-            var num = parseFloat(input.value);
-            // 位置和字号取整，避免浮点累积
-            if (field === "x" || field === "y" || field === "fontSize") num = Math.round(num);
-            layer[field] = num;
-            var valSpan = input.parentNode.querySelector(".val");
-            if (valSpan) {
-              valSpan.textContent = field === "opacity" ? Math.round(num * 100) + "%" : (field === "rotation" ? Math.round(num) + "°" : Math.round(num));
-            }
-          } else {
-            layer[field] = input.value;
-            if (field === "text") {
-              var nameEl = card.querySelector(".layer-name");
-              if (nameEl) nameEl.textContent = layerName(layer.text);
-            }
-          }
-          drawPreview();
-        };
-        input.addEventListener("input", handler);
-        input.addEventListener("change", handler);
+      // 字段输入委托：文字/颜色/字体/加粗（transform 类在右侧属性面板）
+      card.addEventListener("input", function (e) { applyField(layer, e.target); });
+      card.addEventListener("change", function (e) { applyField(layer, e.target); });
+
+      // 图片文件选择（导入）
+      card.addEventListener("change", function (e) {
+        var fi = e.target.closest("[data-file]");
+        if (!fi) return;
+        var file = fi.files && fi.files[0];
+        if (file) loadImageFile(layer, file);
+        fi.value = "";   // 允许重复选择同一个文件
       });
 
       layersEl.appendChild(card);
     });
+  }
+
+  // 通用字段写入（卡片与属性面板共用）
+  function applyField(layer, input) {
+    var f = input.getAttribute("data-f");
+    if (!f || !layer) return;
+    if (input.type === "checkbox") {
+      layer[f] = input.checked;
+    } else if (input.type === "range") {
+      var num = parseFloat(input.value);
+      if (f === "x" || f === "y" || f === "scale") num = Math.round(num);
+      layer[f] = num;
+      var valSpan = input.parentNode.querySelector(".val");
+      if (valSpan) {
+        valSpan.textContent = (f === "opacity" || f === "scale")
+          ? Math.round(num * 100) + "%"
+          : (f === "rotation" ? Math.round(num) + "°" : String(Math.round(num)));
+      }
+    } else {
+      layer[f] = input.value;
+      if (f === "text") {
+        var card = input.closest(".layer-card");
+        var nameEl = card && card.querySelector(".layer-name");
+        if (nameEl) nameEl.textContent = layerName(layer);
+      }
+    }
+    drawPreview();
+  }
+
+  // 右侧属性面板：编辑当前激活层的 缩放/透明度/位置/旋转
+  function renderProps() {
+    var layer = selectedLayerRef;
+    var body = $("propsBody");
+    var title = $("propsTitle");
+    if (!body) return;
+    if (!layer) {
+      if (title) title.textContent = "属性";
+      body.innerHTML = '<p class="props-empty">在左侧点选一个层，即可编辑它的缩放、透明度、位置与旋转。</p>';
+      return;
+    }
+    if (title) title.textContent = "属性 · " + layerName(layer);
+    body.innerHTML =
+      sizeHtml(layer) +
+      sliderHtml("透明度", "opacity", 0, 1, 0.01, layer.opacity, Math.round(layer.opacity * 100) + "%", "opacity") +
+      sliderHtml("位置 X", "x", 0, 256, 1, layer.x, String(layer.x), "x") +
+      sliderHtml("位置 Y", "y", 0, 256, 1, layer.y, String(layer.y), "y") +
+      fieldHtml("旋转", '<input type="range" min="-180" max="180" step="1" data-f="rotation" value="' + (layer.rotation || 0) + '" />' +
+        '<span class="val">' + (layer.rotation || 0) + '°</span>', { span2: true, slot: "rotation" });
+  }
+
+  // 切换文字/图片：只替换内容区，文字专属项显示/隐藏；缩放等 transform 在右侧属性面板，不受影响
+  function switchMode(card, layer, m) {
+    if (layer.mode === m) return;
+    layer.mode = m;
+    card.querySelectorAll("[data-mode]").forEach(function (b) {
+      b.classList.toggle("on", b.getAttribute("data-mode") === m);
+    });
+    replaceSlot(card, "content", contentHtml(layer));
+    ["font", "color", "bold"].forEach(function (s) {
+      var el = card.querySelector('[data-slot="' + s + '"]');
+      if (el) el.hidden = (m === "image");
+    });
+    var nameEl = card.querySelector(".layer-name");
+    if (nameEl) nameEl.textContent = layerName(layer);
+    drawPreview();
+  }
+
+  function replaceSlot(card, slot, html) {
+    var wrap = document.createElement("div");
+    wrap.innerHTML = html;
+    var next = wrap.firstElementChild;
+    var old = card.querySelector('[data-slot="' + slot + '"]');
+    if (old && next) old.replaceWith(next);
   }
 
   function moveLayer(from, to) {
@@ -330,7 +478,7 @@
       row.className = "size-row";
       row.innerHTML =
         '<label class="check"><input type="checkbox" value="' + s + '"' + (on ? " checked" : "") + ' /> <span>' + s + 'px</span></label>' +
-        '<button class="btn-sm" data-size="' + s + '" type="button">下载 .ico</button>';
+        '<button class="dl" data-size="' + s + '" type="button">下载</button>';
       row.querySelector("input").addEventListener("change", function (e) {
         if (e.target.checked) {
           if (state.sizes.indexOf(s) === -1) state.sizes.push(s);
@@ -442,11 +590,11 @@
 
   // ---- 预览区拖拽改位置 ----
   var dragging = null;
-  var selectedLayerIndex = null;
+  var selectedLayerRef = null;
 
   function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
 
-  // 单层文字离屏渲染（不透明度置 1，用于命中测试）
+  // 单层离屏渲染（不透明度置 1，用于命中测试）
   function layerCanvas(layer, size) {
     var c = document.createElement("canvas");
     c.width = size; c.height = size;
@@ -456,8 +604,8 @@
     return ctx;
   }
 
-  // 以光标为中心，向外搜索最近的文字像素（容差范围内）。
-  // 返回最近文字所属图层索引；范围内无文字则返回 -1。
+  // 以光标为中心，向外搜索最近的内容像素（容差范围内）。
+  // 返回最近内容所属图层索引；范围内无内容则返回 -1。
   function nearestTextHit(px, py, size, maxRBase) {
     var maxR = Math.max(1, Math.round(maxRBase * size / BASE));
     var x0 = Math.max(0, Math.floor(px - maxR));
@@ -469,7 +617,7 @@
     var bestDist = Infinity, bestIdx = -1;
     for (var i = 0; i < state.layers.length; i++) {
       var layer = state.layers[i];
-      if (!layer.text) continue;
+      if (!hasContent(layer)) continue;
       var ctx = layerCanvas(layer, size);
       var img = ctx.getImageData(x0, y0, w, h).data;
       for (var yy = 0; yy < h; yy++) {
@@ -486,29 +634,29 @@
   }
 
   function setSelectedLayer(idx) {
-    selectedLayerIndex = idx;
+    selectedLayerRef = state.layers[idx] || null;
     Array.prototype.forEach.call(layersEl.children, function (card, ci) {
-      card.classList.toggle("selected", ci === idx);
+      card.classList.toggle("selected", state.layers[ci] === selectedLayerRef);
     });
+    renderProps();
   }
 
-  // 拖拽后把位置同步回该图层卡片的 X / Y 滑块
+  // 拖拽后把位置同步回右侧属性面板的 X / Y 滑块
   function syncLayerXY(idx) {
-    var card = layersEl.children[idx];
-    if (!card) return;
     var layer = state.layers[idx];
-    var xInput = card.querySelector('[data-f="x"]');
-    var yInput = card.querySelector('[data-f="y"]');
-    if (xInput) {
-      xInput.value = Math.round(layer.x);
-      var vx = xInput.parentNode.querySelector(".val");
-      if (vx) vx.textContent = Math.round(layer.x);
-    }
-    if (yInput) {
-      yInput.value = Math.round(layer.y);
-      var vy = yInput.parentNode.querySelector(".val");
-      if (vy) vy.textContent = Math.round(layer.y);
-    }
+    if (layer !== selectedLayerRef) return;
+    var body = $("propsBody");
+    setSliderVal(body, "x", layer.x);
+    setSliderVal(body, "y", layer.y);
+  }
+
+  function setSliderVal(scope, key, val) {
+    if (!scope) return;
+    var input = scope.querySelector('[data-f="' + key + '"]');
+    if (!input) return;
+    input.value = Math.round(val);
+    var span = input.parentNode.querySelector(".val");
+    if (span) span.textContent = Math.round(val);
   }
 
   function previewPoint(e) {
@@ -591,23 +739,36 @@
       state.fileName = fileName.value.replace(/[^\w\-]+/g, "_");
     });
 
-    $("addLayer").addEventListener("click", function () {
+    function addLayer() {
       state.layers.push({
-        text: "新", fontSize: 120, color: nextColor(), opacity: 1,
-        x: 128, y: 128, rotation: 0, bold: false, font: FONT_OPTIONS[0].value
+        mode: "text", text: "新", scale: 60, color: nextColor(), opacity: 1,
+        x: 128, y: 128, rotation: 0, bold: false, font: FONT_OPTIONS[0].value,
+        img: null, src: "", imgName: ""
       });
       renderLayers();
       drawPreview();
-    });
+      setSelectedLayer(state.layers.length - 1);
+    }
+
+    $("addLayer").addEventListener("click", addLayer);
 
     $("download").addEventListener("click", buildIco);
   }
 
   // ---- 初始化 ----
   $("bgColor").disabled = state.transparent;
+
+  // 属性面板（右侧）：编辑激活层的缩放/透明度/位置/旋转
+  var propsCard = $("propsCard");
+  if (propsCard) {
+    propsCard.addEventListener("input", function (e) { if (selectedLayerRef) applyField(selectedLayerRef, e.target); });
+    propsCard.addEventListener("change", function (e) { if (selectedLayerRef) applyField(selectedLayerRef, e.target); });
+  }
+
   renderLayers();
   renderSizeList();
   bindGlobal();
   bindPreviewDrag();
+  setSelectedLayer(0);
   drawPreview();
 })();

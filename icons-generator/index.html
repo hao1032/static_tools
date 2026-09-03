@@ -51,12 +51,11 @@
 
       <!-- 图层 -->
       <div class="card">
-        <div class="card-head">
-          <h2>文字图层</h2>
-          <button id="addLayer" class="btn btn-primary" type="button">+ 添加图层</button>
-        </div>
         <div id="layers"></div>
-        <p class="hint">列表越靠上的图层显示在越上层，可拖动 ⠿ 调整顺序。在右侧预览里按住文字即可直接拖动改位置。每层可输入多个字母，支持中文。</p>
+        <div class="add-layer-wrap">
+          <button id="addLayer" class="btn btn-primary btn-block" type="button">+ 添加层</button>
+        </div>
+        <p class="hint">每层用右上角「文字 / 图片」切换内容类型，二者互斥。列表越靠上的层显示在越上层，可拖动 ⠿ 调整顺序；在右侧预览里按住内容即可直接拖动改位置。图片缩放 100% 表示等比铺满 256 画布。</p>
       </div>
     </section>
 
@@ -71,6 +70,12 @@
         <div class="preview-tiles" id="tiles"></div>
       </div>
 
+      <!-- 属性：编辑激活层的缩放 / 透明度 / 位置 / 旋转 -->
+      <div class="card props-card" id="propsCard">
+        <h2 id="propsTitle">属性</h2>
+        <div class="layer-body" id="propsBody"></div>
+      </div>
+
       <!-- 导出 -->
       <div class="card export-card">
         <h2>导出</h2>
@@ -79,11 +84,8 @@
           <input type="text" id="fileName" value="icon" class="text-input" />
           <span class="ext">.ico</span>
         </div>
-        <div class="row col">
-          <label>尺寸与下载</label>
-          <div id="sizeList" class="size-list"></div>
-        </div>
-        <button id="download" class="btn btn-primary btn-block" type="button">生成并下载（全部勾选尺寸）</button>
+        <div class="export-sizes" id="sizeList"></div>
+        <button id="download" class="btn btn-primary btn-block" type="button">生成并下载</button>
       </div>
     </aside>
   </main>
