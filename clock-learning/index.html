@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>认识时钟 · 时间练习</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="back" href="../">← 返回工具箱</a>
+    <h1>认识时钟 · 时间练习</h1>
+  </header>
+
+  <main class="layout">
+    <!-- 左：时钟卡片。讲解入口和讲解内容都在时钟正下方，不再单独成板块 -->
+    <section class="clock-pane">
+      <div class="card">
+        <!-- 读数提示条（讲解时显示） -->
+        <div class="badge empty" id="badge">
+          <span class="badge-main" id="badgeMain"></span>
+          <span class="badge-sub" id="badgeSub"></span>
+        </div>
+
+        <div class="clock-stage">
+          <svg id="clock" viewBox="0 0 400 400" role="img" aria-label="时钟">
+            <circle class="face" cx="200" cy="200" r="190" />
+            <circle class="face-inner" cx="200" cy="200" r="181" />
+            <g id="gTicks"></g>
+            <path id="hourGuide" class="hour-guide" d="" opacity="0" />
+            <g id="gMinNums"></g>
+            <g id="gHourNums"></g>
+            <path id="sweep" class="sweep" d="" />
+            <circle id="rimDot" class="rim-dot" cx="200" cy="29" r="7" opacity="0" />
+            <g id="hourHand" class="hand hour-hand">
+              <rect x="195" y="106" width="10" height="94" rx="5" />
+            </g>
+            <g id="minuteHand" class="hand minute-hand">
+              <rect x="197" y="44" width="6" height="156" rx="3" />
+            </g>
+            <circle class="pin" cx="200" cy="200" r="8" />
+            <circle class="pin-dot" cx="200" cy="200" r="3.5" />
+          </svg>
+        </div>
+
+        <!-- 答完题后出现在时钟下方；每点一次往前走一步，并同步播放动画 -->
+        <div class="explain-launch" id="explainLaunch" hidden>
+          <button class="btn btn-explain" id="explainBtn" type="button">
+            <span class="explain-ico" id="explainIco">▶</span>
+            <span id="explainLabel">看动画讲解</span>
+          </button>
+        </div>
+
+        <!-- 讲解就地展开：第 1 步 / 第 2 步 / 第 3 步 逐个出现 -->
+        <div class="explain" id="explain" hidden>
+          <div class="exp-steps" id="steps">
+            <span class="step" data-step="1">第 1 步 · 读分针</span>
+            <span class="step" data-step="2">第 2 步 · 读时针</span>
+            <span class="step" data-step="3">第 3 步 · 合起来</span>
+          </div>
+          <div class="exp-text" id="expText"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右：作答（点数字弹出面板，不弹键盘） -->
+    <aside class="panel">
+      <div class="card">
+        <h2>你的答案</h2>
+        <button id="newQuestion" class="btn btn-outline btn-block" type="button">随机出一道题</button>
+        <p class="hint">看清针尖指向，点下面的数字选时间。</p>
+
+        <div class="ctrl-row">
+          <button class="digit" id="hourDigit" type="button" aria-haspopup="true" aria-expanded="false" aria-label="选择小时">
+            <span class="digit-label">时</span>
+            <span class="digit-val" id="hourVal">12</span>
+            <span class="digit-caret">▾</span>
+          </button>
+          <div class="picker" id="pickerH" hidden>
+            <div class="picker-head">
+              <span>选择小时（1–12）</span>
+              <button class="picker-x" type="button" aria-label="关闭">×</button>
+            </div>
+            <div class="picker-grid g-hour" id="gridH"></div>
+          </div>
+        </div>
+
+        <div class="ctrl-row">
+          <button class="digit" id="minDigit" type="button" aria-haspopup="true" aria-expanded="false" aria-label="选择分钟">
+            <span class="digit-label">分</span>
+            <span class="digit-val" id="minVal">00</span>
+            <span class="digit-caret">▾</span>
+          </button>
+          <div class="picker" id="pickerM" hidden>
+            <div class="picker-head">
+              <span>选择分钟（十位 / 个位）</span>
+              <button class="picker-x" type="button" aria-label="关闭">×</button>
+            </div>
+            <div class="digit-cols">
+              <div class="digit-col c-tens">
+                <span class="col-label">十位</span>
+                <div class="picker-grid g-digit g-tens" id="gridTens"></div>
+              </div>
+              <div class="digit-col c-units">
+                <span class="col-label">个位</span>
+                <div class="picker-grid g-digit g-units" id="gridUnits"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="submit" class="btn btn-primary btn-block" type="button">提交答案</button>
+        <div class="feedback" id="feedback"></div>
+        <div class="score" id="score">还没有答题</div>
+      </div>
+    </aside>
+
+    <!-- 页面最下方：显示 / 出题选项（自动保存到浏览器） -->
+    <section class="card options-card">
+      <div class="options-group">
+        <span class="opts-title">显示</span>
+        <label class="check"><input type="checkbox" id="optNumbers" checked /><span>数字 1–12</span></label>
+        <label class="check"><input type="checkbox" id="optMinuteNumbers" checked /><span>分钟数字</span></label>
+        <label class="check"><input type="checkbox" id="optTicks" checked /><span>刻度线</span></label>
+      </div>
+      <div class="options-group">
+        <span class="opts-title">出题</span>
+        <label class="mini">难度
+          <select id="difficulty">
+            <option value="easy">入门 · 整点 / 半点</option>
+            <option value="normal">普通 · 5 分刻度</option>
+            <option value="hard">困难 · 任意分钟</option>
+          </select>
+        </label>
+        <label class="mini">允许误差
+          <select id="tolerance">
+            <option value="0">0 分钟（严格）</option>
+            <option value="1">±1 分钟</option>
+            <option value="2">±2 分钟</option>
+            <option value="3">±3 分钟</option>
+            <option value="5">±5 分钟</option>
+          </select>
+        </label>
+        <span class="opts-saved" id="savedTip">设置会自动保存</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

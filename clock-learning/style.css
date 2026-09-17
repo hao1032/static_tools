@@ -1,0 +1,420 @@
+:root {
+  --bg: #f6f8fb;
+  --card: #ffffff;
+  --border: #e6e9ef;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --accent-soft: #eff4ff;
+  --ok: #16a34a;
+  --ok-soft: #f0fdf4;
+  --bad: #dc2626;
+  --bad-soft: #fef2f2;
+  --warn: #b45309;
+  --shadow: 0 1px 3px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.05);
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* 顶部栏 */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+.topbar h1 { font-size: 18px; margin: 0; font-weight: 600; }
+.back { color: var(--muted); text-decoration: none; font-size: 14px; white-space: nowrap; }
+.back:hover { color: var(--accent); }
+
+/* 布局：左（时钟，讲解也在里面） / 右（作答） / 底部整行（选项） */
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 350px;
+  gap: 24px;
+  align-items: start;
+}
+.clock-pane { min-width: 0; }
+.panel { align-self: stretch; }
+.panel .card { position: sticky; top: 20px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 24px 24px;
+  box-shadow: var(--shadow);
+}
+.card h2 { margin: 0 0 14px; font-size: 16px; }
+
+.hint { color: var(--muted); font-size: 12.5px; margin: 12px 0 14px; }
+
+/* 读数提示条 */
+.badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 58px;
+  justify-content: center;
+  padding: 8px 18px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fbfcff, #f4f7ff);
+  transition: opacity .2s ease, border-color .2s ease;
+}
+.badge.empty { opacity: 0; border-color: transparent; }
+.badge-main { font-size: 24px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+.badge-sub { font-size: 13px; color: var(--muted); }
+
+/* 时钟 */
+.clock-stage { display: flex; justify-content: center; }
+#clock {
+  width: 100%;
+  max-width: 466px;
+  height: auto;
+  display: block;
+  user-select: none;
+}
+
+.face { fill: #ffffff; stroke: var(--border); stroke-width: 2; }
+.face-inner { fill: none; stroke: #eef2f7; stroke-width: 1.5; }
+
+.tick { stroke-linecap: round; }
+.tick-major { stroke: #64748b; stroke-width: 5; }
+.tick-minor { stroke: #cbd5e1; stroke-width: 2.5; }
+
+.hour-num {
+  font-size: 34px;
+  font-weight: 600;
+  fill: #1f2937;
+  font-family: inherit;
+  transition: fill .25s ease;
+}
+.min-num {
+  font-size: 15px;
+  font-weight: 500;
+  fill: #94a3b8;
+  font-family: inherit;
+}
+.hour-num.live { fill: #f97316; }
+.min-num.live { fill: #f97316; }
+
+.sweep { fill: rgba(37,99,235,.12); }
+
+.rim-dot { fill: var(--accent); stroke: #fff; stroke-width: 2.5; }
+
+/* 时针所在的「两格之间」高亮带（衬在数字下面，不压字） */
+.hour-guide {
+  fill: none;
+  stroke: rgba(249,115,22,.22);
+  stroke-width: 34;
+  stroke-linecap: round;
+  transition: opacity .3s ease;
+}
+
+.hand rect { fill: #1f2937; transition: fill .25s ease; }
+.hand { transition: opacity .25s ease; }
+.minute-hand rect { fill: #2563eb; }
+.hand.active rect { fill: #f97316; filter: drop-shadow(0 0 7px rgba(249,115,22,.65)); }
+
+#clock.focus-minute .hour-hand { opacity: .18; }
+#clock.focus-minute .hour-num { fill: #cbd5e1; }
+#clock.focus-hour .minute-hand { opacity: .18; }
+#clock.focus-hour .sweep, #clock.focus-hour .rim-dot { opacity: .2; }
+
+.pin { fill: #1f2937; }
+.pin-dot { fill: #ffffff; }
+
+/* 按钮 */
+.btn {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .05s;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; padding: 10px 20px; }
+.btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+.btn-primary:disabled { background: #93b4f7; border-color: #93b4f7; }
+.btn-outline { color: var(--accent); border-color: #c7d9fb; background: var(--accent-soft); font-weight: 600; }
+.btn-outline:hover { background: #e3edff; border-color: var(--accent); }
+.btn-block { width: 100%; margin-top: 6px; padding: 11px; }
+
+/* 讲解入口：平时不出现，答完题才在时钟下方冒出来 */
+.explain-launch { margin-top: 18px; display: flex; justify-content: center; }
+
+.btn-explain {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #b45309;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+.btn-explain:hover { background: #ffedd5; border-color: #f97316; color: #9a3412; }
+.btn-explain:disabled { opacity: .6; }
+.explain-ico { font-size: 11px; line-height: 1; }
+
+/* 讲解：就地在时钟下方展开，不单独占板块 */
+.explain {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--border);
+}
+.exp-steps { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.step {
+  font-size: 12.5px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: #fbfcfe;
+  transition: all .25s ease;
+}
+.step.on { color: #fff; background: var(--accent); border-color: var(--accent); font-weight: 600; }
+.step.done { color: var(--ok); border-color: #bbf7d0; background: var(--ok-soft); }
+
+.exp-text {
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--text);
+  min-height: 76px;
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fbfcfe;
+  border: 1px solid var(--border);
+}
+.exp-text:empty { display: none; }
+.exp-text.fade { animation: fadeUp .32s ease-out; }
+.exp-text em { font-style: normal; color: var(--accent); font-weight: 600; }
+.exp-text strong { color: #b45309; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 作答：点数字弹出选择面板（不弹键盘） */
+.ctrl-row { position: relative; margin-bottom: 10px; }
+
+.digit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 14px 6px 14px;
+  background: #f7f9ff;
+  border: 1px solid #dbe5fb;
+  border-radius: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: inset 0 1px 2px rgba(37,99,235,.06);
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.digit:hover { border-color: var(--accent); background: #f2f6ff; }
+.digit[aria-expanded="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.13); }
+.digit:disabled { opacity: .5; cursor: not-allowed; }
+.digit-label { flex-shrink: 0; font-size: 13px; color: var(--muted); }
+.digit-val {
+  flex: 1;
+  text-align: center;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 1px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+.digit-caret { flex-shrink: 0; font-size: 11px; color: #9aa3b2; transition: transform .2s ease; }
+.digit[aria-expanded="true"] .digit-caret { transform: rotate(180deg); }
+
+/* 弹出的数字面板 */
+.picker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 40;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #dbe5fb;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(16,24,40,.16);
+  animation: popIn .14s ease-out;
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: none; }
+}
+/* 下方放不下时向上翻 */
+.picker.up { top: auto; bottom: calc(100% + 8px); animation: popInUp .14s ease-out; }
+@keyframes popInUp {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+/* 面板整体不高，窗口很矮时仍给个兜底 */
+#pickerM { max-height: 78vh; overflow-y: auto; }
+.picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-left: 2px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.picker-x {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.picker-x:hover { color: var(--accent); }
+
+.picker-grid { display: grid; gap: 5px; }
+.g-hour { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* 分钟：左组十位 0–5、右组个位 0–9，各自排成多排多列的小键盘（和小时面板一样） */
+.digit-cols { display: flex; align-items: stretch; gap: 14px; }
+.digit-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 8px 9px;
+  background: #fafbfe;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+}
+.c-tens { flex: 3; }
+.c-units { flex: 5; }
+.col-label { font-size: 12px; color: var(--muted); text-align: center; }
+.g-tens { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g-units { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+.picker-grid button {
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  font-size: 16px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.g-digit button { height: 38px; font-size: 16px; }
+.picker-grid button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.picker-grid button.sel { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+.feedback { font-size: 14px; line-height: 1.7; margin-top: 14px; }
+.feedback:empty { display: none; }
+.feedback b { color: var(--accent); }
+.feedback.ok {
+  color: #15803d;
+  background: var(--ok-soft);
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.feedback.ok b { color: #15803d; }
+.feedback.bad {
+  color: #b91c1c;
+  background: var(--bad-soft);
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.feedback.bad b { color: #b91c1c; }
+
+.score { margin-top: 14px; font-size: 12.5px; color: var(--muted); text-align: center; }
+
+/* 底部选项条（整行，自动保存） */
+.options-card {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 40px;
+  align-items: center;
+  padding: 18px 24px;
+  background: #fbfcff;
+}
+.options-group { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.opts-title { font-size: 12.5px; color: var(--muted); letter-spacing: 1px; }
+.opts-saved { font-size: 12px; color: #9aa3b2; }
+
+.check { display: flex; align-items: center; gap: 7px; color: var(--text); font-size: 14px; cursor: pointer; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.mini { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.mini select {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 13px;
+  background: #fff;
+  color: var(--text);
+  font-family: inherit;
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; padding: 20px 16px 56px; gap: 18px; }
+  .clock-pane { order: -1; }
+  .panel .card { position: static; }
+  #clock { max-width: 350px; }
+  .options-card { flex-direction: column; align-items: flex-start; gap: 14px; }
+
+  /* 窄屏：输入框常在屏幕下方，改成贴着屏幕底部的浮层，保证整块都能看见 */
+  .picker {
+    position: fixed;
+    left: 14px;
+    right: 14px;
+    top: auto;
+    bottom: 14px;
+    max-height: 70vh;
+    overflow-y: auto;
+    animation: popInSheet .16s ease-out;
+  }
+  .picker.up { top: auto; bottom: 14px; }
+  .digit-cols { gap: 10px; }
+  .digit-col { padding: 6px 6px 7px; gap: 5px; }
+  .g-digit button { height: 34px; }
+}
+@keyframes popInSheet {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
