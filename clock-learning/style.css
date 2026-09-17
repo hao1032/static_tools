@@ -60,9 +60,9 @@ body {
   padding: 22px 24px 24px;
   box-shadow: var(--shadow);
 }
-.card h2 { margin: 0 0 14px; font-size: 16px; }
+.card h2 { margin: 0 0 6px; font-size: 16px; }
 
-.hint { color: var(--muted); font-size: 12.5px; margin: 12px 0 14px; }
+.hint { color: var(--muted); font-size: 12.5px; margin: 0 0 16px; }
 
 /* 读数提示条 */
 .badge {
@@ -70,7 +70,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  min-height: 58px;
+  min-height: 68px;              /* 固定高度：读数条出现时时钟不会上下跳 */
   justify-content: center;
   padding: 8px 18px;
   margin-bottom: 12px;
@@ -163,8 +163,16 @@ body {
 .btn-outline:hover { background: #e3edff; border-color: var(--accent); }
 .btn-block { width: 100%; margin-top: 6px; padding: 11px; }
 
-/* 讲解入口：平时不出现，答完题才在时钟下方冒出来 */
-.explain-launch { margin-top: 18px; display: flex; justify-content: center; }
+/* 钟表下方：出题 + 讲解入口，同一行居中 */
+.clock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+.explain-launch { display: flex; justify-content: center; margin: 0; }
 
 .btn-explain {
   display: inline-flex;
@@ -220,15 +228,16 @@ body {
   to { opacity: 1; transform: none; }
 }
 
-/* 作答：点数字弹出选择面板（不弹键盘） */
-.ctrl-row { position: relative; margin-bottom: 10px; }
+/* 作答：时 / 分并排同一行，两个面板都按整行宽度展开 */
+.answer-body { position: relative; display: flex; gap: 10px; margin-bottom: 12px; }
+.ctrl-row { flex: 1 1 0; min-width: 0; position: relative; }
 
 .digit {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 6px 14px 6px 14px;
+  padding: 6px 12px;
   background: #f7f9ff;
   border: 1px solid #dbe5fb;
   border-radius: 14px;
@@ -240,13 +249,13 @@ body {
 .digit:hover { border-color: var(--accent); background: #f2f6ff; }
 .digit[aria-expanded="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.13); }
 .digit:disabled { opacity: .5; cursor: not-allowed; }
-.digit-label { flex-shrink: 0; font-size: 13px; color: var(--muted); }
+.digit-label { flex-shrink: 0; font-size: 12.5px; color: var(--muted); }
 .digit-val {
   flex: 1;
   text-align: center;
-  font-size: 40px;
+  font-size: 34px;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.15;
   letter-spacing: 1px;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
@@ -267,6 +276,7 @@ body {
   border: 1px solid #dbe5fb;
   border-radius: 14px;
   box-shadow: 0 12px 32px rgba(16,24,40,.16);
+  overflow-y: auto;
   animation: popIn .14s ease-out;
 }
 @keyframes popIn {
@@ -397,6 +407,11 @@ body {
   .panel .card { position: static; }
   #clock { max-width: 350px; }
   .options-card { flex-direction: column; align-items: flex-start; gap: 14px; }
+
+  /* 窄屏：出题与讲解按钮排在一行，缩紧内边距避免换行 */
+  .clock-actions { gap: 10px; }
+  .clock-actions .btn,
+  .clock-actions .btn-explain { padding: 9px 14px; font-size: 13.5px; }
 
   /* 窄屏：输入框常在屏幕下方，改成贴着屏幕底部的浮层，保证整块都能看见 */
   .picker {

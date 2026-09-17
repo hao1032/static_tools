@@ -243,16 +243,34 @@
     }
     openUnit = null;
   }
+  /** 面板定位：优先向下展开；下方不够就向上翻；两侧都不够就限制高度（面板内部滚动） */
+  function placePicker(p) {
+    const GAP = 8, M = 8;
+    p.classList.remove('up');
+    p.style.maxHeight = '';
+    if (getComputedStyle(p).position === 'fixed') return;   // 窄屏是贴底浮层，不用算
+    const box = p.offsetParent || p.parentElement;           // .answer-body
+    const boxTop = box.getBoundingClientRect().top;
+    const boxBottom = boxTop + box.offsetHeight;
+    const h = p.offsetHeight;
+    if (boxBottom + GAP + h <= window.innerHeight - M) return;      // 向下放得下
+    if (boxTop - GAP - h >= M) { p.classList.add('up'); return; }   // 翻上去放得下
+    // 两边都放不下：选空间大的一侧，并限制高度
+    if (boxTop > window.innerHeight - boxBottom) {
+      p.classList.add('up');
+      p.style.maxHeight = Math.max(140, boxTop - GAP - M) + 'px';
+    } else {
+      p.style.maxHeight = Math.max(140, window.innerHeight - boxBottom - GAP - M) + 'px';
+    }
+  }
+
   function togglePicker(unit) {
     if (state.answered) return;
     if (openUnit === unit) { closePickers(); return; }
     closePickers();
     const p = $(PICKER[unit]);
     p.hidden = false;
-    p.classList.remove('up');
-    // 下方放不下就向上翻（窄屏 / 矮窗口时避免被屏幕切掉）
-    const r = p.getBoundingClientRect();
-    if (r.bottom > window.innerHeight - 10 && r.height + 16 < r.top) p.classList.add('up');
+    placePicker(p);
     $(DIGIT[unit]).setAttribute('aria-expanded', 'true');
     openUnit = unit;
     // 只在面板内部需要滚动时对齐高亮项，避免整个页面被滚动

@@ -43,12 +43,15 @@
           </svg>
         </div>
 
-        <!-- 答完题后出现在时钟下方；每点一次往前走一步，并同步播放动画 -->
-        <div class="explain-launch" id="explainLaunch" hidden>
-          <button class="btn btn-explain" id="explainBtn" type="button">
-            <span class="explain-ico" id="explainIco">▶</span>
-            <span id="explainLabel">看动画讲解</span>
-          </button>
+        <!-- 钟表下方：出题 + 讲解入口。答完题后讲解按钮出现，两个按钮同一行 -->
+        <div class="clock-actions">
+          <button id="newQuestion" class="btn btn-outline" type="button">随机出一道题</button>
+          <div class="explain-launch" id="explainLaunch" hidden>
+            <button class="btn btn-explain" id="explainBtn" type="button">
+              <span class="explain-ico" id="explainIco">▶</span>
+              <span id="explainLabel">看动画讲解</span>
+            </button>
+          </div>
         </div>
 
         <!-- 讲解就地展开：第 1 步 / 第 2 步 / 第 3 步 逐个出现 -->
@@ -63,19 +66,28 @@
       </div>
     </section>
 
-    <!-- 右：作答（点数字弹出面板，不弹键盘） -->
+    <!-- 右：作答（时 / 分 同一行，点数字弹出面板，不弹键盘） -->
     <aside class="panel">
       <div class="card">
         <h2>你的答案</h2>
-        <button id="newQuestion" class="btn btn-outline btn-block" type="button">随机出一道题</button>
         <p class="hint">看清针尖指向，点下面的数字选时间。</p>
 
-        <div class="ctrl-row">
-          <button class="digit" id="hourDigit" type="button" aria-haspopup="true" aria-expanded="false" aria-label="选择小时">
-            <span class="digit-label">时</span>
-            <span class="digit-val" id="hourVal">12</span>
-            <span class="digit-caret">▾</span>
-          </button>
+        <div class="answer-body">
+          <div class="ctrl-row">
+            <button class="digit" id="hourDigit" type="button" aria-haspopup="true" aria-expanded="false" aria-label="选择小时">
+              <span class="digit-label">小时</span>
+              <span class="digit-val" id="hourVal">12</span>
+              <span class="digit-caret">▾</span>
+            </button>
+          </div>
+          <div class="ctrl-row">
+            <button class="digit" id="minDigit" type="button" aria-haspopup="true" aria-expanded="false" aria-label="选择分钟">
+              <span class="digit-label">分钟</span>
+              <span class="digit-val" id="minVal">00</span>
+              <span class="digit-caret">▾</span>
+            </button>
+          </div>
+
           <div class="picker" id="pickerH" hidden>
             <div class="picker-head">
               <span>选择小时（1–12）</span>
@@ -83,14 +95,7 @@
             </div>
             <div class="picker-grid g-hour" id="gridH"></div>
           </div>
-        </div>
 
-        <div class="ctrl-row">
-          <button class="digit" id="minDigit" type="button" aria-haspopup="true" aria-expanded="false" aria-label="选择分钟">
-            <span class="digit-label">分</span>
-            <span class="digit-val" id="minVal">00</span>
-            <span class="digit-caret">▾</span>
-          </button>
           <div class="picker" id="pickerM" hidden>
             <div class="picker-head">
               <span>选择分钟（十位 / 个位）</span>
