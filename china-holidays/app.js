@@ -121,16 +121,22 @@
     var months = [prev, { y: state.year, m: state.month }, next];
     var counts = { holiday: 0, legal: 0, makeup: 0, weekend: 0, workday: 0 };
     var blocks = [], cur = null, makeupList = [];
-    var cells = "";
+    var nodes = [];   // 逐格收集，便于回头标记「月份交界行」
 
-    var startOffset = (new Date(prev.y, prev.m - 1, 1).getDay() + 6) % 7; // 上月 1 号对齐周一
-    var totalDays = startOffset;
-    for (var i = 0; i < startOffset; i++) cells += '<div class="cell empty"></div>';
+    var startOffset = (new Date(prev.y, prev.m - 1, 1).getDay() + 6) % 7; // 首月 1 号对齐周一
+    for (var i = 0; i < startOffset; i++) nodes.push({ cls: "cell empty", inner: "" });
 
     months.forEach(function (mo, idx) {
       var map = mapOf(mo.y);
       var dim = new Date(mo.y, mo.m, 0).getDate();
-      totalDays += dim;
+      var col0 = (new Date(mo.y, mo.m - 1, 1).getDay() + 6) % 7; // 当月 1 号所在列（0=周一）
+      var firstRowDays = 7 - col0;                               // 本月与上月共处一行的天数
+
+      // 上月落在这一行末尾的几天，与新月份首周同处一行 —— 月份在此「叠加」，不会出现整行空白
+      if (idx > 0 && col0 > 0) {
+        for (var p = nodes.length - col0; p < nodes.length; p++) nodes[p].cls += " mbrow";
+      }
+
       for (var d = 1; d <= dim; d++) {
         var key = pad(mo.m) + "-" + pad(d);
         var info = map[key];
@@ -155,6 +161,8 @@
 
         var mcls = idx === 1 ? "m-cur" : (idx === 0 ? "m-prev" : "m-next");
         var cls = "cell " + c.kind + (c.legal ? " legal" : "") + " " + mcls;
+        // 交界行里的新月份首周：整格下移一点，形成上下错开（与上月末同处一行）
+        if (idx > 0 && col0 > 0 && d <= firstRowDays) cls += " mbrow mstagger";
         var isToday = (d === today.getDate() && mo.m === today.getMonth() + 1 && mo.y === today.getFullYear());
         if (isToday) cls += " today";
 
@@ -169,12 +177,17 @@
         } else if (c.kind === "weekend") {
           inner += '<div class="badge rest">休</div>';
         }
-        cells += '<div class="' + cls + '">' + inner + "</div>";
+        nodes.push({ cls: cls, inner: inner });
       }
     });
 
-    var trailing = (7 - (totalDays % 7)) % 7; // 补齐最后一行，保持矩形
-    for (var t = 0; t < trailing; t++) cells += '<div class="cell empty"></div>';
+    // 仅在最末尾补齐最后一行，使日历为矩形（月份之间不留空行）
+    var tail = (7 - (nodes.length % 7)) % 7;
+    for (var t = 0; t < tail; t++) nodes.push({ cls: "cell empty", inner: "" });
+
+    var cells = nodes.map(function (n) {
+      return '<div class="' + n.cls + '">' + n.inner + "</div>";
+    }).join("");
 
     return { cells: cells, counts: counts, blocks: blocks, makeupList: makeupList };
   }

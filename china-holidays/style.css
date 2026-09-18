@@ -199,6 +199,10 @@ body {
   grid-template-columns: repeat(7, 1fr);
   gap: 5px;
 }
+/* 月份交界行：上月末与新月份首周同处一行（月份「叠加」，无整行空白）。
+   该行不做拉伸，新月份首周整格下移，形成上下错开。 */
+.cell.mbrow { align-self: start; }
+.cell.mstagger { margin-top: 20px; }   /* ≈ 半个方格高（格高 42px） */
 .cell {
   position: relative;
   min-height: 42px;
@@ -340,6 +344,7 @@ body {
   .cell .name { font-size: 10px; margin-top: 3px; line-height: 1.2; }
   .cell .badge { font-size: 9px; padding: 0 4px; right: 2px; top: 2px; bottom: auto; }
   .cell.today .d::after { content: ""; }   /* 窄屏省略「今天」文字，保留描边 */
+  .cell.mstagger { margin-top: 18px; }   /* ≈ 半个方格高（窄屏格高 40px） */
 
   /* 月份水印在窄格内收小，避免溢出 */
   .mo-mark { font-size: 13px; }
