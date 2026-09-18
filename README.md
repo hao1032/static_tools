@@ -1,5 +1,3 @@
-# 静态工具箱 · Static Tools
-
 一个纯静态在线小工具集合站点。每个工具独占一个文件夹，根目录 `index.html` 作为导航页。
 
 ## 目录结构
@@ -139,30 +137,6 @@ npx http-server -p 8765
 - 所有选项（显示开关、难度、允许误差）**自动保存到浏览器 localStorage**，下次打开自动恢复。
 
 > 全部在本地浏览器运行，无网络请求。
-
-## 部署到 Cloudflare Pages
-
-整个仓库就是静态站点根目录，无需构建。
-
-### 方式一：Git 关联（推荐，支持自动更新）
-
-1. 在 Cloudflare 控制台进入 **Pages** → **Create a project** → 选择 **Connect to Git**（GitHub / GitLab）。
-2. 选择本仓库（`hao1032/static_tools`）。
-3. 构建设置：
-   - **Framework preset**：`None`
-   - **Build command**：留空
-   - **Build output directory**：`/`（即仓库根目录）
-4. 点击 **Save and Deploy**。后续每次 `git push` 到 `main` 会自动重新部署。
-
-### 方式二：直接拖拽上传
-
-1. 在 Cloudflare Pages 点击 **Create a project** → **Upload assets**。
-2. 把仓库根目录（`index.html`、`icons-generator/` 等）压缩或直接拖入上传区。
-3. 部署完成即可获得 `.pages.dev` 域名。
-
-### 自定义域名（可选）
-
-在 Pages 项目 **Custom domains** 中添加你的域名并按提示配置 DNS（CNAME 到 `*.pages.dev`）。
 
 ## 技术说明
 

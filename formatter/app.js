@@ -400,11 +400,11 @@
   var SAMPLES = [
     {
       label: "JSON 示例",
-      code: '{"name":"静态工具箱","tools":[{"id":1,"title":"ICO生成器"},{"id":2,"title":"格式化工具"}],"ok":true,"count":2}'
+      code: '{"name":"Static Tools","tools":[{"id":1,"title":"ICO生成器"},{"id":2,"title":"格式化工具"}],"ok":true,"count":2}'
     },
     {
       label: "JSON 复杂",
-      code: '{"app":{"name":"静态工具箱","version":"1.0.0","author":{"name":"hao","email":"hao@example.com","links":["github.com/hao1032"]},"features":{"formatter":true,"ico":true},"tools":[{"id":1,"title":"ICO生成器","layers":[{"text":"字","fontSize":150,"color":"#fff","opacity":1,"rotation":0},{"text":"NEW","fontSize":40,"color":"#f59e0b","opacity":1,"rotation":0}]},{"id":2,"title":"格式化工具","formats":["json","html","xml"],"options":{"indent":[2,4,"tab"],"mode":["format","minify"]}}],"stats":{"users":1280,"active":true,"tags":["tool","web"]}},"ok":true}'
+      code: '{"app":{"name":"Static Tools","version":"1.0.0","author":{"name":"hao","email":"hao@example.com","links":["github.com/hao1032"]},"features":{"formatter":true,"ico":true},"tools":[{"id":1,"title":"ICO生成器","layers":[{"text":"字","fontSize":150,"color":"#fff","opacity":1,"rotation":0},{"text":"NEW","fontSize":40,"color":"#f59e0b","opacity":1,"rotation":0}]},{"id":2,"title":"格式化工具","formats":["json","html","xml"],"options":{"indent":[2,4,"tab"],"mode":["format","minify"]}}],"stats":{"users":1280,"active":true,"tags":["tool","web"]}},"ok":true}'
     },
     {
       label: "HTML 示例",

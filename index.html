@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>静态工具箱 · Static Tools</title>
+  <title>Static Tools</title>
   <style>
     :root {
       --bg: #f6f8fb;
@@ -23,14 +23,6 @@
       color: var(--text);
       line-height: 1.6;
     }
-    header {
-      padding: 56px 24px 32px;
-      text-align: center;
-      background: linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
-      border-bottom: 1px solid var(--border);
-    }
-    header h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: .5px; }
-    header p { margin: 0; color: var(--muted); }
     .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
     .grid {
       display: grid;
@@ -58,38 +50,9 @@
     }
     .tool h3 { margin: 0 0 6px; font-size: 18px; }
     .tool p { margin: 0; color: var(--muted); font-size: 14px; }
-    .deploy {
-      margin-top: 48px;
-      background: var(--card);
-      border: 1px dashed var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .deploy code {
-      background: var(--accent-soft);
-      color: var(--accent);
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 13px;
-    }
-    footer {
-      text-align: center;
-      padding: 24px;
-      color: var(--muted);
-      font-size: 13px;
-      border-top: 1px solid var(--border);
-    }
-    footer .version { color: var(--accent); font-weight: 600; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>静态工具箱</h1>
-    <p>纯静态小工具集合</p>
-  </header>
-
   <main class="wrap">
     <section class="grid">
       <a class="tool" href="./icons-generator/">
@@ -131,17 +94,6 @@
       <!-- 新增工具：复制本卡片，在对应文件夹放一个 index.html 即可 -->
     </section>
 
-    <section class="deploy">
-      <strong>部署方式：</strong>
-      将整个 <code>static_tools</code> 文件夹推送到 Git 仓库并在
-      <a href="https://pages.cloudflare.com" target="_blank" rel="noreferrer">Cloudflare Pages</a>
-      关联（构建设置选 “无 / None”，输出目录为根目录 <code>/</code>），或直接拖拽上传文件夹即可。
-      每个工具独立放在自己的文件夹中，根目录 <code>index.html</code> 作为导航入口。
-    </section>
   </main>
-
-  <footer>
-    静态工具箱 · <span class="version">v1.0.0</span>
-  </footer>
 </body>
 </html>
