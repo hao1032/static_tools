@@ -8,19 +8,25 @@
   --accent-soft: #eff4ff;
   --shadow: 0 1px 3px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.05);
 
-  /* 状态色 */
-  --legal-bg: rgba(220,38,38,.10);
-  --legal-fg: #dc2626;
-  --legal-line: #dc2626;
-  --holiday-bg: rgba(244,63,94,.08);
-  --holiday-fg: #e11d48;
-  --holiday-line: #fb7185;
-  --makeup-bg: rgba(37,99,235,.08);
-  --makeup-fg: #2563eb;
-  --makeup-line: #2563eb;
-  --weekend-bg: #f8fafc;
+  /* 主题色：当前月=淡黄，上下月=淡蓝（格子底色尽量淡） */
+  --cur-bg: #fdf6e3;
+  --cur-chip: #fcd34d;
+  --cur-fg: #7a5c00;
+  --edge-bg: #eef5fd;
+
+  /* 状态色（格子底色尽量淡） */
+  --legal-bg: #e0f3e8;
+  --legal-fg: #137333;
+  --legal-line: #34a853;
+  --holiday-bg: #eef9f1;
+  --holiday-fg: #1e8e4e;
+  --holiday-line: #7bc89a;
+  --makeup-bg: #fdf0f0;
+  --makeup-fg: #c0392b;
+  --makeup-line: #e57f7f;
+  --weekend-bg: #e9edf2;
   --weekend-fg: #94a3b8;
-  --weekend-line: #e2e8f0;
+  --weekend-line: #d2d9e2;
 }
 
 * { box-sizing: border-box; }
@@ -110,14 +116,14 @@ body {
 }
 .mbtn:hover { border-color: var(--accent); color: var(--accent); }
 .mbtn.near {
-  background: var(--accent-soft);
-  border-color: #c7d7f7;
+  background: var(--edge-bg);
+  border-color: #bcd4f5;
   color: var(--accent);
 }
 .mbtn.on {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--cur-chip);
+  border-color: #f0b429;
+  color: var(--cur-fg);
   font-weight: 600;
 }
 
@@ -148,35 +154,35 @@ body {
 .summary .hl-makeup { color: var(--makeup-fg); }
 .summary .hl-rest { color: var(--muted); }
 
-/* 三个月视图：上个月 / 本月 / 下个月（上下排列） */
+/* 连续三个月视图：单张整体卡片，所有日期连续排列；每月 1 号用月份标记区分 */
 .cal3 {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
   margin-top: 16px;
-}
-.cal-month {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 14px;
+  padding: 16px;
   box-shadow: var(--shadow);
 }
-.cal-month.center {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft), var(--shadow);
+.cal3 .cal-head { margin-bottom: 10px; }
+.cal.cont .cell .name { overflow-wrap: anywhere; }
+/* 每月 1 号的月份标记：全高、加粗、类背景水印（加强显示） */
+.mo-mark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: rgba(37, 99, 235, .5);
+  pointer-events: none;
+  z-index: 0;
 }
-.cm-title {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 10px;
-  color: var(--text);
-}
-.cal-month .cal-head { margin-bottom: 8px; }
+.mo-mark.on { color: rgba(170, 115, 0, .58); }
 .cal-head {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  gap: 5px;
   margin-bottom: 8px;
 }
 .cal-head span {
@@ -186,44 +192,56 @@ body {
   font-weight: 600;
   padding: 4px 0;
 }
-.cal-head span.we { color: var(--holiday-fg); }
+.cal-head span.we { color: #d93025; }
 
 .cal {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  gap: 5px;
 }
 .cell {
   position: relative;
-  min-height: 86px;
+  min-height: 42px;
   border: 1px solid var(--border);
   border-left-width: 3px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #fff;
-  padding: 8px 9px;
+  padding: 4px 5px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 .cell.empty { background: transparent; border-color: transparent; }
-.cell .d { font-size: 15px; font-weight: 600; }
+.cell .d { font-size: 13px; font-weight: 700; position: relative; z-index: 2; }
 .cell .name {
-  margin-top: 6px;
-  font-size: 13px;
-  line-height: 1.35;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.25;
   font-weight: 600;
+  overflow-wrap: anywhere;
+  position: relative;
+  z-index: 2;
 }
 .cell .badge {
   position: absolute;
-  right: 7px;
-  bottom: 7px;
-  font-size: 11px;
-  padding: 1px 7px;
+  right: 4px;
+  bottom: 4px;
+  font-size: 10px;
+  padding: 1px 5px;
   border-radius: 999px;
   font-weight: 600;
+  z-index: 2;
 }
 
-/* 状态配色 */
+/* 月份底色：当前月淡黄，上下月淡蓝（状态色会覆盖） */
+.cell.m-cur { background: var(--cur-bg); }
+.cell.m-prev, .cell.m-next { background: var(--edge-bg); }
+
+/* 周末底色：普通周末以此区分（置于假日/补班之前，故优先级更低） */
+.cell.weekend { background: var(--weekend-bg); border-left-color: var(--weekend-line); }
+.badge.rest { background: #eef2f7; color: var(--weekend-fg); }
+
+/* 状态配色（优先级高于月份与周末） */
 .cell.holiday { background: var(--holiday-bg); border-left-color: var(--holiday-line); }
 .cell.holiday .name { color: var(--holiday-fg); }
 .cell.holiday.legal { background: var(--legal-bg); border-left-color: var(--legal-line); }
@@ -233,12 +251,9 @@ body {
 .cell.makeup .name { color: var(--makeup-fg); }
 .badge.work { background: var(--makeup-fg); color: #fff; }
 
-.cell.weekend { background: var(--weekend-bg); border-left-color: var(--weekend-line); }
-.badge.rest { background: #eef2f7; color: var(--weekend-fg); }
+.cell.workday { border-left-color: var(--border); }   /* 工作日跟随月份底色 */
 
-.cell.workday { background: #fff; border-left-color: var(--border); }
-
-.badge.legal { background: var(--legal-fg); color: #fff; position: static; margin-top: 6px; align-self: flex-start; }
+.badge.legal { background: var(--legal-fg); color: #fff; position: relative; margin-top: 6px; align-self: flex-start; z-index: 2; }
 
 /* 今天 */
 .cell.today {
@@ -311,7 +326,7 @@ body {
 
 @media (max-width: 600px) {
   .wrap { padding: 16px 14px 40px; }
-  .cell { min-height: 64px; padding: 6px 6px; }
+  .cell { min-height: 46px; padding: 4px 4px; }
   .cell .d { font-size: 13px; }
   .cell .name { font-size: 11px; margin-top: 4px; }
   .cal, .cal-head { gap: 5px; }

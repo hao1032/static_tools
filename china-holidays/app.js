@@ -114,69 +114,73 @@
 
   function mapOf(y) { var e = cache[y]; return (e && e.ok) ? e.map : {}; }
 
-  // ---------- 单月渲染 ----------
-  function monthHTML(y, m, map, role) {
-    var first = new Date(y, m - 1, 1);
-    var startOffset = (first.getDay() + 6) % 7; // 0 = 周一
-    var dim = new Date(y, m, 0).getDate();
-
+  // ---------- 连续三个月渲染（单张卡，日期连续排列，每月 1 号用月份标记） ----------
+  function buildContinuous() {
+    var prev = neighbor(state.year, state.month, -1);
+    var next = neighbor(state.year, state.month, 1);
+    var months = [prev, { y: state.year, m: state.month }, next];
     var counts = { holiday: 0, legal: 0, makeup: 0, weekend: 0, workday: 0 };
     var blocks = [], cur = null, makeupList = [];
     var cells = "";
+
+    var startOffset = (new Date(prev.y, prev.m - 1, 1).getDay() + 6) % 7; // 上月 1 号对齐周一
+    var totalDays = startOffset;
     for (var i = 0; i < startOffset; i++) cells += '<div class="cell empty"></div>';
 
-    for (var d = 1; d <= dim; d++) {
-      var key = pad(m) + "-" + pad(d);
-      var info = map[key];
-      var dow = new Date(y, m - 1, d).getDay();
-      var c;
-      if (info) {
-        if (info.holiday === true) c = { kind: "holiday", name: info.name, wage: info.wage, legal: info.wage === 3 };
-        else c = { kind: "makeup", name: info.name, target: info.target || "" };
-      } else {
-        c = (dow === 0 || dow === 6) ? { kind: "weekend" } : { kind: "workday" };
+    months.forEach(function (mo, idx) {
+      var map = mapOf(mo.y);
+      var dim = new Date(mo.y, mo.m, 0).getDate();
+      totalDays += dim;
+      for (var d = 1; d <= dim; d++) {
+        var key = pad(mo.m) + "-" + pad(d);
+        var info = map[key];
+        var dow = new Date(mo.y, mo.m - 1, d).getDay();
+        var c;
+        if (info) {
+          if (info.holiday === true) c = { kind: "holiday", name: info.name, wage: info.wage, legal: info.wage === 3 };
+          else c = { kind: "makeup", name: info.name, target: info.target || "" };
+        } else {
+          c = (dow === 0 || dow === 6) ? { kind: "weekend" } : { kind: "workday" };
+        }
+
+        if (idx === 1) { // 仅统计「本月」用于概览与清单
+          counts[c.kind] = (counts[c.kind] || 0) + 1;
+          if (c.kind === "holiday" && c.legal) counts.legal++;
+          if (c.kind === "holiday") {
+            if (cur) { cur.end = d; cur.days++; }
+            else { cur = { name: c.name, start: d, end: d, days: 1, legal: c.legal }; blocks.push(cur); }
+          } else cur = null;
+          if (c.kind === "makeup") makeupList.push({ d: d, dow: dow, name: c.name, target: c.target });
+        }
+
+        var mcls = idx === 1 ? "m-cur" : (idx === 0 ? "m-prev" : "m-next");
+        var cls = "cell " + c.kind + (c.legal ? " legal" : "") + " " + mcls;
+        var isToday = (d === today.getDate() && mo.m === today.getMonth() + 1 && mo.y === today.getFullYear());
+        if (isToday) cls += " today";
+
+        var moMark = (d === 1) ? '<div class="mo-mark' + (idx === 1 ? " on" : "") + '">' + mo.m + "月</div>" : "";
+        var inner = '<div class="d">' + d + "</div>" + moMark;
+        if (c.kind === "holiday") {
+          inner += '<div class="name">' + esc(c.name) + "</div>";
+          if (c.legal) inner += '<div class="badge legal">法定</div>';
+        } else if (c.kind === "makeup") {
+          inner += '<div class="name">' + esc(c.name) + "</div>";
+          inner += '<div class="badge work">班</div>';
+        } else if (c.kind === "weekend") {
+          inner += '<div class="badge rest">休</div>';
+        }
+        cells += '<div class="' + cls + '">' + inner + "</div>";
       }
+    });
 
-      counts[c.kind] = (counts[c.kind] || 0) + 1;
-      if (c.kind === "holiday" && c.legal) counts.legal++;
+    var trailing = (7 - (totalDays % 7)) % 7; // 补齐最后一行，保持矩形
+    for (var t = 0; t < trailing; t++) cells += '<div class="cell empty"></div>';
 
-      if (c.kind === "holiday") {
-        if (cur) { cur.end = d; cur.days++; }
-        else { cur = { name: c.name, start: d, end: d, days: 1, legal: c.legal }; blocks.push(cur); }
-      } else cur = null;
-      if (c.kind === "makeup") makeupList.push({ d: d, dow: dow, name: c.name, target: c.target });
-
-      var cls = "cell " + c.kind + (c.legal ? " legal" : "");
-      var isToday = (d === today.getDate() && m === today.getMonth() + 1 && y === today.getFullYear());
-      if (isToday) cls += " today";
-
-      var inner = '<div class="d">' + d + "</div>";
-      if (c.kind === "holiday") {
-        inner += '<div class="name">' + esc(c.name) + "</div>";
-        if (c.legal) inner += '<div class="badge legal">法定</div>';
-      } else if (c.kind === "makeup") {
-        inner += '<div class="name">' + esc(c.name) + "</div>";
-        inner += '<div class="badge work">班</div>';
-      } else if (c.kind === "weekend") {
-        inner += '<div class="badge rest">休</div>';
-      }
-      cells += '<div class="' + cls + '">' + inner + "</div>";
-    }
-
-    var label = role === "prev" ? "上个月" : role === "next" ? "下个月" : "本月";
-    return {
-      html: '<div class="cal-month' + (role === "center" ? " center" : "") + '">' +
-            '<div class="cm-title">' + label + " · " + y + "年" + m + "月</div>" +
-            '<div class="cal-head">' + WEEKHEAD + "</div>" +
-            '<div class="cal">' + cells + "</div></div>",
-      counts: counts, blocks: blocks, makeupList: makeupList
-    };
+    return { cells: cells, counts: counts, blocks: blocks, makeupList: makeupList };
   }
 
   // ---------- 渲染三个月 ----------
   function render() {
-    var prev = neighbor(state.year, state.month, -1);
-    var next = neighbor(state.year, state.month, 1);
     var centerEntry = cache[state.year];
 
     if (!centerEntry || !centerEntry.ok) {
@@ -194,13 +198,11 @@
       statusEl.textContent = "";
     }
 
-    var p = monthHTML(prev.y, prev.m, mapOf(prev.y), "prev");
-    var c = monthHTML(state.year, state.month, mapOf(state.year), "center");
-    var n = monthHTML(next.y, next.m, mapOf(next.y), "next");
-    cal3.innerHTML = p.html + c.html + n.html;
+    var built = buildContinuous();
+    cal3.innerHTML = '<div class="cal-head">' + WEEKHEAD + '</div><div class="cal cont">' + built.cells + "</div>";
 
-    renderSummary(c.counts, centerEntry);
-    renderList(c.blocks, c.makeupList, state.month);
+    renderSummary(built.counts, centerEntry);
+    renderList(built.blocks, built.makeupList, state.month);
   }
 
   function renderSummary(counts, entry) {
