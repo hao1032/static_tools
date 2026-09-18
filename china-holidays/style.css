@@ -325,9 +325,31 @@ body {
 .footer-note a { color: var(--accent); }
 
 @media (max-width: 600px) {
-  .wrap { padding: 16px 14px 40px; }
-  .cell { min-height: 46px; padding: 4px 4px; }
-  .cell .d { font-size: 13px; }
-  .cell .name { font-size: 11px; margin-top: 4px; }
-  .cal, .cal-head { gap: 5px; }
+  .wrap { padding: 12px 10px 32px; }
+  .cal3 { padding: 10px; }
+  .cal, .cal-head { gap: 3px; }
+  .cal-head span { font-size: 12px; padding: 2px 0; }
+
+  .cell {
+    min-height: 40px;
+    padding: 3px 3px;
+    border-left-width: 2px;
+    border-radius: 7px;
+  }
+  .cell .d { font-size: 12px; }
+  .cell .name { font-size: 10px; margin-top: 3px; line-height: 1.2; }
+  .cell .badge { font-size: 9px; padding: 0 4px; right: 2px; top: 2px; bottom: auto; }
+  .cell.today .d::after { content: ""; }   /* 窄屏省略「今天」文字，保留描边 */
+
+  /* 月份水印在窄格内收小，避免溢出 */
+  .mo-mark { font-size: 13px; }
+
+  /* 月份导航：年份独占一行，按钮更紧凑 */
+  .mg-year { width: 100%; }
+  .mg-btns { gap: 6px; }
+  .mbtn { min-width: 0; padding: 6px 9px; font-size: 12px; }
+
+  .summary { font-size: 13px; padding: 12px 14px; }
+  .list { font-size: 13px; padding: 14px 14px; }
+  .legend { gap: 8px 14px; font-size: 12px; }
 }
