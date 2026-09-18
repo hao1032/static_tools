@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>中国节假日 · 放假与调休日历</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="back" href="../">← 返回工具箱</a>
+    <h1>中国节假日</h1>
+  </header>
+
+  <main class="wrap">
+    <!-- 月份导航（今天 + 年份合并） -->
+    <section class="months" id="months"></section>
+
+    <!-- 本月概览 -->
+    <section class="summary" id="summary"></section>
+
+    <!-- 月历：上个月 / 本月 / 下个月 -->
+    <section class="cal3" id="cal3"></section>
+
+    <!-- 图例 -->
+    <section class="legend">
+      <span class="lg legal"><i></i>法定节假日</span>
+      <span class="lg holiday"><i></i>普通放假</span>
+      <span class="lg makeup"><i></i>调休补班（需上班）</span>
+      <span class="lg weekend"><i></i>周末休息</span>
+      <span class="lg workday"><i></i>工作日</span>
+    </section>
+
+    <!-- 本月节假日与调休清单 -->
+    <section class="list" id="list"></section>
+
+    <p class="footer-note">
+      数据来源：<a href="https://timor.tech/api/holiday" target="_blank" rel="noreferrer">timor.tech 免费节假日 API</a>（国务院放假安排）。
+      默认显示当前月份，可通过上方按钮查看任意月份。
+    </p>
+  </main>
+
+  <script src="./fallback.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
