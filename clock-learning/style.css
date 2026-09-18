@@ -263,6 +263,15 @@ body {
 }
 .digit-caret { flex-shrink: 0; font-size: 11px; color: #9aa3b2; transition: transform .2s ease; }
 .digit[aria-expanded="true"] .digit-caret { transform: rotate(180deg); }
+/* 分钟只选了十位、个位还没选时，个位位置显示一个闪动的「?」 */
+.digit-val .pick-ph {
+  color: #b6c1d6;
+  animation: phPulse 1.15s ease-in-out infinite;
+}
+@keyframes phPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .28; }
+}
 
 /* 弹出的数字面板 */
 .picker {
@@ -332,6 +341,21 @@ body {
 .col-label { font-size: 12px; color: var(--muted); text-align: center; }
 .g-tens { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .g-units { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+/* 个位还没选就想提交：把「个位」这一栏抖一下并变暖色 */
+.digit-col.urge {
+  border-color: #fb923c;
+  background: #fff7ed;
+  animation: urgeShake .5s ease;
+}
+.digit-col.urge .col-label { color: #c2410c; font-weight: 600; }
+@keyframes urgeShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
 
 .picker-grid button {
   height: 42px;
@@ -432,4 +456,9 @@ body {
 @keyframes popInSheet {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
+}
+
+/* 系统开启「减少动态效果」时，不再闪动 */
+@media (prefers-reduced-motion: reduce) {
+  .digit-val .pick-ph { animation: none; opacity: .75; }
 }

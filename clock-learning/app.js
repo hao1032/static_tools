@@ -93,6 +93,8 @@
   const state = {
     h: 3, m: 0,          // 当前题目
     ansH: 12, ansM: 0,   // 用户选出来的答案
+    pickT: null,         // 分钟面板里正在选的「十位」（打开面板时默认 0）
+    pickU: null,         // 分钟面板里正在选的「个位」（打开面板时不预选）
     answered: false,
     ok: 0, total: 0,
     step: 0,             // 讲解进行到第几步（0 = 还没开始）
@@ -221,18 +223,19 @@
       closePickers();
     });
 
-    // 分钟两栏：点十位保持打开（还要接着点个位），点个位就算选完，自动收起
+    // 分钟两栏：面板打开时十位默认选 0、个位不预选。
+    // 两个数字都选中了才落成答案并自动收起；只选了十位就继续等个位。
     [gt, gu].forEach((g) => g.addEventListener('click', (e) => {
       const b = e.target.closest('button[data-v]');
       if (!b || state.answered) return;
       const v = Number(b.dataset.v);
       if (b.dataset.unit === 't') {
-        state.ansM = v * 10 + (state.ansM % 10);
-        renderAnswer();
+        state.pickT = v;
+        renderAnswer();                 // 个位还没选 → 面板保持打开
       } else {
-        state.ansM = Math.floor(state.ansM / 10) * 10 + v;
-        renderAnswer();
-        closePickers();
+        state.pickU = v;
+        state.ansM = state.pickT * 10 + v;
+        closePickers();                 // 十位 + 个位都选好了 → 自动收起
       }
     }));
   }
@@ -242,6 +245,28 @@
       $(DIGIT[u]).setAttribute('aria-expanded', 'false');
     }
     openUnit = null;
+    state.pickT = null;
+    state.pickU = null;
+    clearUrge();
+    renderAnswer();
+  }
+
+  /* 个位还没选就想提交时：在面板里就地提醒（反馈区被面板挡住，写在下面看不见） */
+  const PICK_M_TITLE = '选择分钟（十位 / 个位）';
+  let urgeTimer = 0;
+  function clearUrge() {
+    clearTimeout(urgeTimer);
+    $('colUnits').classList.remove('urge');
+    $('pickerMTitle').textContent = PICK_M_TITLE;
+  }
+  function urgeUnits() {
+    const col = $('colUnits');
+    $('pickerMTitle').textContent = '分钟还差个位 → 点右边';
+    col.classList.remove('urge');
+    void col.offsetWidth;          // 重排一次，让抖动动画能重放
+    col.classList.add('urge');
+    clearTimeout(urgeTimer);
+    urgeTimer = setTimeout(clearUrge, 1600);
   }
   /** 面板定位：优先向下展开；下方不够就向上翻；两侧都不够就限制高度（面板内部滚动） */
   function placePicker(p) {
@@ -268,11 +293,14 @@
     if (state.answered) return;
     if (openUnit === unit) { closePickers(); return; }
     closePickers();
+    // 分钟面板每次打开都是全新的一次选择：十位默认 0，个位待选（不预选任何数字）
+    if (unit === 'm') { state.pickT = 0; state.pickU = null; }
     const p = $(PICKER[unit]);
     p.hidden = false;
     placePicker(p);
     $(DIGIT[unit]).setAttribute('aria-expanded', 'true');
     openUnit = unit;
+    renderAnswer();
     // 只在面板内部需要滚动时对齐高亮项，避免整个页面被滚动
     const sels = p.querySelectorAll('button.sel');
     if (sels.length && p.scrollHeight > p.clientHeight + 1) {
@@ -282,15 +310,23 @@
   }
   function markSel(gridId, v) {
     $(gridId).querySelectorAll('button').forEach((b) => {
-      b.classList.toggle('sel', Number(b.dataset.v) === v);
+      b.classList.toggle('sel', v !== null && Number(b.dataset.v) === v);
     });
   }
   function renderAnswer() {
     $('hourVal').textContent = String(state.ansH);
-    $('minVal').textContent = pad(state.ansM);
+    // 分钟：面板开着但个位还没选时，显示「十位 + ?」——提示还要选个位
+    const picking = openUnit === 'm' && state.pickT !== null && state.pickU === null;
+    if (picking) {
+      $('minVal').innerHTML = `${state.pickT}<span class="pick-ph">?</span>`;
+    } else {
+      $('minVal').textContent = pad(state.ansM);
+    }
     markSel('gridH', state.ansH);
-    markSel('gridTens', Math.floor(state.ansM / 10));   // 分钟十位
-    markSel('gridUnits', state.ansM % 10);              // 分钟个位
+    // 分钟两栏：面板开着时高亮「正在选的」，否则高亮已确定的答案
+    const pick = openUnit === 'm';
+    markSel('gridTens', pick ? state.pickT : Math.floor(state.ansM / 10));
+    markSel('gridUnits', pick ? state.pickU : state.ansM % 10);
   }
   function lockAnswer(locked) {
     $('hourDigit').disabled = locked;
@@ -317,6 +353,7 @@
 
   /* ---------------- 出下一题 ---------------- */
   function newQuestion() {
+    closePickers();             // 顺手清掉分钟面板里没选完的那次
     state.runId++;              // 取消正在播放的动画
     resetOverlay();
 
@@ -350,6 +387,11 @@
   /* ---------------- 判题 ---------------- */
   function judge() {
     if (state.answered) return;
+    // 分钟面板还开着、个位没选：在面板里提醒，不判题
+    if (openUnit === 'm' && state.pickU === null) {
+      urgeUnits();
+      return;
+    }
     closePickers();
     const ah = state.ansH;
     const am = state.ansM;
@@ -560,7 +602,10 @@
   $('minDigit').addEventListener('click', () => togglePicker('m'));
   document.querySelectorAll('.picker-x').forEach((b) => b.addEventListener('click', closePickers));
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.ctrl-row')) closePickers();
+    // 面板和数字位都挂在 .answer-body 里，点它们都算「面板内」。
+    // 提交按钮也放行：分钟个位还没选完时要留着面板提示，不能顺手收掉。
+    if (e.target.closest('.answer-body') || e.target.closest('#submit')) return;
+    closePickers();
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closePickers();
