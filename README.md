@@ -77,6 +77,46 @@ npx http-server -p 8765
 
 > 如需修改端口或 Python 路径，编辑 `restart-server.bat` 顶部的 `PORT` 和 `PYTHON` 变量即可。
 
+## 部署与缓存
+
+站点通过 **GitHub 仓库 → Cloudflare Pages** 自动部署（无构建步骤，构建输出目录就是仓库根目录）。`git push` 之后要经过
+「GitHub webhook → Cloudflare 排队 → 上传 → 全球边缘生效」才会真正上线，通常几十秒到两分钟。
+
+**「改了但用户看不到」通常有两层原因，仓库里已经各做了一个对策：**
+
+### 1. 静态资源被浏览器长时间缓存 → `_headers`
+
+Pages 对 `.html` 默认不缓存，但对 `.css` / `.js` 会给数小时级的浏览器缓存。本站文件名不带内容 hash，
+所以改样式或脚本后用户会长时间看到旧版本（`clsf-viewer` 里手工加的 `style.css?v=5` 就是被这个问题逼出来的）。
+
+根目录的 `_headers` 把所有路径统一改成 `Cache-Control: no-cache`——**可以缓存，但每次都要回源校验**：
+内容没变走 `304` 几乎不耗流量，内容变了立刻生效。有了它，新增工具时不用再手工维护 `?v=N`。
+
+### 2. 用户页面一直开着，不会主动刷新 → `version-check.js`
+
+`version-check.js` 在页面加载时记下当前 URL 的**响应头指纹**（`ETag` / `Last-Modified` / `Content-Length`），
+之后在「页面切回前台」「窗口重新获得焦点」「前台每 5 分钟」各比对一次，发现线上变了就在右下角提示
+「站点已更新 · 刷新看看」。点一下带一次性参数重新进入，绕开整页内存缓存。零配置、零维护，取不到指纹时静默失效。
+
+新增页面时在 `</head>` 前加一行即可：
+
+```html
+<script src="/version-check.js" defer></script>
+```
+
+### 排查顺序
+
+1. **确认部署真的跑完**：Cloudflare Dashboard → Pages → 项目 → **Deployments**，最新一条要是 `Success`，
+   且属于 Production。特别检查 **Settings → Builds & deployments → Production branch 是不是 `main`**——
+   如果配成了别的分支，push 到 `main` 只会生成 Preview 部署，生产域名永远不更新。
+2. **确认浏览器拿到的是哪一版**（换成自己的域名）：
+   ```bash
+   curl -sI https://<站点域名>/clock-learning/app.js | grep -i "cache-control\|etag\|age\|cf-cache-status"
+   ```
+   如果 `cache-control` 不是 `no-cache`，说明 `_headers` 没生效，或被 Cloudflare 的
+   **Caching → Configuration → Browser Cache TTL** 覆盖了——该项应是 `Respect Existing Headers`。
+3. **区分范围**：所有设备都旧 → 部署链路问题；只有某台设备旧 → 本地/中间缓存问题（微信内置浏览器最顽固）。
+
 ## 工具一：ICO 文字图标生成器
 
 把文字（支持中文、多个字母）渲染成 `.ico` 图标，完全在浏览器本地完成，不上传任何数据。
