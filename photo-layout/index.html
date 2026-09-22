@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>照片排版 · 拼版打印</title>
+  <link rel="stylesheet" href="./style.css" />
+  <style id="pageSizeRule"></style>
+  <script src="/version-check.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="back" href="../">← 返回工具箱</a>
+    <h1>照片排版 · 拼版打印</h1>
+  </header>
+
+  <main class="layout">
+    <!-- 左：排版预览 -->
+    <section class="stage-pane">
+      <div class="card">
+        <div class="stage-head">
+          <div class="sh-left">
+            <button id="addBtn" class="btn btn-primary btn-sm" type="button">+ 添加照片</button>
+            <input id="fileInput" type="file" accept="image/*" multiple hidden />
+            <span class="meta" id="stageMeta">还没有照片</span>
+          </div>
+          <div class="sh-right">
+            <button id="clearBtn" class="btn btn-ghost btn-sm" type="button">清空</button>
+            <div class="pager" id="pager" hidden>
+              <button id="prevPage" class="pg-btn" type="button" aria-label="上一页">‹</button>
+              <span id="pageLabel">1 / 1</span>
+              <button id="nextPage" class="pg-btn" type="button" aria-label="下一页">›</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage" id="stage">
+          <div class="sheet" id="sheet">
+            <canvas id="canvas"></canvas>
+            <div class="cells" id="cells"></div>
+          </div>
+          <div class="empty-tip" id="emptyTip">
+            <strong>把照片拖到这里</strong>
+            <span>或点击左上角「添加照片」· 也支持直接 Ctrl/⌘+V 粘贴</span>
+          </div>
+          <div class="drop-hint" id="dropHint"><span>松开即添加照片</span></div>
+        </div>
+
+        <div class="stage-foot">
+          在预览里按住照片拖动可调取景，滚轮缩放；点击选中后可用下方列表排序、旋转。
+        </div>
+      </div>
+
+      <!-- 照片列表紧贴预览下方 -->
+      <div class="card">
+        <div class="strip-head">
+          <h2>照片列表</h2>
+          <span class="hint">拖动缩略图可调整顺序，顺序即排版顺序。</span>
+        </div>
+        <div class="strip" id="strip"></div>
+        <div class="strip-empty" id="stripEmpty">列表还是空的，先添加几张照片吧。</div>
+      </div>
+    </section>
+
+    <!-- 右：参数面板 -->
+    <aside class="panel">
+      <div class="card">
+        <h2>快速模板</h2>
+        <p class="hint">一键套用常见排版，之后再按需微调。</p>
+        <div class="preset-row" id="presets"></div>
+      </div>
+
+      <div class="card">
+        <h2>纸张</h2>
+        <label class="row"><span>尺寸</span><select id="paper"></select></label>
+        <label class="row"><span>方向</span>
+          <select id="orient">
+            <option value="land">横向</option>
+            <option value="port">纵向</option>
+          </select>
+        </label>
+        <div class="row" id="paperCustom" hidden>
+          <span>自定义</span>
+          <div class="inline">
+            <input id="pw" type="number" min="20" max="1200" step="1" /> ×
+            <input id="ph" type="number" min="20" max="1200" step="1" /> mm
+          </div>
+        </div>
+        <label class="row"><span>背景</span><input type="color" id="bg" /></label>
+      </div>
+
+      <div class="card">
+        <h2>排版</h2>
+        <label class="row"><span>方式</span>
+          <select id="mode">
+            <option value="size">按照片尺寸</option>
+            <option value="grid">按行列平分</option>
+          </select>
+        </label>
+
+        <div id="sizeBlock">
+          <label class="row"><span>照片尺寸</span><select id="cell"></select></label>
+          <div class="row" id="cellCustom" hidden>
+            <span>自定义</span>
+            <div class="inline">
+              <input id="cw" type="number" min="5" max="500" step="0.5" /> ×
+              <input id="ch" type="number" min="5" max="500" step="0.5" /> mm
+            </div>
+          </div>
+        </div>
+
+        <div id="gridBlock" hidden>
+          <label class="row"><span>列 × 行</span>
+            <div class="inline">
+              <input id="cols" type="number" min="1" max="12" step="1" /> ×
+              <input id="rows" type="number" min="1" max="12" step="1" />
+            </div>
+          </label>
+        </div>
+
+        <label class="row"><span>页边距</span>
+          <div class="inline grow">
+            <input id="margin" type="range" min="0" max="20" step="0.5" />
+            <b id="marginVal">0mm</b>
+          </div>
+        </label>
+        <label class="row"><span>照片间距</span>
+          <div class="inline grow">
+            <input id="gap" type="range" min="0" max="20" step="0.5" />
+            <b id="gapVal">0mm</b>
+          </div>
+        </label>
+
+        <div class="stat" id="layoutStat"></div>
+      </div>
+
+      <div class="card">
+        <h2>单元格</h2>
+        <label class="row"><span>填充</span>
+          <select id="fit">
+            <option value="cover">裁剪铺满</option>
+            <option value="contain">完整显示</option>
+          </select>
+        </label>
+        <label class="row"><span>白边</span>
+          <div class="inline grow">
+            <input id="border" type="range" min="0" max="6" step="0.5" />
+            <b id="borderVal">0mm</b>
+          </div>
+        </label>
+        <label class="row"><span>白边色</span><input type="color" id="borderColor" /></label>
+        <label class="row"><span>圆角</span>
+          <div class="inline grow">
+            <input id="radius" type="range" min="0" max="10" step="0.5" />
+            <b id="radiusVal">0mm</b>
+          </div>
+        </label>
+        <label class="check"><input type="checkbox" id="repeat" checked /><span>照片不足时循环铺满</span></label>
+        <label class="check"><input type="checkbox" id="cut" /><span>显示裁切线</span></label>
+      </div>
+
+      <div class="card">
+        <h2>输出</h2>
+        <label class="row"><span>分辨率</span>
+          <select id="dpi">
+            <option value="150">150 DPI · 预览</option>
+            <option value="300" selected>300 DPI · 推荐</option>
+            <option value="600">600 DPI · 高清</option>
+          </select>
+        </label>
+        <label class="row"><span>格式</span>
+          <select id="fmt">
+            <option value="png">PNG</option>
+            <option value="jpeg">JPEG</option>
+          </select>
+        </label>
+        <button id="exportBtn" class="btn btn-primary btn-block" type="button">导出</button>
+        <button id="printBtn" class="btn btn-outline btn-block" type="button">打印（按实际尺寸）</button>
+        <div class="stat" id="outputStat"></div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="print-root" id="printRoot"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
