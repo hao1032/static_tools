@@ -132,6 +132,26 @@
     return null;
   }
 
+  /* 某一格当前显示的照片，在 photos 顺序里的下标（空格子返回 -1） */
+  function photoIndexAt(cellIndex, page) {
+    const pid = photoIdAt(cellIndex, page);
+    return pid ? photos.findIndex((p) => p.id === pid) : -1;
+  }
+
+  /* 交换两个格子里的照片。
+     注意交换的是「照片在顺序中的位置」而不是「格子内容」——这样循环铺满时也成立：
+     只有 2 张照片铺满一页时，把 A 格拖到 B 格就是让这两张照片换位，重复的格子跟着一起换，
+     不会出现「交换后有些格子还是旧照片」的矛盾状态。 */
+  function swapPhotosAt(i, j, page) {
+    const a = photoIndexAt(i, page);
+    const b = photoIndexAt(j, page);
+    if (a < 0 || b < 0 || a === b) return false;
+    const t = photos[a];
+    photos[a] = photos[b];
+    photos[b] = t;
+    return true;
+  }
+
   /* 单元格内照片的摆放几何（单位 mm） */
   function cellGeom(photo, w, h) {
     const iw = photo.img ? photo.img.naturalWidth : 1;
@@ -299,7 +319,8 @@
       if (pid) {
         const s = document.createElement('span');
         s.className = 'cell-idx';
-        s.textContent = photos.findIndex((p) => p.id === pid) + 1;
+        s.textContent = photoIndexAt(i, state.page) + 1;
+        s.title = '按住拖动，可与另一格交换照片';
         d.appendChild(s);
       }
       cellsEl.appendChild(d);
@@ -317,7 +338,114 @@
     });
   }
 
-  let drag = null;
+  /* 预览里有两种拖动，靠「抓哪里」区分：
+     · 按住照片本体拖 = 调取景（原有行为，不动）
+     · 抓格子左上角的序号、或长按格子再拖 = 与另一个格子交换照片
+     长按阈值给得短一点，触摸屏上不用等太久。 */
+  const LONG_PRESS_MS = 320;
+  const MOVE_TOL = 6;
+
+  let drag = null;    // 调取景
+  let press = null;   // 已按下、还没判定是哪种拖动
+  let swap = null;    // 换位置
+  let ghost = null;   // 跟着指针走的浮层
+
+  function clearPress() {
+    if (press && press.timer) clearTimeout(press.timer);
+    press = null;
+  }
+
+  function cellIndexAt(clientX, clientY) {
+    const el = document.elementFromPoint(clientX, clientY);
+    const cell = el && el.closest ? el.closest('.cell') : null;
+    return cell ? +cell.dataset.i : -1;
+  }
+
+  /* 浮层直接用预览画布里那一格的像素，看起来就是「把这张照片拎起来」 */
+  function makeGhost(srcEl) {
+    const r = srcEl.getBoundingClientRect();
+    const cv = $('canvas');
+    const cr = cv.getBoundingClientRect();
+    const box = document.createElement('div');
+    box.className = 'swap-ghost';
+    box.style.width = r.width + 'px';
+    box.style.height = r.height + 'px';
+    const mini = document.createElement('canvas');
+    const dpr = cr.width ? Math.max(1, cv.width / cr.width) : 1;
+    mini.width = Math.max(1, Math.round(r.width * dpr));
+    mini.height = Math.max(1, Math.round(r.height * dpr));
+    try {
+      mini.getContext('2d').drawImage(
+        cv,
+        (r.left - cr.left) * dpr, (r.top - cr.top) * dpr, r.width * dpr, r.height * dpr,
+        0, 0, mini.width, mini.height
+      );
+    } catch (e) { /* 取不到像素就退化成半透明方块，不影响功能 */ }
+    box.appendChild(mini);
+    document.body.appendChild(box);
+    return box;
+  }
+
+  function beginSwap(from, clientX, clientY, srcEl) {
+    clearPress();
+    if (swap) return;
+    const r = srcEl.getBoundingClientRect();
+    ghost = makeGhost(srcEl);
+    swap = { from: from, to: -1, dx: clientX - r.left, dy: clientY - r.top, el: srcEl };
+    srcEl.classList.add('swapping');
+    document.body.classList.add('swapping');
+    moveGhost(clientX, clientY);
+  }
+
+  function moveGhost(clientX, clientY) {
+    ghost.style.transform = 'translate(' + (clientX - swap.dx) + 'px,' + (clientY - swap.dy) + 'px)';
+    const i = cellIndexAt(clientX, clientY);
+    if (i === swap.to) return;
+    const box = $('cells');
+    const prev = box.querySelector('.cell.drop-target');
+    if (prev) prev.classList.remove('drop-target', 'ok', 'invalid');
+    swap.to = i;
+    if (i >= 0 && i !== swap.from) {
+      const el = box.querySelector('.cell[data-i="' + i + '"]');
+      if (el) {
+        el.classList.add('drop-target');
+        el.classList.add(canDropOn(i) ? 'ok' : 'invalid');
+      }
+    }
+  }
+
+  /* 这一格能不能接收：本身要有照片，且与被拖的那格不是同一张（同一张交换等于没变） */
+  function canDropOn(i) {
+    if (!swap || i < 0 || i === swap.from) return false;
+    const a = photoIdAt(swap.from, state.page);
+    const b = photoIdAt(i, state.page);
+    return !!a && !!b && a !== b;
+  }
+
+  function endSwap(commit) {
+    if (!swap) return;
+    const s = swap;
+    swap = null;
+    if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
+    ghost = null;
+    document.body.classList.remove('swapping');
+    const box = $('cells');
+    const t = box.querySelector('.cell.drop-target');
+    if (t) t.classList.remove('drop-target', 'ok', 'invalid');
+    if (s.el) s.el.classList.remove('swapping');
+    if (!commit || s.to < 0 || s.to === s.from) return;
+    if (!swapPhotosAt(s.from, s.to, state.page)) return;
+    refresh();
+    renderStrip();
+    syncSelection();
+  }
+
+  function endDrag() {
+    if (!drag) return;
+    drag = null;
+    const el = $('cells').querySelector('.cell.dragging');
+    if (el) el.classList.remove('dragging');
+  }
 
   function initStageEvents() {
     const cellsEl = $('cells');
@@ -325,6 +453,7 @@
     cellsEl.addEventListener('pointerdown', (e) => {
       const el = e.target.closest('.cell');
       if (!el) return;
+      if (e.button != null && e.button !== 0) return;
       e.preventDefault();
       const i = +el.dataset.i;
       const pid = photoIdAt(i, state.page);
@@ -333,14 +462,39 @@
       if (!pid) return;
       const photo = byId(pid);
       if (!photo || !photo.img) return;
-      const cell = view.L.cells[i];
-      const g = cellGeom(photo, cell.w, cell.h);
-      if (Math.abs(g.ox) <= 0.001 && Math.abs(g.oy) <= 0.001) return;
-      drag = { pid: pid, ox: photo.ox, oy: photo.oy, g: g, x: e.clientX, y: e.clientY };
-      el.classList.add('dragging');
+
+      // 抓序号角标 = 立刻进入换位（桌面端最精准）
+      if (e.target.classList && e.target.classList.contains('cell-idx')) {
+        beginSwap(i, e.clientX, e.clientY, el);
+        return;
+      }
+      // 其余位置：先按住，按住不动才切到换位；一动就是调取景（触摸屏走这条）
+      press = { i: i, pid: pid, x: e.clientX, y: e.clientY, el: el, timer: 0 };
+      press.timer = setTimeout(() => {
+        if (!press) return;
+        const p = press;
+        press = null;
+        beginSwap(p.i, p.x, p.y, p.el);
+      }, LONG_PRESS_MS);
     });
 
     window.addEventListener('pointermove', (e) => {
+      if (swap) { moveGhost(e.clientX, e.clientY); return; }
+
+      if (press) {
+        if (Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) <= MOVE_TOL) return;
+        const p = press;
+        clearPress();
+        const photo = byId(p.pid);
+        const cell = view.L.cells[p.i];
+        if (!photo || !cell) return;
+        const g = cellGeom(photo, cell.w, cell.h);
+        if (Math.abs(g.ox) <= 0.001 && Math.abs(g.oy) <= 0.001) return;
+        drag = { pid: p.pid, ox: photo.ox, oy: photo.oy, g: g, x: p.x, y: p.y };
+        p.el.classList.add('dragging');
+        // 故意不 return：这一次的位移立刻生效，手感与之前完全一致
+      }
+
       if (!drag) return;
       const p = byId(drag.pid);
       if (!p) return;
@@ -352,10 +506,15 @@
     });
 
     window.addEventListener('pointerup', () => {
-      if (!drag) return;
-      drag = null;
-      const el = $('cells').querySelector('.cell.dragging');
-      if (el) el.classList.remove('dragging');
+      if (swap) { endSwap(true); return; }
+      clearPress();
+      endDrag();
+    });
+
+    window.addEventListener('pointercancel', () => {
+      if (swap) { endSwap(false); return; }
+      clearPress();
+      endDrag();
     });
 
     cellsEl.addEventListener(
@@ -392,6 +551,7 @@
 
   /* ============ 照片管理 ============ */
   let uid = 0;
+  let fileSeq = 0;   // 文件选择序号的发号器（与 uid 分开，只用来定顺序）
 
   function addFiles(files) {
     const list = Array.prototype.filter.call(files, (f) => f && f.type.indexOf('image/') === 0);
@@ -405,14 +565,22 @@
         name: f.name || '粘贴的图片',
         url: url,
         img: img,
+        order: ++fileSeq,   // 同步发号：这个号就是用户点选的先后
         rot: 0,
         zoom: 1,
         ox: 0,
         oy: 0
       };
       img.onload = () => {
-        photos.push(photo);
-        if (!selected) selected = photo.id;
+        // 必须按序号插进去，不能 push：图片解码完成的先后是不确定的，
+        // 直接 push 会让 photos 的顺序变成「谁先解码完」，而列表顺序即排版顺序，
+        // 多选上传时排出来的顺序就是随机的。
+        let at = photos.length;
+        for (let i = 0; i < photos.length; i++) {
+          if (photos[i].order > photo.order) { at = i; break; }
+        }
+        photos.splice(at, 0, photo);
+        if (!selected) selected = photos[0].id;
         pending--;
         renderStrip();
         fitPreview();
