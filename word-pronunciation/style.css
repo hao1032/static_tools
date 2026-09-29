@@ -1,0 +1,376 @@
+/* 英文单词发音练习 —— 样式
+ * 变量、顶栏、卡片、按钮、选项区沿用 clock-learning 的规范，保持整个工具箱观感一致。
+ */
+
+:root {
+  --bg: #f6f8fb;
+  --card: #ffffff;
+  --border: #e6e9ef;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --accent-soft: #eff4ff;
+  --ok: #16a34a;
+  --ok-soft: #f0fdf4;
+  --bad: #dc2626;
+  --warn: #b45309;
+  --shadow: 0 1px 3px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.05);
+
+  /* 口型调色板 */
+  --skin: #ffd9b8;
+  --skin-line: #e8b48c;
+  --hair: #6b4a35;
+  --lip: #e2697a;
+  --lip-line: #c14b5e;
+  --cavity: #7b3540;
+  --tongue: #f2a0a8;
+  --tooth: #ffffff;
+  --tooth-line: #cdd5df;
+  --palate: #f0b49a;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* 顶部栏 */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+.topbar h1 { font-size: 18px; margin: 0; font-weight: 600; }
+.back { color: var(--muted); text-decoration: none; font-size: 14px; white-space: nowrap; }
+.back:hover { color: var(--accent); }
+
+/* 布局：左（舞台 + 卡片/词表） / 右（进度） / 底部整行（选项） */
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 24px;
+  align-items: start;
+}
+.stage-pane { min-width: 0; }
+.panel { align-self: stretch; }
+.panel .card { position: sticky; top: 20px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 24px 24px;
+  box-shadow: var(--shadow);
+}
+.card h2 { margin: 0 0 6px; font-size: 16px; }
+.hint { color: var(--muted); font-size: 12.5px; margin: 0 0 16px; }
+
+/* ---------------- 模式切换 ---------------- */
+.mode-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 18px;
+  background: #f1f4f9;
+  border-radius: 11px;
+}
+.tab {
+  padding: 7px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.tab:hover { color: var(--text); }
+.tab.on { background: var(--card); color: var(--accent); font-weight: 600; box-shadow: 0 1px 2px rgba(16,24,40,.08); }
+
+/* ---------------- 口型舞台 ---------------- */
+.stage-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: end;
+  padding: 8px 0 4px;
+}
+.face-fig { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.face-fig svg { width: 100%; height: auto; max-height: 250px; display: block; }
+.face-fig figcaption { font-size: 12px; color: var(--muted); letter-spacing: .3px; }
+
+/* — 正脸 — */
+.ff-hair { fill: var(--hair); }
+.ff-head { fill: var(--skin); stroke: var(--skin-line); stroke-width: 2; }
+.ff-ear { fill: var(--skin); stroke: var(--skin-line); stroke-width: 2; }
+.ff-brow { fill: none; stroke: var(--hair); stroke-width: 4.5; stroke-linecap: round; }
+.ff-eye ellipse { fill: #fff; stroke: var(--skin-line); stroke-width: 1.5; }
+.ff-eye circle { fill: #33445c; }
+.ff-nose { fill: none; stroke: var(--skin-line); stroke-width: 3; stroke-linecap: round; }
+.ff-cheek { fill: #ffb3a7; opacity: .38; }
+
+#ffLips { fill: var(--lip); stroke: var(--lip-line); stroke-width: 1.4; }
+#ffCavity { fill: var(--cavity); }
+#ffTeeth { fill: var(--tooth); stroke: var(--tooth-line); stroke-width: .8; }
+#ffTongue { fill: var(--tongue); }
+/* 上齿咬下唇时，牙齿画在嘴唇之上 */
+#ffTeeth.on-lip { fill: var(--tooth); stroke: var(--tooth-line); }
+.ff-voice { opacity: 0; transition: opacity .18s ease; }
+.ff-voice path { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; }
+.ff-voice.on { opacity: .85; }
+
+/* — 侧脸 — */
+.pf-head { fill: var(--skin); stroke: var(--skin-line); stroke-width: 2; }
+.pf-nose { fill: var(--skin); stroke: var(--skin-line); stroke-width: 2; }
+.pf-palate { fill: none; stroke: var(--palate); stroke-width: 3; stroke-linecap: round; }
+.pf-cavity { fill: var(--cavity); }
+.pf-tongue { fill: var(--tongue); stroke: #dd8b93; stroke-width: 1.2; }
+.pf-lip { fill: var(--lip); stroke: var(--lip-line); stroke-width: 1.4; }
+.pf-teeth { fill: var(--tooth); stroke: var(--tooth-line); stroke-width: 1; }
+/* 侧脸把嘴部放大到右侧一块，眼鼻只作淡淡示意 */
+.face-side svg { position: relative; }
+
+/* ---------------- 音素提示条 ---------------- */
+.cue-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-height: 46px;
+  margin: 6px 0 18px;
+  padding: 9px 18px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: linear-gradient(180deg, #fbfcff, #f4f7ff);
+  transition: opacity .2s ease;
+}
+.cue-bar.off { opacity: .45; }
+.cue-ph {
+  font-family: "Segoe UI", "DejaVu Sans", "Lucida Sans Unicode", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 34px;
+  text-align: center;
+}
+.cue-tip { font-size: 13.5px; color: var(--text); }
+.cue-bar.idle .cue-ph { color: #b6c2d4; }
+.cue-bar.idle .cue-tip { color: var(--muted); }
+
+/* ---------------- 单词卡片 ---------------- */
+.word-card {
+  padding: 8px 0 4px;
+  text-align: center;
+}
+.wc-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.wc-emoji { font-size: 30px; line-height: 1; }
+.wc-word {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  line-height: 1.15;
+  color: #141f33;
+}
+.wc-phonetic {
+  margin-top: 4px;
+  font-family: "Segoe UI", "DejaVu Sans", "Lucida Sans Unicode", sans-serif;
+  font-size: 17px;
+  color: var(--muted);
+}
+.wc-meaning { margin-top: 6px; font-size: 18px; color: #33445c; }
+.wc-sentence {
+  margin-top: 12px;
+  font-size: 14.5px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--border);
+}
+.btn-slow { color: #b45309; border-color: #fed7aa; background: #fff7ed; font-weight: 600; }
+.btn-slow:hover { background: #ffedd5; border-color: #f97316; color: #9a3412; }
+
+/* 完成卡片 */
+.done-card { text-align: center; padding: 14px 0 6px; }
+.done-emoji { font-size: 46px; line-height: 1; }
+.done-title { margin-top: 8px; font-size: 20px; font-weight: 700; color: var(--ok); }
+.done-sub { margin: 6px 0 16px; font-size: 14px; color: var(--muted); }
+
+/* ---------------- 词表点读 ---------------- */
+.word-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 62vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.wl-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: #fcfdff;
+  transition: border-color .15s, background .15s, transform .05s;
+}
+.wl-row:hover { border-color: #c7d9fb; background: var(--accent-soft); }
+.wl-row.playing { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.wl-row.done { background: var(--ok-soft); border-color: #bbf7d0; }
+.wl-emoji { font-size: 22px; line-height: 1; flex-shrink: 0; width: 28px; text-align: center; }
+.wl-main { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.wl-word { font-size: 17px; font-weight: 600; }
+.wl-phon { font-family: "Segoe UI", "DejaVu Sans", "Lucida Sans Unicode", sans-serif; font-size: 13px; color: var(--muted); }
+.wl-meaning { font-size: 13.5px; color: #4b5b73; }
+.wl-tick { flex-shrink: 0; font-size: 15px; color: var(--ok); opacity: 0; width: 16px; text-align: center; }
+.wl-row.done .wl-tick { opacity: 1; }
+.wl-play {
+  flex-shrink: 0;
+  width: 36px; height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--card);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .05s;
+}
+.wl-play:hover { border-color: var(--accent); background: var(--accent-soft); }
+.wl-play:active { transform: scale(.94); }
+.wl-row.done .wl-play { border-color: #bbf7d0; }
+
+/* ---------------- 右栏：进度 ---------------- */
+.progress-wrap { margin: 4px 0 16px; }
+.progress-bar {
+  height: 9px;
+  border-radius: 999px;
+  background: #eef2f7;
+  overflow: hidden;
+}
+.progress-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  transition: width .3s ease;
+}
+.progress-text { margin-top: 8px; font-size: 13px; color: var(--muted); }
+
+.panel-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.panel-actions .btn { flex: 1 1 auto; font-size: 13px; padding: 8px 10px; }
+
+.tip-box {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+  font-size: 13px;
+  color: #4b5b73;
+}
+.tip-box p { margin: 0 0 10px; }
+.tip-box p:last-child { margin-bottom: 0; }
+.tip-box b { color: var(--accent); }
+.tip-caveat { color: var(--muted); font-size: 12.5px; }
+.tip-caveat b { color: var(--warn); }
+
+.fallback-note {
+  margin-top: 14px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  font-size: 12.5px;
+  color: #92400e;
+}
+
+/* ---------------- 底部选项 ---------------- */
+.options-card {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 34px;
+  padding: 16px 24px;
+}
+.options-group { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.opts-title { font-size: 12.5px; color: var(--muted); letter-spacing: 1px; }
+.opts-saved { font-size: 12px; color: #9aa3b2; }
+
+.check { display: flex; align-items: center; gap: 7px; color: var(--text); font-size: 14px; cursor: pointer; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.mini { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.mini select {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  max-width: 190px;
+}
+.mini select:hover { border-color: var(--accent); }
+
+/* ---------------- 窄屏 ---------------- */
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; padding: 18px 14px 52px; gap: 16px; }
+  .panel .card { position: static; }
+
+  /* 两张脸仍并排，但整体缩小、靠上，让口型和单词同屏可见 */
+  .stage-wrap { gap: 10px; }
+  .face-fig svg { max-height: 168px; }
+  .face-fig figcaption { font-size: 11px; }
+
+  .wc-word { font-size: 33px; }
+  .wc-emoji { font-size: 26px; }
+  .wc-meaning { font-size: 16px; }
+
+  .cue-bar { min-height: 42px; padding: 8px 12px; gap: 8px; margin-bottom: 14px; }
+  .cue-ph { font-size: 18px; }
+  .cue-tip { font-size: 12.5px; }
+
+  .card-actions { gap: 8px; }
+  .card-actions .btn { flex: 1 1 calc(50% - 8px); padding: 9px 10px; font-size: 13.5px; }
+
+  .word-list { max-height: none; }
+  .options-card { flex-direction: column; align-items: flex-start; gap: 12px; padding: 14px 16px; }
+  .options-group { gap: 12px; }
+  .mini select { max-width: 150px; }
+}
+
+@media (max-width: 420px) {
+  .wl-phon { display: none; }
+}
+
+/* 系统开启「减少动态效果」：口型不做缓动过渡，直接切到目标形状 */
+@media (prefers-reduced-motion: reduce) {
+  .wl-row, .btn, .wl-play { transition: none; }
+}

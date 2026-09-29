@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- 发音接口靠 Referer 之外的方式校验，这里不带 Referer，减少被拒的可能 -->
+  <meta name="referrer" content="no-referrer" />
+  <title>英文单词发音练习</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="/version-check.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="back" href="../">← 返回工具箱</a>
+    <h1>英文单词发音练习</h1>
+  </header>
+
+  <main class="layout">
+    <!-- 左（主体）：口型舞台 + 单词卡片 / 词表 -->
+    <section class="stage-pane">
+      <div class="card">
+
+        <!-- 模式切换 -->
+        <div class="mode-tabs" role="tablist">
+          <button class="tab on" id="tabCard" type="button" role="tab" aria-selected="true">卡片闯关</button>
+          <button class="tab" id="tabList" type="button" role="tab" aria-selected="false">词表点读</button>
+        </div>
+
+        <!-- 口型舞台：正脸看唇形，侧脸看舌头。两个视图共用一条时间轴 -->
+        <div class="stage-wrap" id="stageWrap">
+          <figure class="face-fig face-front">
+            <svg id="faceFront" viewBox="0 0 220 250" role="img" aria-label="正面口型">
+              <!-- 头 -->
+              <ellipse class="ff-hair" cx="110" cy="110" rx="93" ry="99" />
+              <ellipse class="ff-head" cx="110" cy="116" rx="84" ry="92" />
+              <ellipse class="ff-ear" cx="27" cy="124" rx="11" ry="16" />
+              <ellipse class="ff-ear" cx="193" cy="124" rx="11" ry="16" />
+              <!-- 眉毛 + 眼睛 -->
+              <path class="ff-brow" d="M67 78 q13 -9 26 -1" />
+              <path class="ff-brow" d="M127 77 q13 -8 26 1" />
+              <g class="ff-eye"><ellipse cx="80" cy="97" rx="11.5" ry="12.5" /><circle cx="80" cy="98" r="5.6" /></g>
+              <g class="ff-eye"><ellipse cx="140" cy="97" rx="11.5" ry="12.5" /><circle cx="140" cy="98" r="5.6" /></g>
+              <!-- 鼻子 -->
+              <path class="ff-nose" d="M110 106 q7 14 1 22 q-6 4 -11 0" />
+              <!-- 腮红 -->
+              <ellipse class="ff-cheek" cx="60" cy="150" rx="14" ry="9" />
+              <ellipse class="ff-cheek" cx="160" cy="150" rx="14" ry="9" />
+              <!-- 嘴（全部由脚本驱动） -->
+              <g id="ffMouth">
+                <ellipse id="ffLips" cx="110" cy="162" rx="32" ry="9" />
+                <ellipse id="ffCavity" cx="110" cy="162" rx="25" ry="3" />
+                <rect id="ffTeeth" x="86" y="157" width="48" height="4" rx="2" />
+                <ellipse id="ffTongue" cx="110" cy="166" rx="15" ry="5" />
+              </g>
+              <!-- 声带提示：浊音时亮 -->
+              <g id="ffVoice" class="ff-voice">
+                <path d="M92 206 q-8 -6 -8 -14" />
+                <path d="M128 206 q8 -6 8 -14" />
+              </g>
+            </svg>
+            <figcaption>正脸 · 看唇形</figcaption>
+          </figure>
+
+          <figure class="face-fig face-side">
+            <svg id="faceSide" viewBox="0 0 220 250" role="img" aria-label="侧面口型（看舌头）">
+              <!-- 头部侧面轮廓（面朝右） -->
+              <path id="pfHead" class="pf-head" d="
+                M 112 24
+                C 74 26, 46 58, 44 98
+                C 42 130, 52 158, 68 176
+                C 78 187, 88 192, 96 196
+                L 96 214
+                L 150 214
+                L 150 200
+                C 152 184, 152 168, 150 152
+                L 150 40
+                Z" />
+              <!-- 鼻腔（示意） -->
+              <path class="pf-nose" d="M 150 84 C 156 88, 160 96, 156 102 L 148 108 L 150 84 Z" />
+              <!-- 上腭（齿龈 → 软腭） -->
+              <path id="pfPalate" class="pf-palate" d="M 148 100 L 148 104 C 130 104, 108 100, 92 94" />
+              <!-- 口腔（深色） -->
+              <path id="pfCavity" class="pf-cavity" d="M 150 104 L 150 152 L 100 152 L 100 104 Z" />
+              <!-- 舌头 -->
+              <path id="pfTongue" class="pf-tongue" d="" />
+              <!-- 上唇（面朝右：向右突出） -->
+              <path id="pfUpperLip" class="pf-lip" d="" />
+              <!-- 下唇 + 下巴 -->
+              <path id="pfLowerLip" class="pf-lip" d="" />
+              <!-- 牙齿 -->
+              <rect id="pfUpperTeeth" class="pf-teeth" x="0" y="0" width="0" height="0" rx="1.5" />
+              <rect id="pfLowerTeeth" class="pf-teeth" x="0" y="0" width="0" height="0" rx="1.5" />
+              <circle class="pf-eye" cx="0" cy="0" r="0" />
+            </svg>
+            <figcaption>侧脸 · 看舌头</figcaption>
+          </figure>
+        </div>
+
+        <!-- 音素提示条：当前音素 · 中文口令 -->
+        <div class="cue-bar" id="cueBar">
+          <span class="cue-ph" id="cuePh">—</span>
+          <span class="cue-tip" id="cueTip">点「读单词」，跟着口型读一遍</span>
+        </div>
+
+        <!-- 卡片闯关 -->
+        <div class="card-view" id="cardView">
+          <div class="word-card" id="wordCard">
+            <div class="wc-top">
+              <span class="wc-emoji" id="wcEmoji">📖</span>
+              <span class="wc-word" id="wcWord">word</span>
+            </div>
+            <div class="wc-phonetic" id="wcPhonetic">/wɜːrd/</div>
+            <div class="wc-meaning" id="wcMeaning">单词</div>
+            <div class="wc-sentence" id="wcSentence">This is a word.</div>
+          </div>
+
+          <div class="done-card" id="doneCard" hidden>
+            <div class="done-emoji">🎉</div>
+            <div class="done-title">这一组练完啦！</div>
+            <div class="done-sub" id="doneSub">已练 0 个单词</div>
+            <button class="btn btn-outline" id="restart" type="button">重新练一遍</button>
+          </div>
+
+          <div class="card-actions">
+            <button class="btn btn-primary" id="playWord" type="button">🔊 读单词</button>
+            <button class="btn" id="playSentence" type="button">🔊 读例句</button>
+            <button class="btn btn-slow" id="playSlow" type="button">🐢 慢速看口型</button>
+            <button class="btn btn-outline" id="nextWord" type="button">✓ 下一个</button>
+          </div>
+        </div>
+
+        <!-- 词表点读 -->
+        <div class="list-view" id="listView" hidden>
+          <div class="word-list" id="wordList"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 右：进度与说明 -->
+    <aside class="panel">
+      <div class="card">
+        <h2>练习进度</h2>
+        <p class="hint" id="topicName">三年级上 · 文具</p>
+
+        <div class="progress-wrap">
+          <div class="progress-bar"><span id="progressFill"></span></div>
+          <div class="progress-text" id="progressText">已练 0 / 0</div>
+        </div>
+
+        <div class="panel-actions">
+          <button class="btn" id="markAll" type="button">全部标为已练</button>
+          <button class="btn" id="clearTopic" type="button">清除本组进度</button>
+        </div>
+
+        <div class="tip-box">
+          <p><b>怎么用</b>：点「读单词」听标准发音，同时看旁边的两张脸——<b>正脸看嘴唇</b>、<b>侧脸看舌头</b>。跟读两遍，再点「下一个」。</p>
+          <p>th、l、r 这几个音在正脸几乎看不出区别，<b>重点看侧脸</b>。</p>
+          <p class="tip-caveat">口型是<b>按音标推算</b>的示意动画，不是逐帧对齐真实录音；用来看清「发音部位」够用，但不等于录音本身。</p>
+        </div>
+
+        <div class="fallback-note" id="fallbackNote" hidden></div>
+      </div>
+    </aside>
+
+    <!-- 页面最下方：选项（自动保存到浏览器） -->
+    <section class="card options-card">
+      <div class="options-group">
+        <span class="opts-title">词库</span>
+        <label class="mini">主题
+          <select id="topic"></select>
+        </label>
+        <label class="mini">发音
+          <select id="accent">
+            <option value="us">真人 · 美音</option>
+            <option value="uk">真人 · 英音</option>
+            <option value="tts">浏览器合成</option>
+          </select>
+        </label>
+        <label class="mini">语速
+          <select id="rate">
+            <option value="0.6">很慢 0.6x</option>
+            <option value="0.8">慢速 0.8x</option>
+            <option value="1">正常 1.0x</option>
+            <option value="1.2">快速 1.2x</option>
+          </select>
+        </label>
+      </div>
+      <div class="options-group">
+        <span class="opts-title">显示</span>
+        <label class="check"><input type="checkbox" id="optFace" checked /><span>口型动画</span></label>
+        <label class="check"><input type="checkbox" id="optCue" checked /><span>发音提示</span></label>
+        <label class="check"><input type="checkbox" id="optPhonetic" checked /><span>音标</span></label>
+        <label class="check"><input type="checkbox" id="optSentence" checked /><span>例句</span></label>
+        <label class="check"><input type="checkbox" id="optEmoji" checked /><span>配图 emoji</span></label>
+        <label class="check"><input type="checkbox" id="optAuto" checked /><span>自动朗读</span></label>
+        <span class="opts-saved" id="savedTip">设置会自动保存</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="./words.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
