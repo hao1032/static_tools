@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数轴上的两条动线段 PQ、MN · 动画讲解</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#0f172a; --ink2:#475569; --ink3:#8a97a8;
+    --line:#e5e9f0; --line2:#eef1f6;
+    --blue:#2563eb; --bluebg:#eaf0ff;
+    --orange:#ea580c; --orangebg:#fff1e7;
+    --red:#dc2626; --redbg:#fdecec;
+    --teal:#0f766e; --tealbg:#e6f4f2;
+    --violet:#7c3aed; --violetbg:#f1ecfe;
+    --green:#15803d; --greenbg:#e8f6ec;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.7;
+  }
+  .wrap{max-width:1320px;margin:0 auto;padding:34px 30px 80px}
+  .hero{margin-bottom:26px}
+  .hero h1{font-size:29px;margin:0 0 8px;letter-spacing:.4px}
+  .hero p{margin:0;color:var(--ink2);font-size:15px}
+  .tag-pq,.tag-mn{padding:1px 9px;border-radius:8px;color:#fff;font-weight:700}
+  .tag-pq{background:var(--blue)} .tag-mn{background:var(--orange)}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+        padding:24px 26px;margin-bottom:22px;box-shadow:0 1px 2px rgba(16,24,40,.03)}
+  .card h2{font-size:19px;margin:0 0 6px}
+  .card h3{font-size:16px;margin:22px 0 8px}
+  .card h4{font-size:14.5px;margin:18px 0 6px;color:var(--ink2)}
+  .muted{color:var(--ink2)}
+  .small{font-size:13.5px}
+
+  details.problem summary{cursor:pointer;font-size:16px;font-weight:600;list-style:none;display:flex;align-items:center;gap:8px}
+  details.problem summary::-webkit-details-marker{display:none}
+  details.problem summary::before{content:"▸";color:var(--ink3);transition:.2s}
+  details.problem[open] summary::before{transform:rotate(90deg)}
+  .prob-body{margin-top:16px;padding:16px 18px;background:#fafbfd;border:1px solid var(--line2);border-radius:10px;font-size:14.5px;color:#26313f}
+
+  /* ---- 舞台 ---- */
+  .stage{padding:20px 22px 22px}
+  .stage-head{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .seg{display:inline-flex;background:#f1f4f9;border-radius:11px;padding:4px;gap:4px}
+  .seg button{border:0;background:transparent;color:var(--ink2);font-size:13.5px;font-weight:600;
+    padding:8px 16px;border-radius:8px;cursor:pointer;transition:.16s;font-family:inherit}
+  .seg button.active{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(16,24,40,.13)}
+  .status{font-size:13.5px;color:var(--ink2);background:#f7f9fc;border:1px solid var(--line2);
+    border-radius:9px;padding:7px 13px}
+  .status b{color:var(--ink)}
+  canvas{display:block;width:100%}
+  .scene-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .scene-scroll canvas{min-width:720px}
+  #scene{border-radius:10px}
+
+  .controls{display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);font-family:inherit;font-size:13.5px;
+    font-weight:600;padding:9px 16px;border-radius:9px;cursor:pointer;transition:.16s;display:inline-flex;
+    align-items:center;gap:7px}
+  .btn:hover{background:#f7f9fc;border-color:#d3dae6}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.primary:hover{background:#1d4ed8}
+  .rates{display:inline-flex;background:#f1f4f9;border-radius:9px;padding:3px;gap:3px}
+  .rates button{border:0;background:transparent;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink2);
+    padding:6px 11px;border-radius:7px;cursor:pointer}
+  .rates button.active{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(16,24,40,.12)}
+  .slider-box{flex:1;min-width:240px;display:flex;align-items:center;gap:10px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;
+    background:#e3e8f0;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:#fff;border:2.5px solid var(--blue);box-shadow:0 1px 4px rgba(37,99,235,.35);cursor:pointer}
+  .tlabel{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;color:var(--ink2);
+    min-width:74px;text-align:right}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;font-size:12.8px;
+    color:var(--ink2);cursor:pointer;transition:.15s;font-family:inherit}
+  .chip:hover{border-color:#c8d3e4;background:#f8fafd;color:var(--ink)}
+  .chip.ans{border-color:#f6c9ab;background:var(--orangebg);color:#9a3412;font-weight:600}
+  .chip.ans:hover{background:#ffe4d1}
+
+  .data{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:10px;margin-top:16px}
+  .item{background:#fafbfd;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;transition:.18s}
+  .item .k{font-size:11.5px;color:var(--ink3);letter-spacing:.3px;margin-bottom:2px}
+  .item .v{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;font-weight:600;color:var(--ink)}
+  .item.hit{background:var(--greenbg);border-color:#bfe3cb}
+  .item.hit .v{color:#166534}
+  .item.hit .k{color:#3f8a5b}
+  .item.hit::after{content:"✓";float:right;color:#16a34a;font-weight:700;margin-top:-22px}
+
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.8px;color:var(--ink2);margin-top:12px}
+  .legend i{display:inline-block;width:22px;height:9px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+  /* ---- 讲解 ---- */
+  .sol{font-size:15px}
+  .sol .qtag{display:inline-block;background:var(--bluebg);color:#1e40af;font-weight:700;font-size:13px;
+    padding:2px 11px;border-radius:7px;margin-bottom:12px}
+  .step{margin:14px 0 0}
+  .step b{color:var(--ink)}
+  .formula{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#f6f8fc;border:1px solid var(--line2);
+    border-radius:8px;padding:3px 8px;font-size:14px;color:#1e293b}
+  .box{border-left:3px solid var(--blue);background:#f8fafd;border-radius:0 9px 9px 0;padding:12px 16px;margin:14px 0}
+  .box.warn{border-left-color:#f59e0b;background:#fffbeb}
+  .box.ok{border-left-color:var(--green);background:var(--greenbg)}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left}
+  th{background:#f7f9fc;font-weight:600;color:var(--ink2);font-size:13px}
+  td.hlc{color:var(--red);font-weight:700}
+  .ansline{margin-top:16px;font-size:15px;font-weight:700;color:#0f172a;background:var(--greenbg);
+    border:1px solid #bfe3cb;border-radius:10px;padding:12px 16px}
+  .ansline .n{color:#166534;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px}
+  .jump{border:1px dashed #c8d3e4;background:#fff;color:#1e40af;font-family:ui-monospace,Menlo,monospace;
+    font-size:12.5px;padding:3px 9px;border-radius:7px;cursor:pointer;margin-left:6px;transition:.15s;font-weight:600}
+  .jump:hover{background:var(--bluebg);border-color:#9db6ee}
+  footer{color:var(--ink3);font-size:13px;text-align:center;padding:8px 0 0}
+  .kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:12px;
+    font-family:ui-monospace,Menlo,monospace;background:#fff;color:var(--ink2)}
+
+  @media (max-width: 680px){
+    .wrap{padding:20px 14px 56px}
+    .card{padding:18px 16px}
+    .stage{padding:16px 14px 18px}
+    .hero h1{font-size:22px;line-height:1.45}
+    .hero p{font-size:13.5px}
+    .seg{display:flex;width:100%}
+    .seg button{flex:1;padding:8px 6px;font-size:12.5px;white-space:nowrap}
+    .stage-head{gap:10px}
+    .status{font-size:12.5px}
+    .data{grid-template-columns:repeat(auto-fit,minmax(104px,1fr))}
+    .item .v{font-size:15px}
+    table{font-size:13px}
+    th,td{padding:7px 8px}
+    .controls{gap:9px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>数轴上的两条动线段 <span class="tag-pq">PQ</span> 与 <span class="tag-mn">MN</span></h1>
+    <p>七年级数轴动点问题 · 动画演示 + 分类讨论全解（含第 3 问的"重合减速"变式）</p>
+  </header>
+
+  <section class="card">
+    <details class="problem" open>
+      <summary>题目原文</summary>
+      <div class="prob-body">
+        如图，数轴上有 <b>A、B、C</b> 三个点，分别表示数 −20、−8、16。有两条动线段 <b>PQ</b> 和 <b>MN</b>（点 Q 与点 A 重合，点 N 与点 B 重合，且点 P 在点 Q 的左边、点 M 在点 N 的左边），PQ = 2，MN = 4。
+        线段 MN 以每秒 1 个单位的速度从点 B 开始向右匀速运动，同时线段 PQ 以每秒 3 个单位的速度从点 A 开始向右匀速运动。<b>当点 Q 运动到点 C 时，线段 PQ 立即以相同的速度返回</b>；当点 Q 回到点 A 时，线段 PQ、MN 同时停止运动。设运动时间为 <i>t</i> 秒（整个运动过程中两线段长度不变）。
+        <div style="margin-top:12px">
+          (1) 当 t = 20 时，点 M 表示的数为 ______，点 Q 表示的数为 ______；<br>
+          (2) 在整个运动过程中，当 CQ = PM 时，求出点 M 表示的数；<br>
+          (3) 在整个运动过程中，<b>当两条线段有重合部分时，速度均变为原来的一半；当重合部分消失后，速度恢复</b>，请直接写出当线段 PQ 和 MN 重合部分长度为 1.5 时所对应的 t 的值。
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="card stage">
+    <div class="stage-head">
+      <div class="seg" id="modeSeg">
+        <button data-mode="orig" class="active">原题运动（速度不变）</button>
+        <button data-mode="variant">第(3)问变式（重合时减速一半）</button>
+      </div>
+      <div class="status" id="status">—</div>
+    </div>
+
+    <div class="scene-scroll"><canvas id="scene"></canvas></div>
+
+    <div class="controls">
+      <button class="btn primary" id="playBtn">▶ 播放</button>
+      <button class="btn" id="resetBtn">↺ 复位</button>
+      <div class="rates" id="rateSeg">
+        <button data-rate="0.25">0.25×</button>
+        <button data-rate="0.5">0.5×</button>
+        <button data-rate="1" class="active">1×</button>
+        <button data-rate="2">2×</button>
+      </div>
+      <div class="slider-box">
+        <input type="range" id="tSlider" min="0" max="24" step="0.005" value="0">
+        <span class="tlabel" id="tLabel">t = 0.00 s</span>
+      </div>
+    </div>
+
+    <div class="chips" id="events"></div>
+
+    <div class="data" id="data"></div>
+
+    <div class="legend">
+      <span><i style="background:#2563eb"></i>线段 PQ（长 2）</span>
+      <span><i style="background:#ea580c"></i>线段 MN（长 4）</span>
+      <span><i style="background:rgba(220,38,38,.28);border:1px dashed rgba(220,38,38,.7)"></i>两条线段的重合部分</span>
+      <span><i style="background:#7c3aed"></i>CQ 距离</span>
+      <span><i style="background:#0f766e"></i>PM 距离</span>
+    </div>
+    <p class="small muted" style="margin-top:12px">
+      快捷键：<span class="kbd">空格</span> 播放 / 暂停　<span class="kbd">←</span><span class="kbd">→</span> 逐帧微调时间　拖动滑块可任意定位。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>重合部分长度 L(t) 的变化曲线</h2>
+    <p class="small muted" id="chartNote">红点 = L = 1.5 的时刻。</p>
+    <canvas id="chart"></canvas>
+  </section>
+
+  <section class="card sol">
+    <span class="qtag">第 (1) 问</span>
+    <h2 style="margin-top:0">t = 20 时 M、Q 各表示什么数</h2>
+
+    <div class="step">
+      <b>① 点 M：</b>MN 一直向右，速度 1 单位/秒，从 −12 出发 ——
+      <span class="formula">M = −12 + t</span>，代入 t = 20 得 <b>M = 8</b>。
+    </div>
+    <div class="step">
+      <b>② 点 Q 要先判断"走到哪一段了"。</b>Q 从 −20 出发向右，速度 3，到 C(16) 需要
+      <span class="formula">(16 − (−20)) ÷ 3 = 12</span> 秒。
+      因为 20 &gt; 12，所以 t = 20 时 Q <b>已经掉头往回走</b>了，此时它从 C 往回走了 20 − 12 = 8 秒：
+      <div class="box">
+        <span class="formula">Q = 16 − 3 × (20 − 12) = 16 − 24 = −8</span>
+      </div>
+    </div>
+    <div class="ansline">答案：点 M 表示的数为 <span class="n">8</span>，点 Q 表示的数为 <span class="n">−8</span>。<button class="jump" data-jump="20">跳到 t = 20</button></div>
+
+    <div class="box warn">
+      <b>易错提醒：</b>图中手写的 "40" 是错的。40 = −20 + 3×20，这是把 20 秒全部当成"一直向右"来算，
+      漏掉了题目里"Q 到 C 立即以相同速度返回"这个条件。只要 t &gt; 12，Q 的表达式就必须换成
+      <span class="formula">Q = 52 − 3t</span>（t = 20 时正好是 −8）。
+    </div>
+  </section>
+
+  <section class="card sol">
+    <span class="qtag">第 (2) 问</span>
+    <h2 style="margin-top:0">当 CQ = PM 时，求点 M 表示的数</h2>
+
+    <h4>第 1 步：把四个点都写成 t 的式子（分段）</h4>
+    <p class="small muted" style="margin:6px 0 0">
+      MN 全程不变：<span class="formula">N = −8 + t，M = −12 + t</span>。
+      PQ 要分两段（t = 12 时在 C 处掉头）：
+    </p>
+    <table>
+      <tr><th>时间段</th><th>P</th><th>Q</th><th>M</th><th>N</th></tr>
+      <tr><td>0 ≤ t ≤ 12（Q 向右）</td><td>−22 + 3t</td><td>−20 + 3t</td><td>−12 + t</td><td>−8 + t</td></tr>
+      <tr><td>12 ≤ t ≤ 24（Q 向左返回）</td><td>50 − 3t</td><td>52 − 3t</td><td>−12 + t</td><td>−8 + t</td></tr>
+    </table>
+
+    <h4>第 2 步：前 12 秒 —— 解方程</h4>
+    <p class="small muted" style="margin:6px 0 0">
+      CQ 是"Q 到 C 的距离"：<span class="formula">CQ = 16 − (−20 + 3t) = 36 − 3t</span>（t ≤ 12 时恒为正）。<br>
+      PM 是"P 到 M 的距离"，要带绝对值：<span class="formula">PM = |M − P| = |(−12 + t) − (−22 + 3t)| = |10 − 2t|</span>。
+    </p>
+    <table>
+      <tr><th>情况</th><th>方程</th><th>解</th><th>是否在区间内</th></tr>
+      <tr><td>0 ≤ t ≤ 5（P 在 M 左边）</td><td>36 − 3t = 10 − 2t</td><td>t = 26</td><td>✗ 舍去</td></tr>
+      <tr><td>5 &lt; t ≤ 12（P 已超过 M）</td><td>36 − 3t = 2t − 10</td><td class="hlc">t = 9.2 = 46/5</td><td>✓</td></tr>
+    </table>
+    <p class="small muted">验算：t = 9.2 时 Q = 7.6，CQ = 16 − 7.6 = 8.4；M = −2.8，P = 5.6，PM = 8.4 ✓</p>
+
+    <h4>第 3 步：后 12 秒 —— 解方程</h4>
+    <p class="small muted" style="margin:6px 0 0">
+      Q 掉头后跑到 C 的左边：<span class="formula">CQ = Q − 16 = (52 − 3t) − 16 = 3t − 36</span>；<br>
+      <span class="formula">PM = |(−12 + t) − (50 − 3t)| = |4t − 62|</span>。
+    </p>
+    <table>
+      <tr><th>情况</th><th>方程</th><th>解</th><th>是否在区间内</th></tr>
+      <tr><td>15.5 ≤ t ≤ 24</td><td>3t − 36 = 4t − 62</td><td>t = 26</td><td>✗ 超过 24</td></tr>
+      <tr><td>12 ≤ t &lt; 15.5</td><td>3t − 36 = 62 − 4t</td><td class="hlc">t = 14</td><td>✓</td></tr>
+    </table>
+    <p class="small muted">验算：t = 14 时 Q = 10，CQ = 6；M = 2，P = 8，PM = 6 ✓</p>
+
+    <div class="ansline">
+      答案：点 M 表示的数为 <span class="n">−2.8</span>（即 −14/5）或 <span class="n">2</span>。
+      <button class="jump" data-jump="9.2">跳到 t = 9.2</button>
+      <button class="jump" data-jump="14">跳到 t = 14</button>
+    </div>
+    <p class="small muted" style="margin-top:10px">动画页面上把 CQ、PM 两条"尺寸线"打开就能看到：到达这两个时刻时，两条线的长度会自动变成一样长，数字栏会亮成绿色 ✓。</p>
+  </section>
+
+  <section class="card sol">
+    <span class="qtag">第 (3) 问</span>
+    <h2 style="margin-top:0">重合长度为 1.5 时的 t（重合时速度减半）</h2>
+
+    <div class="box">
+      <b>核心思路：</b>重合部分长度的变化速度 = 两条线段的<b>相对速度</b>。<br>
+      不重合时：速度 3 与 1；一重合，速度立刻变成 1.5 与 0.5，<b>相对速度也跟着减半</b>。
+      所以只要先找出所有"谁追上谁"的关键时刻，再逐段算出 L(t) 即可。
+    </div>
+
+    <h4>第 1 步：标出全部关键时刻（用相对速度算）</h4>
+    <table>
+      <tr><th>时刻</th><th>发生了什么</th><th>怎么算出来的</th></tr>
+      <tr><td>t = 4</td><td>Q 追上 M，开始重合</td><td>Q 在 −20、M 在 −12，相距 8；同向相对速度 3 − 1 = 2 → 8 ÷ 2 = 4</td></tr>
+      <tr><td>t = 6</td><td>P 追上 M（PQ 整段进入 MN，L 达到最大 2）</td><td>已重合，速度变 1.5 与 0.5，相对速度 1；P 与 M 相距 2 → 2 ÷ 1 = 2</td></tr>
+      <tr><td>t = 8</td><td>Q 追上 N</td><td>同上相对速度 1；Q 与 N 相距 2 → 2 秒</td></tr>
+      <tr><td>t = 10</td><td>P 追上 N，重合消失，速度恢复 3 与 1</td><td>P 与 N 相距 2，相对速度 1 → 2 秒</td></tr>
+      <tr><td>t = 15</td><td>Q 到达 C(16)，掉头向左</td><td>t = 10 时 Q 在 1，还要走 15 个单位 ÷ 3 = 5 秒</td></tr>
+      <tr><td>t = 17.5</td><td>P 追上 N，两条线段<b>相向</b>接触，再次重合</td><td>P 在 14、N 在 4，相距 10；相向速度 3 + 1 = 4 → 10 ÷ 4 = 2.5</td></tr>
+      <tr><td>t = 18.5</td><td>Q 追上 N（L 再次达到 2）</td><td>相向接近速度 1.5 + 0.5 = 2；Q 与 N 相距 2 → 1 秒</td></tr>
+      <tr><td>t = 19.5</td><td>P 追上 M（P 已越过 M，重合开始变小）</td><td>接近速度 2；P 与 M 相距 2 → 1 秒</td></tr>
+      <tr><td>t = 20.5</td><td>Q 追上 M，重合消失，速度恢复</td><td>接近速度 2；Q 与 M 相距 2 → 1 秒</td></tr>
+      <tr><td>t = 28.5</td><td>Q 回到 A(−20)，全部停止</td><td>t = 20.5 时 Q 在 4，走 24 个单位 ÷ 3 = 8 秒</td></tr>
+    </table>
+
+    <h4>第 2 步：写出每一段的重合长度 L(t)</h4>
+    <table>
+      <tr><th>t 区间</th><th>重合部分</th><th>L(t)</th><th>变化速度（相对速度）</th></tr>
+      <tr><td>[4, 6]</td><td>从 M 到 Q</td><td>t − 4</td><td>同向追及 1.5 − 0.5 = 1，L 由 0 升到 2</td></tr>
+      <tr><td>[6, 8]</td><td>整条 PQ ⊂ MN</td><td>2</td><td>不变（最大就是 PQ 的长度 2）</td></tr>
+      <tr><td>[8, 10]</td><td>从 P 到 N</td><td>10 − t</td><td>1，L 由 2 降到 0</td></tr>
+      <tr><td>[10, 17.5]</td><td>无</td><td>0</td><td>PQ 在前方越走越远，直到掉头后才拉近</td></tr>
+      <tr><td>[17.5, 18.5]</td><td>从 P 到 N</td><td>2(t − 17.5)</td><td>相向接近 1.5 + 0.5 = 2，L 由 0 升到 2</td></tr>
+      <tr><td>[18.5, 19.5]</td><td>整条 PQ ⊂ MN</td><td>2</td><td>不变</td></tr>
+      <tr><td>[19.5, 20.5]</td><td>从 M 到 Q</td><td>41 − 2t</td><td>2，L 由 2 降到 0</td></tr>
+    </table>
+
+    <h4>第 3 步：令 L(t) = 1.5，逐段求解</h4>
+    <table>
+      <tr><th>区间</th><th>方程</th><th>解</th></tr>
+      <tr><td>[4, 6]</td><td>t − 4 = 1.5</td><td class="hlc">t = 5.5</td></tr>
+      <tr><td>[6, 8]</td><td>L 恒为 2</td><td>无解</td></tr>
+      <tr><td>[8, 10]</td><td>10 − t = 1.5</td><td class="hlc">t = 8.5</td></tr>
+      <tr><td>[17.5, 18.5]</td><td>2(t − 17.5) = 1.5</td><td class="hlc">t = 18.25</td></tr>
+      <tr><td>[18.5, 19.5]</td><td>L 恒为 2</td><td>无解</td></tr>
+      <tr><td>[19.5, 20.5]</td><td>41 − 2t = 1.5</td><td class="hlc">t = 19.75</td></tr>
+    </table>
+
+    <div class="ansline">
+      答案：<span class="n">t = 5.5、8.5、18.25、19.75</span>
+      <button class="jump" data-jump="5.5" data-mode="variant">跳到 5.5</button>
+      <button class="jump" data-jump="8.5" data-mode="variant">跳到 8.5</button>
+      <button class="jump" data-jump="18.25" data-mode="variant">跳到 18.25</button>
+      <button class="jump" data-jump="19.75" data-mode="variant">跳到 19.75</button>
+    </div>
+
+    <div class="box warn">
+      <b>这道题的两个大坑：</b><br>
+      ① 只想到"PQ 从后面追 MN"，得到 t = 5.5、8.5 就收笔 —— 漏掉了 Q 掉头后两条线段<b>相向运动</b>造成的第二次重合（对应 18.25、19.75）。<br>
+      ② 忘了"重合期间速度减半"。一旦减速，后面所有时刻都会被推后：比如重合结束的时刻从 7 变成 10，Q 到 C 的时刻不变（15），而最终停止时间从 24 变成 28.5。
+    </div>
+  </section>
+
+  <section class="card sol">
+    <h2 style="margin-top:0">一句话总结</h2>
+    <p style="margin:6px 0 0">
+      这类"双动线段"题目的通用套路是：<b>① 用"起点 + 速度 × 时间"写出每个端点的坐标（分段，掉头处是分界点）；
+      ② 用两个端点的坐标差表示线段长度并加绝对值；③ 把"追上 / 相遇"翻译成相对速度，先锁定关键时刻，再在每一小段里做一元一次方程。</b>
+      第 (3) 问多了一个"速度会变"的机关，只要抓住"<b>相对速度决定重合长度怎么变</b>"，它其实就是一道分段函数题。
+    </p>
+    <div style="margin-top:16px" class="small muted">
+      参考答案：<br>
+      (1) M = 8，Q = −8　（图中手写的 40 有误）<br>
+      (2) M = −2.8 或 M = 2<br>
+      (3) t = 5.5、8.5、18.25、19.75
+    </div>
+  </section>
+
+  <footer>动画由 canvas 实时绘制 · 全部关键时间点均用数值模拟复核过</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= 1. 参数与运动学模型 ================= */
+  const CFG = { A:-20, B:-8, C:16, LPQ:2, LMN:4 };
+  const V_FULL = { pq:3, mn:1 };
+  const V_HALF = { pq:1.5, mn:0.5 };
+  const DOM_X0 = -24.6, DOM_X1 = 22.4;
+
+  function ovl(P,Q,M,N){ return Math.max(0, Math.min(Q,N) - Math.max(P,M)); }
+
+  // 数值积分：重合则速度减半（variant），到 C 掉头，回到 A 停止
+  function buildTrack(variant){
+    const dt = 0.0005;
+    const arr = [];
+    let t = 0, P = CFG.A - CFG.LPQ, Q = CFG.A, M = CFG.B - CFG.LMN, N = CFG.B, dir = 1;
+    arr.push({t:0,P:P,Q:Q,M:M,N:N,ov:0,dir:1,half:false});
+    for(let i=0;i<200000;i++){
+      const o = ovl(P,Q,M,N);
+      const half = variant && o > 1e-12;
+      const vpq = (half ? V_HALF.pq : V_FULL.pq) * dir;
+      const vmn = half ? V_HALF.mn : V_FULL.mn;
+      P += vpq*dt; Q += vpq*dt; M += vmn*dt; N += vmn*dt; t += dt;
+      if(dir === 1 && Q >= CFG.C){ Q = CFG.C; P = CFG.C - CFG.LPQ; dir = -1; }
+      if(dir === -1 && Q <= CFG.A){
+        Q = CFG.A; P = CFG.A - CFG.LPQ;
+        arr.push({t:t,P:P,Q:Q,M:M,N:N,ov:0,dir:dir,half:false});
+        break;
+      }
+      arr.push({t:t,P:P,Q:Q,M:M,N:N,ov:ovl(P,Q,M,N),dir:dir,half:half});
+    }
+    arr.end = Math.round(arr[arr.length-1].t * 20) / 20;   // 收敛到 0.05 的整数倍，避免浮点尾差
+    return arr;
+  }
+
+  function stateAt(arr, t){
+    const n = arr.length;
+    if(t <= arr[0].t) return arr[0];
+    if(t >= arr[n-1].t) return arr[n-1];
+    let lo = 0, hi = n - 1;
+    while(hi - lo > 1){ const mid = (lo + hi) >> 1; if(arr[mid].t <= t) lo = mid; else hi = mid; }
+    const a = arr[lo], b = arr[hi];
+    const f = (t - a.t) / ((b.t - a.t) || 1);
+    return {
+      t: t,
+      P: a.P + (b.P - a.P) * f,
+      Q: a.Q + (b.Q - a.Q) * f,
+      M: a.M + (b.M - a.M) * f,
+      N: a.N + (b.N - a.N) * f,
+      ov: a.ov + (b.ov - a.ov) * f,
+      dir: a.dir, half: a.half
+    };
+  }
+
+  const TRACKS = { orig: buildTrack(false), variant: buildTrack(true) };
+
+  /* ================= 2. 关键时刻 / 答案 ================= */
+  const EVENTS = {
+    orig: [
+      {t:4,   label:'t=4　Q 追上 M，开始重合'},
+      {t:5,   label:'t=5　P 追上 M（PQ 整段进入 MN）'},
+      {t:6,   label:'t=6　Q 追上 N'},
+      {t:7,   label:'t=7　P 追上 N，重合消失'},
+      {t:12,  label:'t=12　Q 到 C，掉头返回'},
+      {t:14.5,label:'t=14.5　P 追上 N，再次重合'},
+      {t:16,  label:'t=16　Q 追上 M，重合消失'},
+      {t:24,  label:'t=24　Q 回到 A，全部停止', ans:false}
+    ],
+    variant: [
+      {t:4,    label:'t=4　Q 追上 M，开始重合'},
+      {t:6,    label:'t=6　P 追上 M（PQ 整段进入 MN）'},
+      {t:8,    label:'t=8　Q 追上 N'},
+      {t:10,   label:'t=10　P 追上 N，重合消失、速度恢复'},
+      {t:15,   label:'t=15　Q 到 C，掉头返回'},
+      {t:17.5, label:'t=17.5　P 追上 N，相向再次重合'},
+      {t:18.5, label:'t=18.5　Q 追上 N'},
+      {t:19.5, label:'t=19.5　P 追上 M'},
+      {t:20.5, label:'t=20.5　Q 追上 M，重合消失、速度恢复'},
+      {t:28.5, label:'t=28.5　Q 回到 A，全部停止'}
+    ]
+  };
+  const ANSWERS = {
+    orig:    [9.2, 14],
+    variant: [5.5, 8.5, 18.25, 19.75]
+  };
+  function crossings(arr, level){
+    const res = [];
+    for(let i=1;i<arr.length;i++){
+      const a = arr[i-1], b = arr[i];
+      if((a.ov - level) * (b.ov - level) < 0){
+        const f = (level - a.ov) / ((b.ov - a.ov) || 1);
+        const tv = a.t + f * (b.t - a.t);
+        if(res.length === 0 || tv - res[res.length-1] > 0.3) res.push(tv);
+      }
+    }
+    return res;
+  }
+  const CROSS = { orig: crossings(TRACKS.orig,1.5), variant: crossings(TRACKS.variant,1.5) };
+
+  /* ================= 3. 状态 ================= */
+  const S = { mode:'orig', t:0, playing:false, rate:1 };
+  const track = () => TRACKS[S.mode];
+  const tEnd  = () => track().end;
+
+  /* ================= 4. 画布准备 ================= */
+  const scene = document.getElementById('scene');
+  const sctx  = scene.getContext('2d');
+  const chart = document.getElementById('chart');
+  const cctx  = chart.getContext('2d');
+  const SCENE_H = 282, CHART_H = 226;
+  let SW = 0, CW = 0;
+
+  function fit(){
+    const dpr = window.devicePixelRatio || 1;
+    SW = scene.clientWidth || 900;
+    scene.width = Math.round(SW * dpr); scene.height = Math.round(SCENE_H * dpr);
+    scene.style.height = SCENE_H + 'px';
+    sctx.setTransform(dpr,0,0,dpr,0,0);
+    CW = chart.clientWidth || 900;
+    chart.width = Math.round(CW * dpr); chart.height = Math.round(CHART_H * dpr);
+    chart.style.height = CHART_H + 'px';
+    cctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', function(){ fit(); render(); });
+
+  function px(v, w, padL, padR){
+    return padL + (v - DOM_X0) / (DOM_X1 - DOM_X0) * (w - padL - padR);
+  }
+
+  /* ================= 5. 画数轴场景 ================= */
+  const Y = { cq:38, pm:72, pqlab:92, pqTop:124, pqBot:144, mnTop:176, mnBot:196,
+              bandTop:96, bandBot:198, axis:226, tickLab:250 };
+  const UNIT = () => (SW - 26 - 46) / (DOM_X1 - DOM_X0);
+
+  function roundRect(ctx,x,y,w,h,r){
+    r = Math.min(r, h/2, w/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+  }
+
+  function dimLine(ctx, x1, x2, y, color, text){
+    if(Math.abs(x2-x1) < 6) return;
+    const a = Math.min(x1,x2), b = Math.max(x1,x2);
+    ctx.save();
+    ctx.strokeStyle = color; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(a,y); ctx.lineTo(b,y);
+    ctx.moveTo(a,y-5); ctx.lineTo(a,y+5);
+    ctx.moveTo(b,y-5); ctx.lineTo(b,y+5);
+    ctx.stroke();
+    const label = text + ' = ' + (Math.abs(x2-x1) / UNIT()).toFixed(2);
+    ctx.font = '600 12.5px ui-monospace, Menlo, monospace';
+    const tw = ctx.measureText(label).width;
+    const cx = (a+b)/2;
+    ctx.fillStyle = '#ffffff';
+    roundRect(ctx, cx - tw/2 - 7, y - 20, tw + 14, 17, 6); ctx.fill();
+    ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, cx, y - 11);
+    ctx.restore();
+  }
+
+  function drawScene(st){
+    const ctx = sctx, w = SW;
+    ctx.clearRect(0,0,w,SCENE_H);
+    const padL = 26, padR = 46;
+    const X = v => px(v, w, padL, padR);
+
+    // --- A/B/C 竖向参考虚线 ---
+    ctx.save();
+    ctx.setLineDash([4,5]); ctx.lineWidth = 1;
+    const keyPts = [
+      {v:CFG.A, c:'rgba(15,118,110,.5)'},
+      {v:CFG.B, c:'rgba(124,58,237,.5)'},
+      {v:CFG.C, c:'rgba(220,38,38,.6)'}
+    ];
+    keyPts.forEach(function(k){
+      ctx.strokeStyle = k.c;
+      ctx.beginPath(); ctx.moveTo(X(k.v), Y.bandTop); ctx.lineTo(X(k.v), Y.axis); ctx.stroke();
+    });
+    ctx.restore();
+
+    // --- 重合带 ---
+    if(st.ov > 1e-9){
+      const lo = Math.max(st.P, st.M), hi = Math.min(st.Q, st.N);
+      const x1 = X(lo), x2 = X(hi);
+      ctx.save();
+      ctx.fillStyle = 'rgba(220,38,38,.13)';
+      ctx.fillRect(x1, Y.bandTop, x2 - x1, Y.bandBot - Y.bandTop);
+      ctx.setLineDash([5,4]); ctx.strokeStyle = 'rgba(220,38,38,.75)'; ctx.lineWidth = 1.4;
+      ctx.strokeRect(x1, Y.bandTop, x2 - x1, Y.bandBot - Y.bandTop);
+      ctx.restore();
+
+      const txt = '重合长度 = ' + st.ov.toFixed(2);
+      ctx.font = '700 12.5px ui-monospace, Menlo, monospace';
+      const tw = ctx.measureText(txt).width;
+      const cx = (x1 + x2) / 2;
+      const lx = Math.max(padL, Math.min(w - padR - tw - 14, cx - tw/2 - 7));
+      ctx.save();
+      ctx.fillStyle = '#dc2626';
+      roundRect(ctx, lx, Y.pqlab, tw + 14, 19, 7); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(txt, lx + tw/2 + 7, Y.pqlab + 9.5);
+      ctx.restore();
+    }
+
+    // --- 线段的竖直投影线 ---
+    ctx.save();
+    ctx.setLineDash([2,4]); ctx.lineWidth = 1;
+    const proj = [
+      {v:st.P, c:'rgba(37,99,235,.45)'},
+      {v:st.Q, c:'rgba(37,99,235,.45)'},
+      {v:st.M, c:'rgba(234,88,12,.45)'},
+      {v:st.N, c:'rgba(234,88,12,.45)'}
+    ];
+    proj.forEach(function(p){
+      ctx.strokeStyle = p.c;
+      ctx.beginPath();
+      ctx.moveTo(X(p.v), p.v===st.P||p.v===st.Q ? Y.pqBot : Y.mnBot);
+      ctx.lineTo(X(p.v), Y.axis + 1);
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    // --- 数轴 ---
+    ctx.save();
+    ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
+    const axL = 12, axR = w - 12;
+    ctx.beginPath(); ctx.moveTo(axL, Y.axis); ctx.lineTo(axR - 10, Y.axis); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(axR - 10, Y.axis - 6); ctx.lineTo(axR, Y.axis); ctx.lineTo(axR - 10, Y.axis + 6);
+    ctx.closePath(); ctx.fillStyle = '#334155'; ctx.fill();
+    ctx.restore();
+
+    // --- 刻度与数字 ---
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for(let v=-24; v<=22; v+=2){
+      const x = X(v);
+      const key = (v === CFG.A) ? 'A' : (v === CFG.B) ? 'B' : (v === CFG.C) ? 'C' : null;
+      ctx.strokeStyle = key ? '#334155' : '#c3ccda';
+      ctx.lineWidth = key ? 2 : 1;
+      ctx.beginPath(); ctx.moveTo(x, Y.axis); ctx.lineTo(x, Y.axis + (key ? 10 : 5)); ctx.stroke();
+      if(v % 4 === 0 || key){
+        if(key){
+          const col = key === 'A' ? '#0f766e' : key === 'B' ? '#7c3aed' : '#dc2626';
+          const t = key + '(' + v + ')';
+          ctx.font = '700 13px ui-monospace, Menlo, monospace';
+          const tw = ctx.measureText(t).width;
+          ctx.fillStyle = col === '#0f766e' ? '#e6f4f2' : col === '#7c3aed' ? '#f1ecfe' : '#fdecec';
+          roundRect(ctx, x - tw/2 - 5, Y.tickLab - 3, tw + 10, 19, 6); ctx.fill();
+          ctx.fillStyle = col;
+          ctx.fillText(t, x, Y.tickLab);
+        }else{
+          ctx.fillStyle = '#8a97a8';
+          ctx.font = '12px ui-monospace, Menlo, monospace';
+          ctx.fillText(String(v), x, Y.tickLab);
+        }
+      }
+    }
+    ctx.restore();
+
+    // --- 尺寸线 CQ / PM ---
+    dimLine(ctx, X(st.Q), X(CFG.C), Y.cq, '#7c3aed', 'CQ');
+    dimLine(ctx, X(st.P), X(st.M), Y.pm, '#0f766e', 'PM');
+
+    // --- 坐标数值标签（整段合并成一个，避免窄条上挤在一起） ---
+    function tag(x1, x2, y, color, text){
+      ctx.save();
+      ctx.font = '600 11px ui-monospace, Menlo, monospace';
+      const tw = ctx.measureText(text).width;
+      let lx = (x1 + x2) / 2 - tw / 2;
+      lx = Math.max(padL + 4, Math.min(w - padR - tw - 4, lx));
+      ctx.fillStyle = 'rgba(255,255,255,.92)';
+      roundRect(ctx, lx - 7, y - 10, tw + 14, 19, 6); ctx.fill();
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, lx + tw/2, y);
+      ctx.restore();
+    }
+
+    // --- PQ 条 ---
+    (function(){
+      const x1 = X(st.P), x2 = X(st.Q);
+      const g = ctx.createLinearGradient(0, Y.pqTop, 0, Y.pqBot);
+      g.addColorStop(0,'#3b82f6'); g.addColorStop(1,'#2563eb');
+      ctx.fillStyle = g;
+      roundRect(ctx, x1, Y.pqTop, x2-x1, Y.pqBot-Y.pqTop, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.95)';
+      ctx.font = '700 12.5px ui-monospace, Menlo, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('P', x1 + 9, (Y.pqTop+Y.pqBot)/2);
+      ctx.fillText('Q', x2 - 9, (Y.pqTop+Y.pqBot)/2);
+      tag(x1, x2, Y.pqBot + 12, '#1d4ed8', 'P = ' + st.P.toFixed(1) + '　Q = ' + st.Q.toFixed(1));
+    })();
+
+    // --- MN 条 ---
+    (function(){
+      const x1 = X(st.M), x2 = X(st.N);
+      const g = ctx.createLinearGradient(0, Y.mnTop, 0, Y.mnBot);
+      g.addColorStop(0,'#f97316'); g.addColorStop(1,'#ea580c');
+      ctx.fillStyle = g;
+      roundRect(ctx, x1, Y.mnTop, x2-x1, Y.mnBot-Y.mnTop, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.95)';
+      ctx.font = '700 12.5px ui-monospace, Menlo, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('M', x1 + 9, (Y.mnTop+Y.mnBot)/2);
+      ctx.fillText('N', x2 - 9, (Y.mnTop+Y.mnBot)/2);
+      tag(x1, x2, Y.mnBot + 12, '#c2410c', 'M = ' + st.M.toFixed(1) + '　N = ' + st.N.toFixed(1));
+    })();
+
+    // --- 掉头位置标记（红色小三角，贴在 C 处） ---
+    if(st.dir === -1){
+      const xc = X(CFG.C);
+      ctx.save();
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath();
+      ctx.moveTo(xc, Y.bandTop - 2); ctx.lineTo(xc - 6, Y.bandTop - 12); ctx.lineTo(xc + 6, Y.bandTop - 12);
+      ctx.closePath(); ctx.fill();
+      ctx.font = '700 11.5px ui-monospace, Menlo, monospace';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText('Q 在此掉头返回', xc + 10, Y.bandTop - 7);
+      ctx.restore();
+    }
+  }
+
+  /* ================= 6. 画 L(t) 曲线 ================= */
+  function drawChart(){
+    const ctx = cctx, w = CW, h = CHART_H;
+    const arr = track();
+    const padL = 46, padR = 22, padT = 20, padB = 34;
+    const plotW = w - padL - padR, plotH = h - padT - padB;
+    const tMax = arr.end, yMax = 2.3;
+    const cx = t => padL + t / tMax * plotW;
+    const cy = v => padT + plotH - v / yMax * plotH;
+
+    ctx.clearRect(0,0,w,h);
+    const gray = S.mode === 'orig';
+
+    // 网格
+    ctx.save();
+    ctx.strokeStyle = '#eef1f6'; ctx.lineWidth = 1;
+    for(let t=0; t<=tMax; t+=2){
+      ctx.beginPath(); ctx.moveTo(cx(t), padT); ctx.lineTo(cx(t), padT+plotH); ctx.stroke();
+    }
+    for(let v=0; v<=2.2; v+=0.5){
+      ctx.beginPath(); ctx.moveTo(padL, cy(v)); ctx.lineTo(padL+plotW, cy(v)); ctx.stroke();
+    }
+    ctx.strokeStyle = '#dfe5ee';
+    ctx.beginPath(); ctx.moveTo(padL, cy(0)); ctx.lineTo(padL+plotW, cy(0)); ctx.stroke();
+    ctx.restore();
+
+    // 坐标文字
+    ctx.save();
+    ctx.fillStyle = '#8a97a8'; ctx.font = '11.5px ui-monospace, Menlo, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const lstep = CW < 640 ? 4 : 2;
+    for(let t=0; t<=tMax; t+=lstep) ctx.fillText(String(t), cx(t), padT+plotH+8);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for(let v=0; v<=2.2; v+=0.5) ctx.fillText(v.toFixed(1), padL-8, cy(v));
+    ctx.textAlign = 'left';
+    ctx.fillText('L', padL-38, padT-8);
+    ctx.textAlign = 'right';
+    ctx.fillText('t / 秒', padL+plotW, padT+plotH+22);
+    ctx.restore();
+
+    // L = 1.5 目标线
+    ctx.save();
+    ctx.strokeStyle = 'rgba(220,38,38,.55)'; ctx.lineWidth = 1.3; ctx.setLineDash([6,5]);
+    ctx.beginPath(); ctx.moveTo(padL, cy(1.5)); ctx.lineTo(padL+plotW, cy(1.5)); ctx.stroke();
+    ctx.restore();
+    ctx.save();
+    ctx.fillStyle = 'rgba(220,38,38,.85)'; ctx.font = '600 11.5px ui-monospace, Menlo, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('目标长度 1.5', padL + 4, cy(1.5) - 4);
+    ctx.restore();
+
+    // 曲线
+    const step = Math.max(1, Math.floor(arr.length / 1600));
+    ctx.save();
+    ctx.beginPath();
+    let started = false;
+    for(let i=0;i<arr.length;i+=step){
+      const s = arr[i];
+      const X0 = cx(s.t), Y0 = cy(s.ov);
+      if(!started){ ctx.moveTo(X0,Y0); started = true; } else ctx.lineTo(X0,Y0);
+    }
+    ctx.lineTo(cx(arr[arr.length-1].t), cy(arr[arr.length-1].ov));
+    ctx.lineWidth = 2.6;
+    ctx.strokeStyle = gray ? '#b6c2d4' : '#2563eb';
+    ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.restore();
+
+    // 与 1.5 的交点
+    const cs = CROSS[S.mode];
+    ctx.save();
+    cs.forEach(function(tv){
+      const X0 = cx(tv), Y0 = cy(1.5);
+      ctx.beginPath(); ctx.arc(X0, Y0, 5, 0, Math.PI*2);
+      ctx.fillStyle = gray ? '#cbd5e1' : '#dc2626';
+      ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.6; ctx.stroke();
+      ctx.fillStyle = gray ? '#94a3b8' : '#b91c1c';
+      ctx.font = '700 11.5px ui-monospace, Menlo, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(tv.toFixed(2), X0, Y0 - 8);
+    });
+    ctx.restore();
+
+    // 当前时刻游标
+    const st = stateAt(arr, S.t);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(15,23,42,.45)'; ctx.lineWidth = 1.2; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(cx(st.t), padT); ctx.lineTo(cx(st.t), padT+plotH); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(cx(st.t), cy(st.ov), 4.5, 0, Math.PI*2);
+    ctx.fillStyle = '#0f172a'; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.restore();
+
+    document.getElementById('chartNote').textContent = gray
+      ? '当前是"原题运动"（重合不影响速度），曲线为灰色作参考；红点并非第 (3) 问答案。切到"第(3)问变式"才是题目要求的运动方式。'
+      : '第 (3) 问变式下 L(t) 的完整图像：两段"山形"（重合期），每段都在上升到 2 的途中和下降离开 2 的途中各穿过一次 1.5，所以共有 4 个时刻。';
+  }
+
+  /* ================= 7. 面板刷新 ================= */
+  const dataBox = document.getElementById('data');
+  const KEYS = [
+    {k:'时间 t',       id:'t'},
+    {k:'P（PQ 左端）', id:'P'},
+    {k:'Q（PQ 右端）', id:'Q'},
+    {k:'M（MN 左端）', id:'M'},
+    {k:'N（MN 右端）', id:'N'},
+    {k:'CQ 距离',      id:'CQ'},
+    {k:'PM 距离',      id:'PM'},
+    {k:'重合长度 L',   id:'L'}
+  ];
+  dataBox.innerHTML = KEYS.map(function(o){
+    return '<div class="item" id="it-'+o.id+'"><div class="k">'+o.k+'</div><div class="v">—</div></div>';
+  }).join('');
+  const cell = {};
+  KEYS.forEach(function(o){ cell[o.id] = document.getElementById('it-'+o.id).querySelector('.v'); });
+  const item = {};
+  KEYS.forEach(function(o){ item[o.id] = document.getElementById('it-'+o.id); });
+
+  const statusEl = document.getElementById('status');
+
+  function refreshPanel(st){
+    const CQ = Math.abs(CFG.C - st.Q);
+    const PM = Math.abs(st.M - st.P);
+    cell.t.textContent  = st.t.toFixed(2) + ' s';
+    cell.P.textContent  = st.P.toFixed(2);
+    cell.Q.textContent  = st.Q.toFixed(2);
+    cell.M.textContent  = st.M.toFixed(2);
+    cell.N.textContent  = st.N.toFixed(2);
+    cell.CQ.textContent = CQ.toFixed(2);
+    cell.PM.textContent = PM.toFixed(2);
+    cell.L.textContent  = st.ov.toFixed(2);
+
+    item.CQ.classList.toggle('hit', Math.abs(CQ - PM) < 0.02 && st.t > 0.05);
+    item.PM.classList.toggle('hit', Math.abs(CQ - PM) < 0.02 && st.t > 0.05);
+    item.L.classList.toggle('hit', Math.abs(st.ov - 1.5) < 0.02);
+
+    var parts = [];
+    if(S.mode === 'orig'){
+      parts.push('原题：PQ <b>' + (st.dir === 1 ? '向右 3' : '向左返回 3') + '</b> 单位/秒，MN <b>向右 1</b> 单位/秒');
+    }else{
+      if(st.ov > 1e-6){
+        parts.push('⚑ 两条线段正在重合 → 速度减半：PQ <b>' + (st.dir === 1 ? '1.5' : '1.5（向左）') + '</b>、MN <b>0.5</b>');
+      }else{
+        parts.push('未重合 → 原速：PQ <b>' + (st.dir === 1 ? '3' : '3（向左）') + '</b>、MN <b>1</b>');
+      }
+    }
+    if(st.dir === -1) parts.push('Q 已在 C 处掉头');
+    if(Math.abs(CQ - PM) < 0.02 && st.t > 0.05) parts.push('<b style="color:#15803d">CQ = PM ✓</b>');
+    if(Math.abs(st.ov - 1.5) < 0.02) parts.push('<b style="color:#15803d">L = 1.5 ✓</b>');
+    statusEl.innerHTML = parts.join('　·　');
+  }
+
+  /* ================= 8. 控件 ================= */
+  const playBtn = document.getElementById('playBtn');
+  const slider  = document.getElementById('tSlider');
+  const tLabel  = document.getElementById('tLabel');
+
+  function setPlaying(p){
+    S.playing = p;
+    playBtn.textContent = p ? '❚❚ 暂停' : '▶ 播放';
+  }
+  function render(){
+    const st = stateAt(track(), S.t);
+    drawScene(st);
+    refreshPanel(st);
+    drawChart();
+    slider.value = S.t;
+    tLabel.textContent = 't = ' + S.t.toFixed(2) + ' s';
+  }
+  function setT(t){
+    S.t = Math.max(0, Math.min(tEnd(), t));
+  }
+  function setMode(m){
+    S.mode = m;
+    document.querySelectorAll('#modeSeg button').forEach(function(b){
+      b.classList.toggle('active', b.dataset.mode === m);
+    });
+    slider.max = tEnd();
+    slider.step = m === 'variant' ? 0.025 : 0.02;
+    if(S.t > tEnd()) S.t = tEnd();
+    buildEvents();
+    render();
+  }
+
+  document.querySelectorAll('#modeSeg button').forEach(function(b){
+    b.addEventListener('click', function(){ setMode(b.dataset.mode); });
+  });
+  document.querySelectorAll('#rateSeg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#rateSeg button').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active'); S.rate = parseFloat(b.dataset.rate);
+    });
+  });
+  playBtn.addEventListener('click', function(){ setPlaying(!S.playing); });
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    setPlaying(false); S.t = 0; setT(0); render();
+  });
+  slider.addEventListener('input', function(){
+    setPlaying(false);
+    setT(parseFloat(slider.value));
+    render();
+  });
+
+  window.addEventListener('keydown', function(e){
+    if(e.code === 'Space'){ e.preventDefault(); setPlaying(!S.playing); }
+    if(e.code === 'ArrowRight'){ setPlaying(false); setT(S.t + (e.shiftKey ? 1 : 0.1)); render(); }
+    if(e.code === 'ArrowLeft'){ setPlaying(false); setT(S.t - (e.shiftKey ? 1 : 0.1)); render(); }
+  });
+
+  // 事件按钮
+  function buildEvents(){
+    const box = document.getElementById('events');
+    box.innerHTML = '';
+    EVENTS[S.mode].forEach(function(ev){
+      const b = document.createElement('button');
+      b.className = 'chip';
+      b.textContent = ev.label;
+      b.addEventListener('click', function(){ setPlaying(false); setT(ev.t); render(); });
+      box.appendChild(b);
+    });
+    ANSWERS[S.mode].forEach(function(tv){
+      const b = document.createElement('button');
+      b.className = 'chip ans';
+      b.textContent = (S.mode === 'variant' ? '★ 答案 t = ' : 'CQ=PM 时 t = ') + tv;
+      b.addEventListener('click', function(){ setPlaying(false); setT(tv); render(); });
+      box.appendChild(b);
+    });
+  }
+
+  // 讲解里的跳转按钮
+  document.querySelectorAll('.jump').forEach(function(b){
+    b.addEventListener('click', function(){
+      const tv = parseFloat(b.dataset.jump);
+      const m  = b.dataset.mode;
+      if(m && S.mode !== m){ setMode(m); }
+      setPlaying(false);
+      setT(tv); render();
+      document.querySelector('.stage').scrollIntoView({behavior:'smooth', block:'center'});
+    });
+  });
+
+  /* ================= 9. 主循环 ================= */
+  let last = 0;
+  function loop(ts){
+    if(!last) last = ts;
+    const dt = Math.min(0.06, (ts - last) / 1000);
+    last = ts;
+    if(S.playing){
+      S.t += dt * S.rate;
+      if(S.t >= tEnd()){ S.t = tEnd(); setPlaying(false); }
+      render();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // 启动
+  fit();
+  setMode('orig');
+  render();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
