@@ -114,6 +114,17 @@
       R("keyword", /^\s*>\s?[^\n]*/y),
       R("space", /\s+/y)
     ],
+    // CLSF / 刀位源文件（NX Cutter Location Source File）
+    clsf: [
+      R("comment", /\$\$[^\n]*/y),
+      R("keyword", /\b(?:TOOL PATH|TLDATA|MSYS|GOTO|RAPID|FEDRAT|SPINDL|COOLNT|CUTCOM|END-OF-PATH|PAINT|COLOR|CYCLE|CIRCLE|GOHOME|CUTTER|TLAXIS|INTOL|OUTTOL|MCSYS|MULTAX|OPSTOP|OPSKIP|ARCSLP|TRACUT|PPRINT|CLAMP|INSERT|PARTNO|MACHIN|UNITS|ROTATE|TRANS|ORIGIN|OPER|LOAD|SELECT|COPY|FINI|STOP|SET|OFST|TURRET|PRINT|PIVOT|GODLTA|COUPLE|THREAD)\b/y),
+      R("builtin", /\b(?:MMPM|MMPR|RPM|SFM|IPM|IPR|ON|OFF|REV|CLW|CCLW|STEP|CLEAR|FEDTO|RTRCTO|RAPTO|DWELL|MILL|DRILL|XY|YZ|ZX|RADIUS|DIAMETR|LEFT|RIGHT|NEXT|START|POINT|LINE|ARC|CONE|CYLNDR|PLANE|VECTOR|MATRIX|TIMES|DEEP|PECK|BREAKCHP|STD|MAX|MIN|AUTO|MANUAL)\b/y),
+      R("number", /-?\b\d+(?:\.\d+)?\b/y),
+      R("punct", /[,/()]/y),
+      R("operator", /[-=]/y),
+      R("ident", /[A-Za-z_][\w.]*/y),
+      R("space", /\s+/y)
+    ],
     plaintext: [
       R("space", /\s+/y)
     ]
@@ -154,6 +165,14 @@
     return html || "​";
   }
 
+  // CLSF 检测：出现 >=2 条主词行，或有 1 条主词行且带 $$ 注释（$$ 在 shell/JS 里也常见，故要求两者兼有）
+  function detectClsf(t) {
+    var re = /^\s*(?:TOOL PATH\/|TLDATA\/|MSYS\/|GOTO\/|RAPID\b|FEDRAT\b|SPINDL\/|COOLNT\/|CUTCOM\/|END-OF-PATH|PAINT\/|CYCLE\/|CIRCLE\/|CUTTER\/|TLAXIS\/|MCSYS\/|MULTAX\/|LOAD\/|SELECT\/|TURRET\/|GOHOME\b)/gm;
+    var hit = 0;
+    while (re.exec(t) !== null) { hit++; if (hit >= 2) return true; }
+    return hit >= 1 && /^\s*\$\$/m.test(t);
+  }
+
   function detectLang(text) {
     var t = (text || "").trim();
     if (!t) return "plaintext";
@@ -162,6 +181,7 @@
       if (/^\s*<\?xml/i.test(t) || /^\s*<!DOCTYPE/i.test(t)) return "xml";
       return "html";
     }
+    if (detectClsf(t)) return "clsf";
     if (/\b(def|class|import|elif|self|print)\b/.test(t) && /:\s*$/m.test(t)) return "python";
     if (/\b(SELECT|INSERT|UPDATE|DELETE|CREATE\s+TABLE)\b/i.test(t) && /\bFROM\b/i.test(t)) return "sql";
     if (/\b(function|const|let|var|=>|console\.|document\.)\b/.test(t)) return "javascript";
@@ -402,7 +422,47 @@
     var h = Math.max(ha, hb, hla, hlb, 160);
     wrapA.style.height = (h + border) + "px";
     wrapB.style.height = (h + border) + "px";
+    zeroEditorScroll();
   }
+
+  // ============================================================
+  // 粘贴长文本：禁止自动滚到底部
+  // ============================================================
+  // 浏览器在插入文本后会「把光标滚入视野」。本工具的编辑框高度恒等于内容高度
+  // （fitHeights 保证），这个滚动本不该发生，而且会带来两个副作用：
+  //   ① 整个页面被滚到底部（用户看到的是粘贴内容的末尾，而不是开头）
+  //   ② textarea 自身被设置 scrollTop，而高亮层 .hl 不跟着滚 → 叠层错位
+  // 处理：paste 时记下当前页面滚动位置，随后一小段时间内把它钉住，并清零编辑框自身滚动。
+  function zeroEditorScroll() {
+    if (taA.scrollTop) taA.scrollTop = 0;
+    if (taB.scrollTop) taB.scrollTop = 0;
+    if (hlA.scrollTop) hlA.scrollTop = 0;
+    if (hlB.scrollTop) hlB.scrollTop = 0;
+  }
+
+  var pinY = null, pinTimer = null, pinBound = false;
+  function onPinScroll() {
+    zeroEditorScroll();
+    if (pinY != null && window.scrollY !== pinY) window.scrollTo(0, pinY);
+  }
+  function holdScrollOnPaste() {
+    pinY = window.scrollY;                 // paste 在插入之前触发，此刻的位置即用户原本所在
+    if (!pinBound) {
+      window.addEventListener("scroll", onPinScroll, true);
+      pinBound = true;
+    }
+    if (pinTimer) clearTimeout(pinTimer);
+    pinTimer = setTimeout(function () {    // 只钉很短一段时间，之后立刻放开，不影响用户手动滚动
+      pinY = null;
+      if (pinBound) { window.removeEventListener("scroll", onPinScroll, true); pinBound = false; }
+    }, 250);
+  }
+  taA.addEventListener("paste", holdScrollOnPaste);
+  taB.addEventListener("paste", holdScrollOnPaste);
+  taA.addEventListener("drop", holdScrollOnPaste);   // 拖入文本同理
+  taB.addEventListener("drop", holdScrollOnPaste);
+  taA.addEventListener("scroll", zeroEditorScroll);
+  taB.addEventListener("scroll", zeroEditorScroll);
 
   function toDiffText() {
     var out = [];
@@ -496,9 +556,40 @@
       b: "{\n  \"name\": \"worker\",\n  \"replicas\": 5,\n  \"features\": [\"cache\", \"retry\", \"metrics\"],\n  \"timeout\": 45,\n  \"region\": \"ap-shanghai\"\n}"
     },
     {
-      name: "NC 代码（刀具路径 / 仅局部不同）",
+      name: "CLSF 刀位文件（仅局部不同）",
       a: "TOOL PATH/004-平面铣,TOOL,T_CUTTER_D46\nTLDATA/TCUTTER,46.0000,0.0000,0.0000,60.0000,20.0000,12.0000\nMSYS/-437.5000,0.0000,-61.0000,-1.0000000,0.0000000,0.0000000,0.0000000,1.0000000,0.0000000\n$$ centerline data",
       b: "TOOL PATH/PLANAR_MILL,TOOL,TCUTTER_TOOL\nTLDATA/TCUTTER_TOOL,46.0000,0.0000,0.0000,60.0000,20.0000,12.0000\nMSYS/-437.500000,0.000000,-61.000000,-1.000000,0.000000,0.000000,0.000000,1.000000,0.000000\n$$ centerline data"
+    },
+    {
+      name: "CLSF 完整刀轨（含 GOTO / RAPID）",
+      a: [
+        "TOOL PATH/CAVITY_MILL,TOOL,D10",
+        "TLDATA/MILL,10.0000,0.0000,50.0000,0.0000,0.0000",
+        "MSYS/0.0000,0.0000,0.0000,1.0000000,0.0000000,0.0000000,0.0000000,1.0000000,0.0000000",
+        "$$ centerline data",
+        "PAINT/COLOR,186",
+        "RAPID",
+        "GOTO/0.0000,0.0000,50.0000",
+        "FEDRAT/MMPM,500.0000",
+        "GOTO/0.0000,0.0000,0.0000",
+        "GOTO/80.0000,0.0000,0.0000",
+        "SPINDL/RPM,1200.0000,CLW",
+        "END-OF-PATH"
+      ].join("\n"),
+      b: [
+        "TOOL PATH/CAVITY_MILL,TOOL,D10R2",
+        "TLDATA/MILL,10.0000,2.0000,50.0000,0.0000,0.0000",
+        "MSYS/0.0000,0.0000,0.0000,1.0000000,0.0000000,0.0000000,0.0000000,1.0000000,0.0000000",
+        "$$ centerline data",
+        "PAINT/COLOR,31",
+        "RAPID",
+        "GOTO/0.0000,0.0000,50.0000",
+        "FEDRAT/MMPM,800.0000",
+        "GOTO/0.0000,0.0000,-5.0000",
+        "GOTO/90.0000,0.0000,-5.0000",
+        "SPINDL/RPM,1500.0000,CLW",
+        "END-OF-PATH"
+      ].join("\n")
     }
   ];
   var sampleMenu = $("sampleMenu");
