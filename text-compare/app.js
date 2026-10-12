@@ -204,107 +204,148 @@
     return { ops: ops, big: false };
   }
 
+  // 分词：空白 / 字母数字串 / 单个其它字符。
+  // 把 _ - . / , 等符号与中日韩文字都切成单字符，T_CUTTER_D46 与 TCUTTER_TOOL
+  // 才能细化到 "_" 一级，而不是整块变红。
   function tokenizeWords(line) {
-    var toks = [], m, re = /(\s+)|([A-Za-z0-9_]+)|([^\sA-Za-z0-9_]+)/g;
+    var toks = [], m, re = /(\s+)|([A-Za-z0-9]+)|([\s\S])/g;
     while ((m = re.exec(line)) !== null) toks.push(m[0]);
     return toks;
   }
 
-  function diffWords(A, B) {
-    var a = tokenizeWords(A), b = tokenizeWords(B);
-    var eq = function (x, y) {
-      if (ignoreWs) return x.trim() === y.trim() && /\S/.test(x);
-      return x === y;
-    };
-    if (a.length * b.length > 2500000) {
-      return {
-        a: a.map(function (t) { return { t: t, rem: true }; }),
-        b: b.map(function (t) { return { t: t, add: true }; })
-      };
+  function tokenSame(x, y) {
+    if (ignoreWs && !x.trim() && !y.trim()) return true;
+    return x === y;
+  }
+
+  // 通用 LCS，返回两侧的“是否命中公共子序列”标记
+  function lcsMark(a, b) {
+    var n = a.length, m = b.length, i, j;
+    var ca = new Array(n), cb = new Array(m);
+    if (n * m > 400000) { // 超长行直接整段标记，避免卡顿
+      for (i = 0; i < n; i++) ca[i] = true;
+      for (j = 0; j < m; j++) cb[j] = true;
+      return { ca: ca, cb: cb };
     }
-    var n = a.length, m = b.length;
     var dp = [];
-    for (var x = 0; x <= n; x++) dp.push(new Int32Array(m + 1));
-    for (var i = n - 1; i >= 0; i--) {
-      for (var j = m - 1; j >= 0; j--) {
-        if (eq(a[i], b[j])) dp[i][j] = dp[i + 1][j + 1] + 1;
-        else dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+    for (i = 0; i <= n; i++) dp.push(new Int32Array(m + 1));
+    for (i = n - 1; i >= 0; i--) {
+      for (j = m - 1; j >= 0; j--) {
+        dp[i][j] = tokenSame(a[i], b[j]) ? dp[i + 1][j + 1] + 1
+                                         : Math.max(dp[i + 1][j], dp[i][j + 1]);
       }
     }
-    var ca = new Array(n).fill(false), cb = new Array(m).fill(false);
+    for (i = 0; i < n; i++) ca[i] = false;
+    for (j = 0; j < m; j++) cb[j] = false;
     i = 0; j = 0;
     while (i < n && j < m) {
-      if (eq(a[i], b[j])) { ca[i] = true; cb[j] = true; i++; j++; }
+      if (tokenSame(a[i], b[j])) { ca[i] = true; cb[j] = true; i++; j++; }
       else if (dp[i + 1][j] >= dp[i][j + 1]) i++;
       else j++;
     }
-    return {
-      a: a.map(function (t, idx) { return { t: t, rem: !ca[idx] }; }),
-      b: b.map(function (t, idx) { return { t: t, add: !cb[idx] }; })
-    };
+    return { ca: ca, cb: cb };
   }
 
-  function wordHTML(tokens, isIns) {
+  // 行内差异。selfText = 本侧这一行，partnerText = 对侧对应行，返回值 a 对应本侧、b 对应对侧。
+  // - 词级：直接整行分词后做 LCS。因为 token 天然对齐，不需要裁前后缀；
+  //   若先按字符裁前缀，会把 0.0000 / 0.000000 这类数字切成碎片，反而更难读。
+  // - 字符级：先裁掉公共前后缀（把差异锚定在真正变化处，避免 LCS 散乱匹配），再逐字符 LCS。
+  // 输出的 token 序列拼接后必须与原始行完全一致，否则高亮层会与输入框错位。
+  function inlineDiff(selfText, partnerText, mode) {
+    var p = 0, s = 0, n = selfText.length, m = partnerText.length;
+    if (mode === "char") {
+      while (p < n && p < m && selfText.charAt(p) === partnerText.charAt(p)) p++;
+      while (s < n - p && s < m - p &&
+             selfText.charAt(n - 1 - s) === partnerText.charAt(m - 1 - s)) s++;
+    }
+    var aMid = selfText.slice(p, n - s), bMid = partnerText.slice(p, m - s);
+    var at = mode === "char" ? aMid.split("") : tokenizeWords(aMid);
+    var bt = mode === "char" ? bMid.split("") : tokenizeWords(bMid);
+    var mk = lcsMark(at, bt);
+
+    var aOut = [], bOut = [], k;
+    if (p > 0) {
+      aOut.push({ t: selfText.slice(0, p), chg: false });
+      bOut.push({ t: partnerText.slice(0, p), chg: false });
+    }
+    for (k = 0; k < at.length; k++) aOut.push({ t: at[k], chg: !mk.ca[k] });
+    for (k = 0; k < bt.length; k++) bOut.push({ t: bt[k], chg: !mk.cb[k] });
+    if (s > 0) {
+      aOut.push({ t: selfText.slice(n - s), chg: false });
+      bOut.push({ t: partnerText.slice(m - s), chg: false });
+    }
+    return { a: aOut, b: bOut };
+  }
+
+  function inlineHTML(tokens, cls) {
     var h = "";
     for (var k = 0; k < tokens.length; k++) {
-      var tk = tokens[k];
-      var e = esc(tk.t);
-      if (isIns) h += tk.add ? '<span class="wd-add">' + e + "</span>" : e;
-      else h += tk.rem ? '<span class="wd-rem">' + e + "</span>" : e;
+      var tk = tokens[k], e = esc(tk.t);
+      h += (tk.chg && tk.t.length) ? '<span class="' + cls + '">' + e + "</span>" : e;
     }
     return h || "​";
   }
 
-  // 将 ops 拆分为两侧对齐的逐行列表：缺失侧补 blank 行，保证两侧行数相同、同一行横向对齐
+  // 将 ops 拆分为两侧对齐的逐行列表：缺失侧补 blank 行，保证两侧行数相同、同一行横向对齐。
+  // 注意：LCS 回溯会把一个变化块输出成「先若干删、再若干增」，若逐条就近配对会
+  // 把 A 的第 3 行配到 B 的第 1 行。正确做法是按“变化块”切分，块内按出现顺序一一对应。
   function classify(ops) {
-    var A = [], B = [];
-    for (var i = 0; i < ops.length; i++) {
-      var op = ops[i];
-      if (op.t === "eq") {
-        A.push({ text: op.a, type: "eq", partner: null });
-        B.push({ text: op.b, type: "eq", partner: null });
-      } else if (op.t === "del") {
-        // 如果下一条是 ins，则把 del/ins 配成一对“替换”行
-        if (i + 1 < ops.length && ops[i + 1].t === "ins") {
-          var next = ops[i + 1];
-          A.push({ text: op.a, type: "del", partner: next.b });
-          B.push({ text: next.b, type: "ins", partner: op.a });
-          i++;
-        } else {
-          A.push({ text: op.a, type: "del", partner: null });
-          B.push({ text: "", type: "blank", partner: op.a });
+    var A = [], B = [], an = 0, bn = 0, i = 0;
+    while (i < ops.length) {
+      if (ops[i].t === "eq") {
+        A.push({ text: ops[i].a, type: "eq", partner: null, num: ++an });
+        B.push({ text: ops[i].b, type: "eq", partner: null, num: ++bn });
+        i++;
+        continue;
+      }
+      // 收集一个连续变化块
+      var dels = [], inss = [];
+      while (i < ops.length && ops[i].t !== "eq") {
+        if (ops[i].t === "del") dels.push(ops[i].a);
+        else inss.push(ops[i].b);
+        i++;
+      }
+      var n = Math.max(dels.length, inss.length);
+      for (var k = 0; k < n; k++) {
+        var hasD = k < dels.length, hasI = k < inss.length;
+        if (hasD && hasI) { // 块内第 k 行 → 替换
+          A.push({ text: dels[k], type: "del", partner: inss[k], num: ++an });
+          B.push({ text: inss[k], type: "ins", partner: dels[k], num: ++bn });
+        } else if (hasD) {  // 多出来的删除行
+          A.push({ text: dels[k], type: "del", partner: null, num: ++an });
+          B.push({ text: "", type: "blank", partner: dels[k], num: null });
+        } else {            // 多出来的新增行
+          A.push({ text: "", type: "blank", partner: inss[k], num: null });
+          B.push({ text: inss[k], type: "ins", partner: null, num: ++bn });
         }
-      } else { // ins（未与上一条 del 配对的情况）
-        A.push({ text: "", type: "blank", partner: op.b });
-        B.push({ text: op.b, type: "ins", partner: null });
       }
     }
     return { A: A, B: B };
   }
 
   // 渲染单侧的叠层 HTML（与另一侧对齐，blank 行为空占位行）
-  function renderOverlay(lines, lang, wordMode) {
+  // mode: "line" | "word" | "char"；非 line 时对“替换行”再做行内高亮
+  function renderOverlay(lines, lang, mode) {
     var html = "";
     for (var i = 0; i < lines.length; i++) {
       var e = lines[i];
+      var gut = '<span class="gut">' + (e.num == null ? "" : e.num) + "</span>";
       if (e.type === "blank") {
         // 镜像对侧文本（隐藏），使 blank 占位行获得与对侧内容相同的折行高度，保证后续行对齐
         var mirror = e.partner ? '<span class="blank-mirror">' + esc(e.partner) + '</span>' : '';
-        html += '<div class="ln blank">' + mirror + '</div>';
+        html += '<div class="ln blank">' + gut + mirror + '</div>';
         continue;
       }
-      var cls = e.type; // eq | del | ins
+      var cls = e.type + (e.partner ? " rep" : "");
       var code;
-      if (wordMode && e.partner) {
-        var dw = diffWords(e.text, e.partner);
-        code = e.type === "del" ? wordHTML(dw.a, false) : wordHTML(dw.b, true);
-      } else if (wordMode) {
-        code = e.type === "del" ? '<span class="wd-rem">' + esc(e.text) + "</span>"
-             : e.type === "ins" ? '<span class="wd-add">' + esc(e.text) + "</span>" : esc(e.text);
+      if (e.partner && mode !== "line") {
+        // e.text 是本侧这一行，inlineDiff 的 .a 就是本侧，两侧都用 .a
+        var d = inlineDiff(e.text, e.partner, mode);
+        code = inlineHTML(d.a, e.type === "del" ? "wd-rem" : "wd-add");
       } else {
         code = highlightHTML(e.text, lang);
       }
-      html += '<div class="ln ' + cls + '">' + code + "</div>";
+      html += '<div class="ln ' + cls + '">' + gut + code + "</div>";
     }
     return html || '<div class="ln"></div>';
   }
@@ -316,7 +357,7 @@
     var A = taA.value, B = taB.value;
     ignoreWs = igwsEl.checked;
     var lang = langEl.value === "auto" ? detectLang(A || B) : langEl.value;
-    var wordMode = granSeg.querySelector(".seg-btn.on").getAttribute("data-gran") === "word";
+    var mode = granSeg.querySelector(".seg-btn.on").getAttribute("data-gran");
 
     if (A === "" && B === "") {
       hlA.innerHTML = ""; hlB.innerHTML = "";
@@ -331,18 +372,21 @@
     currentOps = res.ops;
 
     var sides = classify(res.ops);
-    hlA.innerHTML = renderOverlay(sides.A, lang, wordMode);
-    hlB.innerHTML = renderOverlay(sides.B, lang, wordMode);
+    hlA.innerHTML = renderOverlay(sides.A, lang, mode);
+    hlB.innerHTML = renderOverlay(sides.B, lang, mode);
     fitHeights();
 
-    var added = 0, removed = 0;
-    for (var i = 0; i < res.ops.length; i++) {
-      if (res.ops[i].t === "ins") added++;
-      else if (res.ops[i].t === "del") removed++;
+    var added = 0, removed = 0, changed = 0;
+    for (var k = 0; k < sides.A.length; k++) {
+      var e = sides.A[k];
+      if (e.type === "del") { if (e.partner) changed++; else removed++; }
+      else if (e.type === "blank") added++; // A 侧占位行 = B 侧纯新增
     }
     statsEl.innerHTML =
       "A <b>" + aLines.length + "</b> 行 → B <b>" + bLines.length + "</b> 行 · " +
-      "新增 <span class=\"st-add\">" + added + "</span> · 删除 <span class=\"st-del\">" + removed + "</span>" +
+      "修改 <span class=\"st-chg\">" + changed + "</span> · " +
+      "新增 <span class=\"st-add\">" + added + "</span> · " +
+      "删除 <span class=\"st-del\">" + removed + "</span>" +
       (res.big ? ' · <span class="st-warn">文本过大，已简化对比</span>' : "");
   }
 
@@ -450,6 +494,11 @@
       name: "JSON 配置",
       a: "{\n  \"name\": \"worker\",\n  \"replicas\": 3,\n  \"features\": [\"cache\", \"retry\"],\n  \"timeout\": 30\n}",
       b: "{\n  \"name\": \"worker\",\n  \"replicas\": 5,\n  \"features\": [\"cache\", \"retry\", \"metrics\"],\n  \"timeout\": 45,\n  \"region\": \"ap-shanghai\"\n}"
+    },
+    {
+      name: "NC 代码（刀具路径 / 仅局部不同）",
+      a: "TOOL PATH/004-平面铣,TOOL,T_CUTTER_D46\nTLDATA/TCUTTER,46.0000,0.0000,0.0000,60.0000,20.0000,12.0000\nMSYS/-437.5000,0.0000,-61.0000,-1.0000000,0.0000000,0.0000000,0.0000000,1.0000000,0.0000000\n$$ centerline data",
+      b: "TOOL PATH/PLANAR_MILL,TOOL,TCUTTER_TOOL\nTLDATA/TCUTTER_TOOL,46.0000,0.0000,0.0000,60.0000,20.0000,12.0000\nMSYS/-437.500000,0.000000,-61.000000,-1.000000,0.000000,0.000000,0.000000,1.000000,0.000000\n$$ centerline data"
     }
   ];
   var sampleMenu = $("sampleMenu");

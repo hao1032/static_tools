@@ -8,15 +8,19 @@
   --accent-soft: #eff4ff;
   --shadow: 0 1px 3px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.05);
 
-  /* diff 颜色 */
-  --del-bg: rgba(220,38,38,.12);
+  /* diff 颜色：整行底色分成「纯增/纯删」与「替换」两档，替换行更浅，
+     让视觉重心落在行内的字符级变化上，避免整行大红大绿 */
+  --del-bg: rgba(220,38,38,.14);
+  --del-bg-soft: rgba(220,38,38,.055);
   --del-fg: #b91c1c;
-  --ins-bg: rgba(22,163,74,.12);
+  --ins-bg: rgba(22,163,74,.14);
+  --ins-bg-soft: rgba(22,163,74,.06);
   --ins-fg: #15803d;
-  --wd-rem-bg: rgba(220,38,38,.22);
-  --wd-rem-fg: #b91c1c;
-  --wd-add-bg: rgba(22,163,74,.26);
-  --wd-add-fg: #15803d;
+  --wd-rem-bg: rgba(220,38,38,.30);
+  --wd-rem-fg: #991b1b;
+  --wd-add-bg: rgba(22,163,74,.32);
+  --wd-add-fg: #14532d;
+  --chg-fg: #b45309;
 
   /* 代码高亮 */
   --tk-comment: #94a3b8;
@@ -170,7 +174,7 @@ body {
 .hl, .editor {
   margin: 0;
   border: 0;
-  padding: 14px;
+  padding: 14px 16px 14px 56px;
   font: 13px/1.6 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   white-space: pre-wrap;
   word-break: break-word;
@@ -197,13 +201,40 @@ body {
   outline: none;
   overflow: hidden;
 }
-.ln { min-height: 1.6em; }
+.ln { position: relative; min-height: 1.6em; }
+
+/* 行号栏：绝对定位，不参与折行，保证与输入框文字严格对齐 */
+.gut {
+  position: absolute;
+  left: -48px;
+  width: 40px;
+  text-align: right;
+  color: #aab2bf;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+.ln.del .gut { color: #d99b9b; }
+.ln.ins .gut { color: #93bfa2; }
+
+/* 纯增 / 纯删：整行底色明显 */
 .ln.del { background: var(--del-bg); }
 .ln.ins { background: var(--ins-bg); }
-.ln.blank { background: rgba(0,0,0,0.02); }
+/* 替换（配对）行：底色压浅，把注意力交给行内高亮 */
+.ln.del.rep { background: var(--del-bg-soft); }
+.ln.ins.rep { background: var(--ins-bg-soft); }
+.ln.blank { background: rgba(0,0,0,0.022); }
 .blank-mirror { visibility: hidden; }
-.ln .code.rem, .wd-rem { background: var(--wd-rem-bg); color: var(--wd-rem-fg); text-decoration: line-through; border-radius: 3px; }
-.ln .code.add, .wd-add { background: var(--wd-add-bg); color: var(--wd-add-fg); border-radius: 3px; }
+
+.wd-rem {
+  background: var(--wd-rem-bg);
+  color: var(--wd-rem-fg);
+  border-radius: 3px;
+}
+.wd-add {
+  background: var(--wd-add-bg);
+  color: var(--wd-add-fg);
+  border-radius: 3px;
+}
 
 /* 代码高亮 token */
 .tk-comment { color: var(--tk-comment); font-style: italic; }
@@ -223,6 +254,7 @@ body {
 .stats b { color: var(--text); }
 .st-add { color: var(--ins-fg); font-weight: 600; }
 .st-del { color: var(--del-fg); font-weight: 600; }
+.st-chg { color: var(--chg-fg); font-weight: 600; }
 .st-warn { color: #d97706; }
 
 .footer-note { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; }

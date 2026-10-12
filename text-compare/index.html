@@ -36,8 +36,9 @@
       <div class="field">
         <label>粒度</label>
         <div class="seg" id="granSeg">
-          <button type="button" class="seg-btn on" data-gran="line">行级</button>
+          <button type="button" class="seg-btn" data-gran="line">整行</button>
           <button type="button" class="seg-btn" data-gran="word">词级</button>
+          <button type="button" class="seg-btn on" data-gran="char">字符级</button>
         </div>
       </div>
 
@@ -88,7 +89,7 @@
       </div>
     </section>
 
-    <p class="footer-note">差异实时显示在编辑器中：A 栏被删除 / 修改的行标红，B 栏新增 / 修改的行标绿；词级粒度下改动词以内联红删 / 绿增标出。</p>
+    <p class="footer-note">差异实时显示在编辑器中：先按行定位，再在行内做字符级细化——A 栏删除 / 改动处标红，B 栏新增 / 改动处标绿，其余文字保持原色。整行底色越浅表示该行属于「修改」，纯新增 / 纯删除行底色更明显。</p>
   </main>
 
   <script src="./app.js"></script>
