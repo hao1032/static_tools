@@ -631,14 +631,26 @@
     const words = getCurrentWords();
     if (currentIndex < 0 || currentIndex >= words.length) return;
     const w = words[currentIndex];
-    // 例句不做口型（音标对不上），只朗读
-    const token = claim();
+    // 例句不做口型（音标对不上），只朗读。
+    // 这是用户主动点的按钮，所以不看「例句」显示开关——关了显示也照样能听。
+    speakSentence(w.sentence, claim());
+  }
+
+  /** 朗读一句例句：真人优先，失败兜底 TTS。不涉及口型动画 */
+  async function speakSentence(sentence, token) {
     if (state.options.accent === 'tts') {
-      playTTS(w.sentence, state.options.rate, 5, token);
-    } else {
-      playRealAudio(w.sentence, state.options.rate, token).then((dur) => {
-        if (dur === 0 && token === runId) playTTS(w.sentence, state.options.rate, 5, token);
-      });
+      await playTTS(sentence, state.options.rate, 5, token);
+      return;
+    }
+    const dur = await playRealAudio(sentence, state.options.rate, token);
+    if (dur === 0 && token === runId) {
+      if (!fallbackShown) {
+        fallbackShown = true;
+        const note = $('fallbackNote');
+        note.textContent = '真人发音暂时不可用（离线或接口异常），已改用浏览器合成语音。';
+        note.hidden = false;
+      }
+      await playTTS(sentence, state.options.rate, 5, token);
     }
   }
 
@@ -698,26 +710,21 @@
       return;
     }
 
-    // 间隔
-    await sleep(350, thisRun);
-    if (thisRun !== runId) {
-      row.classList.remove('playing');
-      return;
-    }
-
-    // 播例句（无口型）
-    if (state.options.accent === 'tts') {
-      await playTTS(w.sentence, state.options.rate, 5, thisRun);
-    } else {
-      const dur = await playRealAudio(w.sentence, state.options.rate, thisRun);
-      if (dur === 0 && thisRun === runId) {
-        await playTTS(w.sentence, state.options.rate, 5, thisRun);
+    // 播例句（无口型）。这里的例句是跟着单词自动连读的，
+    // 所以要看「例句」开关：关掉显示就不再自动跟读，只读单词
+    // （卡片模式里那个「🔊 读例句」按钮是用户主动点的，不受此限）。
+    if (state.options.sentence) {
+      await sleep(350, thisRun);   // 单词和例句之间留个换气间隔
+      if (thisRun !== runId) {
+        row.classList.remove('playing');
+        return;
       }
-    }
 
-    if (thisRun !== runId) {
-      row.classList.remove('playing');
-      return;
+      await speakSentence(w.sentence, thisRun);
+      if (thisRun !== runId) {
+        row.classList.remove('playing');
+        return;
+      }
     }
 
     row.classList.remove('playing');

@@ -25,6 +25,54 @@
       line-height: 1.6;
     }
     .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
+    .head { padding-bottom: 4px; }
+    .head h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: .5px; }
+    .head .sub { margin: 0 0 24px; color: var(--muted); font-size: 15px; }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      font: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 9px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all .15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tab:hover { border-color: var(--accent); color: var(--accent); }
+    .tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(37,99,235,.18);
+    }
+    .tab .cnt {
+      font-size: 12px;
+      font-weight: 700;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tab.active .cnt { background: rgba(255,255,255,.22); color: #fff; }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -55,83 +103,128 @@
   <script src="/version-check.js" defer></script>
 </head>
 <body>
+  <header class="wrap head">
+    <h1>Static Tools</h1>
+    <p class="sub">实用小工具 · 小游戏 · 学习助手，全部纯静态、免费、双击即用。</p>
+    <nav class="tabs" role="tablist" aria-label="分类切换">
+      <button class="tab active" data-cat="tool" role="tab" aria-selected="true">工具 <span class="cnt">6</span></button>
+      <button class="tab" data-cat="game" role="tab" aria-selected="false">游戏 <span class="cnt">2</span></button>
+      <button class="tab" data-cat="edu" role="tab" aria-selected="false">教育 <span class="cnt">5</span></button>
+    </nav>
+  </header>
+
   <main class="wrap">
-    <section class="grid">
-      <a class="tool" href="./icons-generator/">
+    <section class="grid" id="grid">
+      <!-- 工具 -->
+      <a class="tool" data-cat="tool" href="./icons-generator/">
         <div class="ico">字</div>
         <h3>ICO 文字图标生成器</h3>
         <p>多层文字（含中文）组合生成 .ico，支持字号、颜色、透明度、位置、背景与圆角。</p>
       </a>
 
-      <a class="tool" href="./photo-layout/">
+      <a class="tool" data-cat="tool" href="./photo-layout/">
         <div class="ico">拼</div>
         <h3>照片排版 · 拼版打印</h3>
         <p>把多张照片拼到一张纸：证件照排版（一寸 / 二寸 / 护照）、九宫格拼图，可选纸张尺寸与 DPI 后导出或直接打印。</p>
       </a>
 
-      <a class="tool" href="./formatter/">
+      <a class="tool" data-cat="tool" href="./formatter/">
         <div class="ico">{}</div>
         <h3>代码格式化工具</h3>
         <p>格式化 / 压缩 JSON、HTML、XML，支持自动检测类型与缩进配置。</p>
       </a>
 
-      <a class="tool" href="./clsf-viewer/">
+      <a class="tool" data-cat="tool" href="./clsf-viewer/">
         <div class="ico">&#9881;</div>
         <h3>CLSF 刀轨预览</h3>
         <p>解析 NX CLSF 刀轨文件，3D 可视化 GOTO / CIRCLE / CYCLE 运动路径，支持动画回放与运动类型筛选。</p>
       </a>
 
-      <a class="tool" href="./clock-learning/">
-        <div class="ico">钟</div>
-        <h3>认识时钟 · 时间练习</h3>
-        <p>给小学生练习认钟表：随机出题，自己读出时和分，答错播放指针动画一步步讲解。</p>
-      </a>
-
-      <a class="tool" href="./text-compare/">
+      <a class="tool" data-cat="tool" href="./text-compare/">
         <div class="ico">&lt;&gt;</div>
         <h3>文本对比工具</h3>
         <p>行级 / 词级差异对比，内置 JavaScript、JSON、HTML、CSS、Python、SQL 等代码高亮，支持统一与并排视图。</p>
       </a>
 
-      <a class="tool" href="./china-holidays/">
+      <a class="tool" data-cat="tool" href="./china-holidays/">
         <div class="ico">假</div>
         <h3>中国节假日</h3>
         <p>月历展示法定放假与调休补班情况，默认显示当月，可切换查看任意月份。数据来自 timor.tech 免费节假日 API。</p>
       </a>
 
-      <a class="tool" href="./maze/">
+      <!-- 游戏 -->
+      <a class="tool" data-cat="game" href="./maze/">
         <div class="ico">&#9672;</div>
         <h3>迷宫大冒险</h3>
         <p>键盘 / 触屏操控角色走出迷宫，7 档难度（含迷雾与最短通关挑战），自动计时计步与本地最佳记录。</p>
       </a>
 
-      <a class="tool" href="./pvz/">
+      <a class="tool" data-cat="game" href="./pvz/">
         <div class="ico">&#127793;</div>
         <h3>植物大战僵尸</h3>
         <p>种向日葵攒阳光、摆射手打僵尸，16 种植物 + 7 类僵尸、6 波进攻与割草机兜底，撑过「一大波」即获胜。</p>
       </a>
 
-      <a class="tool" href="./word-pronunciation/">
+      <!-- 教育 -->
+      <a class="tool" data-cat="edu" href="./clock-learning/">
+        <div class="ico">钟</div>
+        <h3>认识时钟 · 时间练习</h3>
+        <p>给小学生练习认钟表：随机出题，自己读出时和分，答错播放指针动画一步步讲解。</p>
+      </a>
+
+      <a class="tool" data-cat="edu" href="./word-pronunciation/">
         <div class="ico">📖</div>
         <h3>英文单词发音练习</h3>
         <p>小学生英语单词跟读：真人美音/英音与浏览器合成语音可选，跟着音标驱动的口型动画（正脸看唇形、侧脸看舌头）练发音，内置 3–6 年级分级词库。</p>
       </a>
 
-      <a class="tool" href="./length-scale/">
+      <a class="tool" data-cat="edu" href="./length-units/">
+        <div class="ico">📏</div>
+        <h3>认识长度单位</h3>
+        <p>带动画教小学生认识毫米/厘米/分米/米/千米：缩放剧场感受各量级差距、1 米尺拆解看 ×10、单位换算与闯关小测验。</p>
+      </a>
+
+      <a class="tool" data-cat="edu" href="./length-scale/">
         <div class="ico">📏</div>
         <h3>长度有多大？· 三维长度探险</h3>
         <p>给小学生理解长度：从毫米到千米，每个量级都用一个会自转的 3D 立方体作单位，旁边站一个常见物体（蚂蚁 / 指甲 / 铅笔 / 小学生 / 校车 / 足球场 / 高山）对比，可上下切换并带过渡动画。</p>
       </a>
 
-      <a class="tool" href="./number-line-animation/">
+      <a class="tool" data-cat="edu" href="./number-line-animation/">
         <div class="ico">轴</div>
         <h3>数轴动线段 · 动画讲解</h3>
         <p>七年级数轴动点题：两条动线段 PQ、MN 的运动过程实时演示，重合部分高亮、CQ/PM 尺寸线、重合长度 L(t) 曲线，配三问分段讨论详解与关键时刻一键跳转。</p>
       </a>
 
-      <!-- 新增工具：复制本卡片，在对应文件夹放一个 index.html 即可 -->
+      <!-- 新增工具：复制本卡片，加上 data-cat="tool|game|edu" 并放入对应文件夹的 index.html 即可 -->
     </section>
-
   </main>
+
+  <script>
+    (function () {
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+      var tools = Array.prototype.slice.call(document.querySelectorAll('.tool'));
+      function show(cat) {
+        tools.forEach(function (t) {
+          t.style.display = (t.getAttribute('data-cat') === cat) ? '' : 'none';
+        });
+        tabs.forEach(function (b) {
+          var on = b.getAttribute('data-cat') === cat;
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+      }
+      tabs.forEach(function (b) {
+        b.addEventListener('click', function () {
+          var cat = b.getAttribute('data-cat');
+          show(cat);
+          history.replaceState(null, '', '#' + cat);
+        });
+      });
+      var h = (location.hash || '').replace('#', '');
+      var valid = tabs.some(function (b) { return b.getAttribute('data-cat') === h; });
+      show(valid ? h : 'tool');
+    })();
+  </script>
 </body>
 </html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>认识长度单位 · 长度大冒险</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="/version-check.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="back" href="../">← 返回工具箱</a>
+    <h1>认识长度单位 · 长度大冒险</h1>
+  </header>
+
+  <main class="wrap">
+
+    <!-- 欢迎 -->
+    <section class="card intro">
+      <h2>📏 欢迎来到长度大冒险！</h2>
+      <p>
+        「长度」就是东西有多<b>长</b>、多<b>高</b>、多<b>远</b>。量长度有 5 个好帮手，
+        从最小到最大分别是：<b>毫米、厘米、分米、米、千米</b>。
+        下面用好玩的动画，带你看看它们各自有多大、能用来量什么。
+      </p>
+      <p class="hint">小提示：先认识「单位家族」，再打开「缩放剧场」感受从 1 毫米到 1 千米到底差多少～</p>
+    </section>
+
+    <!-- ① 单位家族 -->
+    <section class="card">
+      <h2>① 单位家族（点一点，展开看）</h2>
+      <div class="family" id="family"></div>
+    </section>
+
+    <!-- ② 长度阶梯对比图 -->
+    <section class="card">
+      <h2>② 长度阶梯对比图</h2>
+      <p class="hint">
+        条越长的代表越长。注意：为了让「毫米」和「千米」同时看得见，
+        这里用的是<b>对数尺</b>——每一格代表 ×10 的长度，所以越往上长得越快！
+        点任意一行，去剧场看它。
+      </p>
+      <div class="ladder" id="ladder"></div>
+    </section>
+
+    <!-- ③ 三维缩放剧场 -->
+    <section class="card theater">
+      <h2>③ 三维缩放剧场：从 1 毫米 到 1 千米</h2>
+      <p class="hint">镜头会绕着物体转，旁边站着「你」（约 1.7 米）做参照。点「▶ 播放」，看长度从一粒蚂蚁的大小一路长到一公里！</p>
+
+      <div class="stage3d" id="stage">
+        <div class="ground-shadow"></div>
+        <div class="world-cam" id="worldCam">
+          <div class="world" id="world">
+            <div class="bar3d" id="bar3d">
+              <div class="face f-front"></div>
+              <div class="face f-back"></div>
+              <div class="face f-right"></div>
+              <div class="face f-left"></div>
+              <div class="face f-top"></div>
+              <div class="face f-bottom"></div>
+            </div>
+          </div>
+        </div>
+        <div class="human" id="human">🧍<span class="human-cap">你 · 约 1.7 米</span></div>
+        <div class="bar-cap" id="barCap">蚂蚁的长度</div>
+        <div class="stage-readout">
+          <div class="big-num" id="bigNum">1 毫米</div>
+          <div class="sub-num" id="subNum">= 0.001 米</div>
+          <div class="rels" id="rels">≈ 0.0006 个你</div>
+        </div>
+      </div>
+
+      <div class="axis">
+        <div class="axis-track" id="axisTrack">
+          <div class="axis-dot" id="axisDot"></div>
+        </div>
+        <div class="axis-ticks" id="axisTicks"></div>
+      </div>
+
+      <div class="theater-ctrl">
+        <button class="btn" id="prevBtn" type="button">◀ 上一档</button>
+        <button class="btn btn-primary" id="playBtn" type="button">▶ 播放</button>
+        <button class="btn" id="nextBtn" type="button">下一档 ▶</button>
+        <span class="stage-pos" id="stagePos">1 / 7</span>
+      </div>
+    </section>
+
+    <!-- ④ 1 米尺拆一拆 -->
+    <section class="card">
+      <h2>④ 1 米尺拆一拆（认识 ×10）</h2>
+      <p class="hint">
+        1 米 = 10 分米 = 100 厘米 = 1000 毫米。点下面的方块，一级级放大看里面有什么。
+      </p>
+      <div class="ruler-wrap">
+        <div class="ruler" id="ruler"></div>
+      </div>
+      <div class="zoom-panel" id="zoomPanel"></div>
+    </section>
+
+    <!-- ⑤ 单位换算练习 -->
+    <section class="card">
+      <h2>⑤ 单位换算练习</h2>
+      <p class="hint">选一个单位，输入数字，看看它等于多少其它单位。</p>
+      <div class="convert-ctrl">
+        <input type="number" id="convVal" value="1" min="0" step="any" aria-label="数值" />
+        <select id="convUnit" aria-label="单位"></select>
+        <button class="btn btn-primary" id="convGo" type="button">换算</button>
+        <button class="btn" id="convRand" type="button">🎲 随机出题</button>
+      </div>
+      <div class="convert-out" id="convertOut"></div>
+    </section>
+
+    <!-- ⑥ 小测验 -->
+    <section class="card">
+      <h2>⑥ 小测验（闯关）</h2>
+      <p class="hint">做完每道题立刻知道对不对，最后看你能得几颗 ⭐。</p>
+      <div class="quiz" id="quiz"></div>
+      <div class="quiz-foot">
+        <div class="quiz-score" id="quizScore">还没开始做</div>
+        <button class="btn" id="quizReset" type="button">🔄 重新来过</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
