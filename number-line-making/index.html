@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数轴动线段动画 · 制作过程</title>
+  <style>
+    :root{
+      --bg:#f6f8fb; --card:#fff; --border:#e6e9ef; --text:#1f2937;
+      --muted:#6b7280; --accent:#2563eb; --accent2:#7c3aed;
+      --green:#16a34a; --orange:#ea580c; --shadow:0 1px 3px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.05);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+      line-height:1.7;}
+    .wrap{max-width:880px;margin:0 auto;padding:40px 22px 80px}
+    .back{display:inline-flex;align-items:center;gap:6px;color:var(--accent);text-decoration:none;
+      font-size:14px;margin-bottom:18px}
+    .back:hover{text-decoration:underline}
+    h1{font-size:28px;margin:0 0 6px}
+    .sub{color:var(--muted);font-size:15px;margin:0 0 28px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;
+      padding:24px 26px;box-shadow:var(--shadow);margin-bottom:22px}
+    h2{font-size:20px;margin:2px 0 14px;display:flex;align-items:center;gap:10px}
+    h2 .num{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+      color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    p{margin:0 0 12px}
+    .muted{color:var(--muted);font-size:14px}
+    img.problem{width:100%;height:auto;border:1px solid var(--border);border-radius:12px;background:#fff;display:block}
+    pre.prompt{background:#0f172a;color:#e2e8f0;border-radius:12px;padding:16px 18px;overflow:auto;
+      font-family:ui-monospace,Menlo,monospace;font-size:13.5px;line-height:1.6;margin:0}
+    .qtext{background:#f8fafc;border:1px solid var(--border);border-left:4px solid var(--accent);
+      border-radius:10px;padding:14px 18px;font-size:15px}
+    .qtext b{color:var(--accent)}
+    ul.tools{list-style:none;margin:0;padding:0}
+    ul.tools li{display:flex;gap:14px;padding:14px 0;border-bottom:1px dashed var(--border)}
+    ul.tools li:last-child{border-bottom:none}
+    .ticon{flex-shrink:0;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;
+      justify-content:center;font-size:20px;background:var(--accent);color:#fff}
+    .ticon.b{background:var(--accent2)} .ticon.g{background:var(--green)} .ticon.o{background:var(--orange)}
+    .tt{font-weight:600;margin:0 0 3px}
+    .td{color:var(--muted);font-size:14px;margin:0}
+    .td code{background:#eef2ff;color:#3730a3;padding:1px 6px;border-radius:5px;
+      font-family:ui-monospace,Menlo,monospace;font-size:13px}
+    ol.steps{margin:0;padding-left:22px}
+    ol.steps li{margin-bottom:10px}
+    .pill{display:inline-block;background:var(--accent);color:#fff;border-radius:999px;
+      padding:3px 12px;font-size:13px;text-decoration:none;margin-top:4px}
+    .pill:hover{opacity:.9}
+    .tag{display:inline-block;background:#eef2ff;color:#3730a3;border-radius:6px;
+      padding:1px 8px;font-size:12.5px;font-family:ui-monospace,Menlo,monospace}
+    .foot{text-align:center;color:var(--muted);font-size:13px;margin-top:30px}
+    a{color:var(--accent)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="../index.html">← 返回工具站首页</a>
+    <h1>数轴动线段动画 · 制作过程</h1>
+    <p class="sub">这一页记录 <a href="./number-line-animation/">《数轴动线段 · 动画讲解》</a> 是怎么做出来的：原始提示词、原始题目图片、用到的工具与关键步骤。</p>
+
+    <!-- 1. 原始提示词 -->
+    <div class="card">
+      <h2><span class="num">1</span>原始提示词（Prompt）</h2>
+      <p class="muted">用户在一张题目截图后，给出的唯一一句指令（图片以 <code>@image</code> 形式粘贴进对话）：</p>
+      <pre class="prompt">@image#1:Clipboard_Screenshot.png  将这个题目做成网页动画，详细讲解</pre>
+      <p class="muted" style="margin-top:12px">后续本页本身的指令：<em>“将这个网页是如何产生的，添加到 /Users/tango/Code/static_tools 网站，并 push 修改。包含使用的工具，和图片以及提示词。”</em></p>
+    </div>
+
+    <!-- 2. 原始题目图片 -->
+    <div class="card">
+      <h2><span class="num">2</span>原始题目（图片）</h2>
+      <p class="muted">原始截图是聊天里直接粘贴的，未落盘保存；下图依据动画页中已验证的运动模型重建（参数与题目完全一致）。</p>
+      <img class="problem" src="./problem.svg" alt="数轴动线段原题示意图" />
+      <div class="qtext" style="margin-top:18px">
+        <p style="margin:0 0 8px"><b>题目原文（重建）：</b></p>
+        如图，数轴上有 <b>A、B、C</b> 三个点，分别表示数 −20、−8、16。有两条动线段 <b>PQ</b> 和 <b>MN</b>（点 Q 与点 A 重合，点 N 与点 B 重合，且点 P 在点 Q 的左边、点 M 在点 N 的左边），PQ = 2，MN = 4。<br>
+        线段 MN 以每秒 1 个单位的速度从点 B 开始向右匀速运动，同时线段 PQ 以每秒 3 个单位的速度从点 A 开始向右匀速运动。<b>当点 Q 运动到点 C 时，线段 PQ 立即以相同的速度返回</b>；当点 Q 回到点 A 时，线段 PQ、MN 同时停止运动。设运动时间为 <i>t</i> 秒（整个运动过程中两线段长度不变）。
+        <p style="margin:10px 0 0">(1) 当 <i>t</i> = 20 时，求出点 M、点 Q 表示的数；</p>
+        <p style="margin:4px 0 0">(2) 在整个运动过程中，当 CQ = PM 时，求出点 M 表示的数；</p>
+        <p style="margin:4px 0 0">(3) 在整个运动过程中，<b>当两条线段有重合部分时，速度均变为原来的一半；当重合部分消失后，速度恢复</b>，请直接写出当线段 PQ 和 MN 重合部分长度为 1.5 时所对应的 <i>t</i> 的值。</p>
+      </div>
+    </div>
+
+    <!-- 3. 使用的工具 -->
+    <div class="card">
+      <h2><span class="num">3</span>使用的工具</h2>
+      <ul class="tools">
+        <li>
+          <div class="ticon">🧮</div>
+          <div>
+            <p class="tt">数值验证 · Node.js 脚本</p>
+            <p class="td">用本环境 managed <code>Node 22.22.2</code> 跑极小步长（<code>dt=1e-5</code>）的数值积分，模拟两条线段的运动；再用二分法精确求解 <code>CQ=PM</code> 与 <code>L=1.5</code> 的时刻，逐项复核答案。过程中还纠正了最初手算“第二段重合”时的一个误差。</p>
+          </div>
+        </li>
+        <li>
+          <div class="ticon b">🎬</div>
+          <div>
+            <p class="tt">动画与讲解 · 单文件 HTML + Canvas</p>
+            <p class="td">零依赖单文件页面：数轴双轨场景（PQ 蓝 / MN 橙）、重合部分红色高亮、<code>CQ</code>/<code>PM</code> 尺寸线、端点坐标标签；另绘重合长度 <code>L(t)</code> 曲线；含逐问分段讨论详解、关键时刻一键跳转、原题/变式双模式、播放与拖动时间轴。</p>
+          </div>
+        </li>
+        <li>
+          <div class="ticon g">🤖</div>
+          <div>
+            <p class="tt">浏览器真实自测 · static-page-browser-verify</p>
+            <p class="td">调用<strong>本机 Chromium + CDP</strong>（WebSocket，零第三方依赖）编写断言脚本，覆盖 canvas 绘制、各关键时刻数值、答案按钮联动、窄屏无溢出、窗口缩放后不空白等 <strong>36 项</strong>，全部通过。</p>
+          </div>
+        </li>
+        <li>
+          <div class="ticon o">🚀</div>
+          <div>
+            <p class="tt">站点接入与部署 · static_tools + Git</p>
+            <p class="td">按仓库规范接入——独立文件夹 + 根 <code>index.html</code> 导航卡（图标「轴」）+ README 目录树与预览地址更新；git 小粒度提交并 <code>push</code> 到 GitHub（Cloudflare Pages 自动部署）。</p>
+          </div>
+        </li>
+        <li>
+          <div class="ticon">✨</div>
+          <div>
+            <p class="tt">生成主体 · WorkBuddy</p>
+            <p class="td">上述读题建模、写验证脚本、构建动画、浏览器自测、接入仓库与提交推送，均由 WorkBuddy 在对话中完成。</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 4. 关键步骤 -->
+    <div class="card">
+      <h2><span class="num">4</span>关键步骤时间线</h2>
+      <ol class="steps">
+        <li><b>读题 + 建模：</b>从题目中提取参数——A(−20)、B(−8)、C(16)；PQ 长 2（Q 在 A，速度 3，到 C 掉头），MN 长 4（N 在 B，速度 1，全程向右）。</li>
+        <li><b>写 Node 验证脚本：</b>数值模拟运动，二分求解三问答案；发现并纠正手算第二阶段重合的一个误差，确保页面数字与模拟一致。</li>
+        <li><b>构建动画页：</b>用 Canvas 实时绘制数轴场景与 <code>L(t)</code> 曲线，写逐问分段详解，加入原题 / 第(3)问变式双模式与关键时刻跳转。</li>
+        <li><b>浏览器真实自测：</b>用 Chromium + CDP 跑 36 项断言，修复窄屏布局与 resize 后空白等问题。</li>
+        <li><b>接入站点并发布：</b>复制进 <code>number-line-animation/</code> 文件夹，更新根导航与 README，提交并 push，Cloudflare Pages 自动部署。</li>
+      </ol>
+      <p class="muted">最终三问答案：<span class="tag">(1) M=8，Q=−8</span> <span class="tag">(2) M=−2.8 或 2</span> <span class="tag">(3) t=5.5, 8.5, 18.25, 19.75</span></p>
+      <a class="pill" href="./number-line-animation/">▶ 查看成品动画讲解</a>
+    </div>
+
+    <p class="foot">本页与成品动画同属 static_tools 站点 · 纯静态、零依赖</p>
+  </div>
+</body>
+</html>

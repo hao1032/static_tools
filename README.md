@@ -26,8 +26,11 @@
 │   ├── style.css
 │   ├── words.js            # 词库数据（8 个主题 128 个词）
 │   └── app.js
-└── number-line-animation/  # 工具八：数轴动线段 · 动画讲解
-    └── index.html          # 单文件，canvas 实时绘制数轴与 L(t) 曲线
+├── number-line-animation/  # 工具八：数轴动线段 · 动画讲解
+│   └── index.html          # 单文件，canvas 实时绘制数轴与 L(t) 曲线
+└── number-line-making/     # 工具九：数轴动线段 · 制作过程（溯源）
+    ├── index.html          # 单文件，记录提示词 / 题目图片 / 工具 / 步骤
+    └── problem.svg         # 原题示意图（按已验证模型重建）
 ```
 
 > 新增工具：在根目录建一个带 `index.html` 的文件夹（如 `qr-generator/`），然后在根目录 `index.html` 复制一张导航卡片链接过去即可。
@@ -71,6 +74,7 @@ npx http-server -p 8765
 | 照片排版 · 拼版打印 | <http://localhost:8765/photo-layout/> |
 | 英文单词发音练习 | <http://localhost:8765/word-pronunciation/> |
 | 数轴动线段 · 动画讲解 | <http://localhost:8765/number-line-animation/> |
+| 数轴动线段 · 制作过程 | <http://localhost:8765/number-line-making/> |
 
 > 启动服务器时如果提示端口被占用，可用 `--bind 0.0.0.0` 或换一个端口（如 `8080`），并相应更新访问地址。
 >
