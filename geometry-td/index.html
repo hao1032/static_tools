@@ -72,9 +72,9 @@
   .icon-btn:hover{border-color:var(--cyan);}
   .icon-btn.active{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 0 16px rgba(0,229,255,.4);background:rgba(0,229,255,.1);color:var(--cyan);}
 
-  /* 地图选择 */
-  #maps{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0 6px;}
-  .map-card{width:128px;padding:8px;border-radius:12px;cursor:pointer;background:rgba(255,255,255,.03);border:1px solid var(--line);transition:.15s;}
+  /* 地图选择：横向排布，最多 2 行（5 列网格） */
+  #maps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:14px 0 6px;}
+  .map-card{padding:7px;border-radius:12px;cursor:pointer;background:rgba(255,255,255,.03);border:1px solid var(--line);transition:.15s;}
   .map-card:hover{transform:translateY(-2px);border-color:rgba(120,160,255,.5);}
   .map-card.sel{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 0 18px rgba(0,229,255,.35);background:rgba(0,229,255,.07);}
   .map-card canvas{box-shadow:none;border-radius:8px;background:rgba(0,0,0,.25);display:block;margin:0 auto;}
@@ -102,7 +102,7 @@
     backdrop-filter:blur(3px);z-index:20;
   }
   #overlay .card{text-align:center;padding:30px 34px;border-radius:20px;background:var(--panel);border:1px solid var(--line);
-    box-shadow:0 30px 80px rgba(0,0,0,.6);max-width:470px;}
+    box-shadow:0 30px 80px rgba(0,0,0,.6);max-width:600px;}
   #overlay h1{margin:0 0 8px;font-size:26px;
     background:linear-gradient(90deg,var(--cyan),var(--mag));-webkit-background-clip:text;background-clip:text;color:transparent;}
   #overlay p{margin:6px 0;color:var(--muted);font-size:14px;line-height:1.7;}
@@ -186,6 +186,16 @@
       way:[[0,5],[16,5],[16,9],[4,9],[4,2],[13,2],[13,7],[8,7]] },
     { id:"zig",    name:"Z 字峡谷", desc:"窄幅之字，逼你精准布防", color:"#9d7bff",
       way:[[0,3],[8,3],[8,7],[12,7],[12,3],[19,3]] },
+    { id:"dloop",  name:"双环道",   desc:"两个回环，路程适中",   color:"#ff8a3d",
+      way:[[0,2],[7,2],[7,8],[13,8],[13,2],[19,2],[19,9]] },
+    { id:"stair",  name:"阶梯峡谷", desc:"阶梯上下，塔位交错",   color:"#3dffd2",
+      way:[[0,9],[4,9],[4,7],[8,7],[8,5],[12,5],[12,3],[16,3],[16,9],[19,9]] },
+    { id:"bigc",   name:"巨 C 弯",  desc:"大 C 形，中段狭长",   color:"#ff5e7c",
+      way:[[0,1],[19,1],[19,9],[1,9],[1,4],[19,4]] },
+    { id:"bolt",   name:"闪电折线", desc:"竖向电锯，节奏紧凑",   color:"#5ea0ff",
+      way:[[0,2],[6,2],[6,8],[10,8],[10,2],[14,2],[14,8],[18,8],[18,4],[19,4]] },
+    { id:"outer",  name:"外环绕",   desc:"外圈包抄，核心居中",   color:"#ff9bd6",
+      way:[[0,9],[19,9],[19,1],[1,1],[1,7],[2,7],[2,3],[18,3]] },
   ];
   let PATH_CELLS = new Set();
   let WAY = [];
@@ -239,7 +249,7 @@
     spawnQ:[], waveTime:0, waveActive:false,
     selType:null, selTower:null, hover:null,
     speed:1, paused:false, sound:true, shake:0, time:0,
-    timestop:false, breakT:0,
+    timestop:false, breakT:0, laserActive:false,
     selMapIndex:0, mapColor:"#00e5ff", mapName:"经典蛇道",
   };
 
@@ -273,6 +283,58 @@
       g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+dur);
       s.start();
     }catch(e){}
+  }
+  // 频率扫频（武器发射感）
+  function sweep(f0,f1,dur,type,vol){
+    if(!G.sound) return; const ac=audio(); if(!ac) return;
+    try{
+      const o=ac.createOscillator(), g=ac.createGain();
+      o.type=type||"sawtooth";
+      const t=ac.currentTime;
+      o.frequency.setValueAtTime(f0,t);
+      o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t+dur);
+      g.gain.setValueAtTime(vol||0.05,t);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    }catch(e){}
+  }
+  // 双音和弦（寒冰清脆感）
+  function chord(f0,f1,dur,type,vol){
+    if(!G.sound) return; const ac=audio(); if(!ac) return;
+    try{
+      [f0,f1].forEach((f,i)=>{
+        const o=ac.createOscillator(), g=ac.createGain();
+        o.type=type||"sine"; o.frequency.value=f;
+        const t=ac.currentTime;
+        g.gain.setValueAtTime((vol||0.04)*(i?0.7:1),t);
+        g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+        o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+dur+0.02);
+      });
+    }catch(e){}
+  }
+  // 聚能激光：持续嗡鸣（按需启停，全局唯一）
+  let laserNodes=null;
+  function laserHum(on){
+    const ac=audio(); if(!ac) return;
+    if(on && !laserNodes){
+      try{
+        const o=ac.createOscillator(), g=ac.createGain(), lfo=ac.createOscillator(), lg=ac.createGain();
+        o.type="sawtooth"; o.frequency.value=130;
+        lfo.type="sine"; lfo.frequency.value=28; lg.gain.value=45; lfo.connect(lg); lg.connect(o.frequency);
+        g.gain.setValueAtTime(0.0001,ac.currentTime);
+        g.gain.linearRampToValueAtTime(0.05,ac.currentTime+0.05);
+        o.connect(g); g.connect(ac.destination); o.start(); lfo.start();
+        laserNodes={o,g,lfo};
+      }catch(e){}
+    } else if(!on && laserNodes){
+      try{
+        const {o,g,lfo}=laserNodes, t=ac.currentTime;
+        g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value,t);
+        g.gain.linearRampToValueAtTime(0.0001,t+0.06);
+        o.stop(t+0.08); lfo.stop(t+0.08); laserNodes=null;
+      }catch(e){ laserNodes=null; }
+    }
   }
 
   // ---------- 波次生成 ----------
@@ -371,6 +433,7 @@
       target.hp -= s.dmg*dt;
       target.hitFlash=0.12;
       G.beams.push({x1:t.x,y1:t.y,x2:target.x,y2:target.y,color:t.def.color,life:0.06});
+      G.laserActive=true;
       return;
     }
     if(t.cd>0) return;
@@ -383,7 +446,11 @@
     });
     // 枪口火花
     for(let i=0;i<4;i++) G.parts.push(mkPart(t.x+Math.cos(ang)*16,t.y+Math.sin(ang)*16,t.def.color,2,90));
-    beep(t.key==="sniper"?880:520,0.05,"square",0.035);
+    // 各武器专属发射音
+    if(t.key==="sniper") sweep(1300,520,0.05,"triangle",0.05);      // 锐利狙击「咔」
+    else if(t.key==="blaster") sweep(340,150,0.07,"square",0.045);  // 脉冲炮「啾」
+    else if(t.key==="frost") chord(1040,1560,0.11,"sine",0.035);    // 寒冰核「叮」脆响
+    // 聚能激光：持续嗡鸣在 update 中统一控制
   }
   function pickTarget(t){
     let best=null,bp=-1;
@@ -454,6 +521,7 @@
   }
 
   function update(dt){
+    G.laserActive=false;
     // 生成敌人
     if(G.waveActive){
       G.waveTime+=dt;
@@ -477,7 +545,7 @@
         e.dead=true;
         G.money+=e.def.reward; G.score+=e.def.reward;
         burst(e.x,e.y,e.color,e.type==="boss"?40:14);
-        if(e.type==="boss"){ noise(0.4,0.18); beep(120,0.3,"sawtooth",0.1);} else beep(200,0.07,"square",0.03);
+        if(e.type==="boss"){ noise(0.45,0.2); sweep(180,55,0.45,"sawtooth",0.12);} else sweep(300,130,0.06,"square",0.03);
       }
     }
     G.enemies=G.enemies.filter(e=>!e.dead);
@@ -488,6 +556,7 @@
       const tgt=pickTarget(t);
       if(tgt){ if(t.def.proj!=="beam") t.angle=Math.atan2(tgt.y-t.y,tgt.x-t.x); fire(t,tgt,dt); }
     }
+    laserHum(G.laserActive && G.sound);   // 聚能激光持续嗡鸣随开火状态启停
     // 子弹
     for(const s of G.shots) updateShot(s,dt);
     G.shots=G.shots.filter(s=>!s.dead);
@@ -861,7 +930,7 @@
     MAPS.forEach((m,i)=>{
       const card=document.createElement("div");
       card.className="map-card"+(i===G.selMapIndex?" sel":""); card.dataset.idx=i;
-      const cv=document.createElement("canvas"); cv.width=116; cv.height=64;
+      const cv=document.createElement("canvas"); cv.width=84; cv.height=48;
       drawMapThumb(cv,m);
       const nm=document.createElement("div"); nm.className="mn"; nm.textContent=m.name; nm.style.color=m.color;
       const md=document.createElement("div"); md.className="md"; md.textContent=m.desc;
@@ -881,7 +950,7 @@
   document.getElementById("p-up").addEventListener("click",doUpgrade);
   document.getElementById("p-sell").addEventListener("click",doSell);
   document.getElementById("btn-sound").addEventListener("click",function(){
-    G.sound=!G.sound; this.textContent=G.sound?"🔊":"🔇"; if(G.sound) audio();
+    G.sound=!G.sound; this.textContent=G.sound?"🔊":"🔇"; if(G.sound) audio(); else laserHum(false);
   });
   document.getElementById("btn-speed").addEventListener("click",function(){
     G.speed = G.speed===1?2: G.speed===2?3:1; this.textContent= G.speed===1?"⏩": G.speed===2?"⏩⏩":"▶"; 
@@ -897,7 +966,7 @@
   document.getElementById("btn-timestop").addEventListener("click",toggleTimestop);
   function togglePause(){
     if(G.state!=="wave"&&G.state!=="ready") return;
-    G.paused=!G.paused; toast(G.paused?"已暂停":"继续");
+    G.paused=!G.paused; if(G.paused) laserHum(false); toast(G.paused?"已暂停":"继续");
   }
 
   // ---------- 遮罩 / 结束 ----------
@@ -920,16 +989,17 @@
     else if(G.state==="over"||G.state==="win"){ applyMap(m); resetGame(); hideOverlay(); }
   });
   function lose(){
-    G.state="over"; G.waveActive=false;
+    G.state="over"; G.waveActive=false; laserHum(false);
     showOverlay("核心失守","你坚持到了第 "+G.wave+" 波，得分 "+G.score+"。再来一局？","重新开始");
     noise(0.5,0.2);
   }
   function win(){
-    G.state="win";
+    G.state="win"; laserHum(false);
     showOverlay("防守成功！","你击退了全部 "+MAX_WAVE+" 波入侵，得分 "+G.score+"！","再玩一次");
     beep(880,0.3,"triangle",0.08);
   }
   function resetGame(){
+    laserHum(false);
     G.money=200; G.lives=20; G.wave=0; G.score=0;
     G.enemies=[]; G.towers=[]; G.shots=[]; G.parts=[]; G.beams=[];
     G.spawnQ=[]; G.waveTime=0; G.waveActive=false; G.selType=null; G.selTower=null;
