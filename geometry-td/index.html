@@ -238,7 +238,7 @@
   // ---------- 状态 ----------
   const cv = document.getElementById("game");
   const ctx = cv.getContext("2d");
-  let dpr = Math.min(window.devicePixelRatio||1, 2);
+  let dpr = Math.min(window.devicePixelRatio||1, 1.5);
   cv.width = W*dpr; cv.height = H*dpr; cv.style.width=W+"px"; cv.style.height=H+"px";
   ctx.scale(dpr,dpr);
 
@@ -260,14 +260,24 @@
   const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 
   // 音效（WebAudio 轻量合成）
-  let AC=null;
-  function audio(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+  let AC=null, MASTER=null;
+  function audio(){
+    if(!AC){ try{
+      AC=new (window.AudioContext||window.webkitAudioContext)();
+      // 主音量 + 限幅器：之前所有音直连 destination，多音叠加会破音/过响
+      MASTER=AC.createGain(); MASTER.gain.value=0.4;
+      const comp=AC.createDynamicsCompressor();
+      comp.threshold.value=-14; comp.knee.value=8; comp.ratio.value=12; comp.attack.value=0.003; comp.release.value=0.25;
+      MASTER.connect(comp); comp.connect(AC.destination);
+    }catch(e){ AC=null; } }
+    return AC;
+  }
   function beep(freq,dur,type,vol){
     if(!G.sound) return; const ac=audio(); if(!ac) return;
     try{
       const o=ac.createOscillator(), g=ac.createGain();
       o.type=type||"square"; o.frequency.value=freq;
-      g.gain.value=(vol||0.05); o.connect(g); g.connect(ac.destination);
+      g.gain.value=(vol||0.05); o.connect(g); g.connect(MASTER||ac.destination);
       const t=ac.currentTime; g.gain.setValueAtTime(g.gain.value,t);
       g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
       o.start(t); o.stop(t+dur);
@@ -279,7 +289,7 @@
       const n=Math.floor(ac.sampleRate*dur), buf=ac.createBuffer(1,n,ac.sampleRate), d=buf.getChannelData(0);
       for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
       const s=ac.createBufferSource(); s.buffer=buf;
-      const g=ac.createGain(); g.gain.value=vol||0.08; s.connect(g); g.connect(ac.destination);
+      const g=ac.createGain(); g.gain.value=vol||0.08; s.connect(g); g.connect(MASTER||ac.destination);
       g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+dur);
       s.start();
     }catch(e){}
@@ -295,7 +305,7 @@
       o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t+dur);
       g.gain.setValueAtTime(vol||0.05,t);
       g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-      o.connect(g); g.connect(ac.destination);
+      o.connect(g); g.connect(MASTER||ac.destination);
       o.start(t); o.stop(t+dur+0.02);
     }catch(e){}
   }
@@ -309,7 +319,7 @@
         const t=ac.currentTime;
         g.gain.setValueAtTime((vol||0.04)*(i?0.7:1),t);
         g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-        o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+dur+0.02);
+        o.connect(g); g.connect(MASTER||ac.destination); o.start(t); o.stop(t+dur+0.02);
       });
     }catch(e){}
   }
@@ -321,10 +331,10 @@
       try{
         const o=ac.createOscillator(), g=ac.createGain(), lfo=ac.createOscillator(), lg=ac.createGain();
         o.type="sawtooth"; o.frequency.value=130;
-        lfo.type="sine"; lfo.frequency.value=28; lg.gain.value=45; lfo.connect(lg); lg.connect(o.frequency);
+        lfo.type="sine"; lfo.frequency.value=28; lg.gain.value=28; lfo.connect(lg); lg.connect(o.frequency);
         g.gain.setValueAtTime(0.0001,ac.currentTime);
-        g.gain.linearRampToValueAtTime(0.05,ac.currentTime+0.05);
-        o.connect(g); g.connect(ac.destination); o.start(); lfo.start();
+        g.gain.linearRampToValueAtTime(0.02,ac.currentTime+0.05);
+        o.connect(g); g.connect(MASTER||ac.destination); o.start(); lfo.start();
         laserNodes={o,g,lfo};
       }catch(e){}
     } else if(!on && laserNodes){
@@ -357,7 +367,7 @@
     G.spawnQ = buildWave(G.wave);
     G.waveTime=0; G.waveActive=true; G.state="wave";
     updateWaveBtn();
-    beep(440,0.12,"sawtooth",0.06);
+    beep(440,0.12,"sawtooth",0.035);
   }
   function waveCleared(){
     G.waveActive=false; G.state="ready";
@@ -413,7 +423,7 @@
       angle:-Math.PI/2, spent:def.cost, pulse:0,
     });
     G.money-=def.cost;
-    beep(660,0.08,"triangle",0.05);
+    beep(660,0.08,"triangle",0.03);
     syncHUD();
   }
   function towerStats(t){
@@ -447,9 +457,9 @@
     // 枪口火花
     for(let i=0;i<4;i++) G.parts.push(mkPart(t.x+Math.cos(ang)*16,t.y+Math.sin(ang)*16,t.def.color,2,90));
     // 各武器专属发射音
-    if(t.key==="sniper") sweep(1300,520,0.05,"triangle",0.05);      // 锐利狙击「咔」
-    else if(t.key==="blaster") sweep(340,150,0.07,"square",0.045);  // 脉冲炮「啾」
-    else if(t.key==="frost") chord(1040,1560,0.11,"sine",0.035);    // 寒冰核「叮」脆响
+    if(t.key==="sniper") sweep(1300,520,0.05,"triangle",0.03);      // 锐利狙击「咔」
+    else if(t.key==="blaster") sweep(340,150,0.07,"square",0.03);  // 脉冲炮「啾」
+    else if(t.key==="frost") chord(1040,1560,0.11,"sine",0.025);    // 寒冰核「叮」脆响
     // 聚能激光：持续嗡鸣在 update 中统一控制
   }
   function pickTarget(t){
@@ -490,6 +500,7 @@
   }
   function burst(x,y,color,n){
     for(let i=0;i<n;i++) G.parts.push(mkPart(x,y,color,3,50));
+    while(G.parts.length>240) G.parts.shift();   // 粒子上限，防止卡顿
     G.shake=Math.min(G.shake+2,8);
   }
   function updateParts(dt){
@@ -500,10 +511,16 @@
   }
 
   // ---------- 主循环 ----------
-  let last=performance.now();
+  let last=performance.now(), lastRender=last;
   function loop(now){
+    requestAnimationFrame(loop);
+    if(document.hidden) return;            // 标签页隐藏：彻底跳过，省 CPU
     let dt=(now-last)/1000; last=now;
     dt=Math.min(dt,0.05);
+    // 空闲（菜单/波间无敌人无子弹）时降到 30fps，战斗中保持 60fps
+    const active = G.state==="wave" || G.enemies.length>0 || G.shots.length>0 || G.paused;
+    if(!active && now-lastRender < 1000/30){ return; }
+    lastRender=now;
     if(!G.paused && G.state!=="menu" && G.state!=="over" && G.state!=="win"){
       const sdt=dt*(G.timestop?SLOW_FACTOR:G.speed);
       update(sdt);
@@ -517,7 +534,6 @@
     G.time+=dt;
     if(G.shake>0) G.shake=Math.max(0,G.shake-dt*30);
     render();
-    requestAnimationFrame(loop);
   }
 
   function update(dt){
@@ -536,7 +552,7 @@
       e.spin+=dt*1.5;
       if(e.hitFlash>0) e.hitFlash-=dt;
       moveEnemy(e,dt);
-      if(e.reached){ G.lives--; G.shake=10; noise(0.18,0.12);
+      if(e.reached){ G.lives--; G.shake=10; noise(0.15,0.06);
         if(G.lives<=0){ lose(); } }
     }
     // 击杀结算
@@ -544,8 +560,8 @@
       if(!e.dead && e.hp<=0){
         e.dead=true;
         G.money+=e.def.reward; G.score+=e.def.reward;
-        burst(e.x,e.y,e.color,e.type==="boss"?40:14);
-        if(e.type==="boss"){ noise(0.45,0.2); sweep(180,55,0.45,"sawtooth",0.12);} else sweep(300,130,0.06,"square",0.03);
+        burst(e.x,e.y,e.color,e.type==="boss"?22:9);
+        if(e.type==="boss"){ noise(0.4,0.1); sweep(180,55,0.45,"sawtooth",0.06);} else sweep(300,130,0.06,"square",0.025);
       }
     }
     G.enemies=G.enemies.filter(e=>!e.dead);
@@ -592,11 +608,11 @@
     ctx.restore();
   }
 
+  let BG_GRAD=null;
   function drawBackground(){
-    // 渐变底
-    const g=ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0,"#0a1024"); g.addColorStop(1,"#060912");
-    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    // 渐变底（只创建一次）
+    if(!BG_GRAD){ BG_GRAD=ctx.createLinearGradient(0,0,0,H); BG_GRAD.addColorStop(0,"#0a1024"); BG_GRAD.addColorStop(1,"#060912"); }
+    ctx.fillStyle=BG_GRAD; ctx.fillRect(0,0,W,H);
     // 网格
     ctx.strokeStyle="rgba(90,130,220,.07)"; ctx.lineWidth=1;
     ctx.beginPath();
@@ -605,7 +621,7 @@
     ctx.stroke();
     // 漂浮星点
     ctx.fillStyle="rgba(150,190,255,.25)";
-    for(let i=0;i<40;i++){
+    for(let i=0;i<26;i++){
       const x=(i*137.5)%W, y=(i*89.3 + G.time*8)%H;
       const a=0.3+0.3*Math.sin(G.time*2+i);
       ctx.globalAlpha=a; ctx.fillRect(x,y,1.5,1.5);
@@ -624,7 +640,7 @@
     ctx.strokeStyle="rgba(40,70,140,.55)"; ctx.lineWidth=CELL*0.7; ctx.stroke();
     // 边缘霓虹（主题色）
     ctx.strokeStyle=G.mapColor; ctx.globalAlpha=0.4; ctx.lineWidth=CELL*0.86;
-    ctx.shadowColor=G.mapColor; ctx.shadowBlur=14; ctx.stroke(); ctx.shadowBlur=0; ctx.globalAlpha=1;
+    ctx.shadowColor=G.mapColor; ctx.shadowBlur=10; ctx.stroke(); ctx.shadowBlur=0; ctx.globalAlpha=1;
     // 流光虚线
     ctx.setLineDash([14,18]); ctx.lineDashOffset=-G.time*40;
     ctx.strokeStyle=G.mapColor; ctx.globalAlpha=0.9; ctx.lineWidth=3; ctx.stroke();
@@ -650,12 +666,17 @@
     }
     ctx.closePath();
   }
+  // 廉价辉光：低透明、大一圈的纯填充，替代昂贵的 shadowBlur（每帧上百次模糊是 CPU 元凶）
+  function halo(x,y,r,color,a){
+    ctx.globalAlpha=a; ctx.fillStyle=color;
+    ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); ctx.globalAlpha=1;
+  }
   function drawTowerShape(t,x,y,scale){
     const col=t.def.color;
-    ctx.save();
-    ctx.shadowColor=col; ctx.shadowBlur=12;
-    ctx.fillStyle=col; ctx.strokeStyle="#fff"; ctx.lineWidth=2;
     const s=scale||1, r=15*s;
+    halo(x,y,r*1.7,col,0.16);          // 廉价辉光，替代 shadowBlur
+    ctx.save();
+    ctx.fillStyle=col; ctx.strokeStyle="#fff"; ctx.lineWidth=2;
     if(t.def.shape==="square"){ ctx.save(); ctx.translate(x,y); ctx.rotate(t.angle+Math.PI/4); ctx.fillRect(-r,-r,2*r,2*r); ctx.strokeRect(-r,-r,2*r,2*r); ctx.restore(); }
     else if(t.def.shape==="triangle"){ poly(x,y,r,3,t.angle+Math.PI/2); ctx.fill(); ctx.stroke(); }
     else if(t.def.shape==="hexagon"){ poly(x,y,r,6,t.spin||0); ctx.fill(); ctx.stroke(); }
@@ -679,7 +700,8 @@
   function drawEnemies(){
     for(const e of G.enemies){
       const col=e.hitFlash>0?"#ffffff":e.color;
-      ctx.save(); ctx.shadowColor=e.color; ctx.shadowBlur=10;
+      halo(e.x,e.y,e.r*1.6,col,0.16);
+      ctx.save();
       ctx.fillStyle=col; ctx.strokeStyle="rgba(255,255,255,.8)"; ctx.lineWidth=2;
       const r=e.r;
       if(e.def.shape==="circle"){ ctx.beginPath(); ctx.arc(e.x,e.y,r,0,TAU); ctx.fill(); ctx.stroke(); }
@@ -699,9 +721,8 @@
 
   function drawShots(){
     for(const s of G.shots){
-      ctx.save(); ctx.shadowColor=s.color; ctx.shadowBlur=10;
+      halo(s.x,s.y,s.r*1.9,s.color,0.28);
       ctx.fillStyle=s.color; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,TAU); ctx.fill();
-      ctx.restore();
     }
   }
   function drawBeams(){
@@ -817,14 +838,14 @@
     const cost=upgradeCost(t);
     if(G.money<cost){ toast("能量不足"); return; }
     G.money-=cost; t.spent+=cost; t.level++;
-    t.pulse=0.3; beep(700,0.1,"triangle",0.05);
+    t.pulse=0.3; beep(700,0.1,"triangle",0.03);
     showPanel(t); syncHUD();
   }
   function doSell(){
     const t=G.selTower; if(!t) return;
     G.money+=Math.floor(t.spent*0.6);
     G.towers=G.towers.filter(x=>x!==t);
-    hidePanel(); beep(300,0.1,"square",0.04); syncHUD();
+    hidePanel(); beep(300,0.1,"square",0.025); syncHUD();
   }
 
   // ---------- 输入 ----------
@@ -939,7 +960,7 @@
         G.selMapIndex=i; applyMap(m);
         document.querySelectorAll(".map-card").forEach(c=>c.classList.remove("sel"));
         card.classList.add("sel");
-        beep(600,0.06,"triangle",0.04);
+        beep(600,0.06,"triangle",0.025);
       });
       wrap.appendChild(card);
     });
@@ -961,7 +982,7 @@
     b.classList.toggle("active",G.timestop);
     b.textContent=G.timestop?"⏸":"⏳";
     toast(G.timestop?"时停 · 慢动作（便于思考）":"恢复正常速度");
-    beep(G.timestop?330:520,0.08,"sine",0.04);
+    beep(G.timestop?330:520,0.08,"sine",0.025);
   }
   document.getElementById("btn-timestop").addEventListener("click",toggleTimestop);
   function togglePause(){
@@ -991,12 +1012,12 @@
   function lose(){
     G.state="over"; G.waveActive=false; laserHum(false);
     showOverlay("核心失守","你坚持到了第 "+G.wave+" 波，得分 "+G.score+"。再来一局？","重新开始");
-    noise(0.5,0.2);
+    noise(0.45,0.1);
   }
   function win(){
     G.state="win"; laserHum(false);
     showOverlay("防守成功！","你击退了全部 "+MAX_WAVE+" 波入侵，得分 "+G.score+"！","再玩一次");
-    beep(880,0.3,"triangle",0.08);
+    beep(880,0.3,"triangle",0.05);
   }
   function resetGame(){
     laserHum(false);
