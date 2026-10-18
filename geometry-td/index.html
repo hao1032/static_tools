@@ -70,6 +70,7 @@
   .icon-btn{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
     background:rgba(255,255,255,.05);border:1px solid var(--line);cursor:pointer;font-size:18px;color:var(--text);}
   .icon-btn:hover{border-color:var(--cyan);}
+  .icon-btn.active{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 0 16px rgba(0,229,255,.4);background:rgba(0,229,255,.1);color:var(--cyan);}
 
   /* 升级面板 */
   #panel{
@@ -134,7 +135,7 @@
       <div class="card">
         <h1 id="ov-title">几何塔防</h1>
         <p id="ov-desc">用几何炮塔守住能量核心，别让入侵图形抵达终点。</p>
-        <p class="hint">点击下方炮塔 → 在空地落子 · 点击已有炮塔可升级/出售<br/>快捷键 1~4 选炮塔 · 空格 开始下一波 · P 暂停</p>
+        <p class="hint">点击下方炮塔 → 在空地落子 · 点击已有炮塔可升级/出售<br/>每波清完自动进入下一波（空格可立即开始）· 1~4 选炮塔 · P 暂停 · T 时停慢动作</p>
         <button class="btn" id="ov-btn" style="margin-top:16px;">开始游戏</button>
       </div>
     </div>
@@ -143,6 +144,7 @@
   <div id="bottombar">
     <div id="towerbar" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
     <div class="ctl">
+      <div class="icon-btn" id="btn-timestop" title="时停（慢动作，便于思考）">⏳</div>
       <div class="icon-btn" id="btn-speed" title="加速">⏩</div>
       <div class="icon-btn" id="btn-sound" title="音效">🔊</div>
       <button class="btn" id="btn-wave">开始第 1 波</button>
@@ -158,6 +160,8 @@
   const CELL = 56;
   const COLS = Math.floor(W/CELL), ROWS = Math.floor(H/CELL);
   const MAX_WAVE = 20;
+  const WAVE_BREAK = 5;        // 波间自动进入下一波的等待秒数（真实时间）
+  const SLOW_FACTOR = 0.3;     // 时停时的速度倍率
 
   // 路径：网格坐标折线（蛇形），敌人沿线行进
   const PATH_CELLS = (function(){
@@ -212,6 +216,7 @@
     spawnQ:[], waveTime:0, waveActive:false,
     selType:null, selTower:null, hover:null,
     speed:1, paused:false, sound:true, shake:0, time:0,
+    timestop:false, breakT:0,
   };
 
   // ---------- 工具函数 ----------
@@ -274,6 +279,7 @@
     G.money += bonus;
     if(G.wave>=MAX_WAVE){ win(); return; }
     toast("第 "+G.wave+" 波清除！+ "+bonus+" 能量");
+    G.breakT = WAVE_BREAK;   // 自动进入下一波倒计时
     updateWaveBtn();
   }
 
@@ -408,8 +414,14 @@
     let dt=(now-last)/1000; last=now;
     dt=Math.min(dt,0.05);
     if(!G.paused && G.state!=="menu" && G.state!=="over" && G.state!=="win"){
-      const sdt=dt*G.speed;
+      const sdt=dt*(G.timestop?SLOW_FACTOR:G.speed);
       update(sdt);
+      // 波间自动进入下一波倒计时（真实时间，不受倍速/时停影响）
+      if(G.state==="ready" && G.breakT>0){
+        G.breakT-=dt;
+        if(G.breakT<=0){ G.breakT=0; startWave(); }
+        else updateWaveBtn();
+      }
     }
     G.time+=dt;
     if(G.shake>0) G.shake=Math.max(0,G.shake-dt*30);
@@ -482,6 +494,8 @@
     drawParts();
     drawPlacement();
     drawSelection();
+    if(G.state==="ready" && G.breakT>0) drawBreakHint();
+    if(G.timestop) drawSlowBadge();
     ctx.restore();
   }
 
@@ -648,6 +662,23 @@
     ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
     ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
   }
+  function drawBreakHint(){
+    ctx.save();
+    ctx.textAlign="center";
+    const cx=W/2, cy=H/2-44;
+    ctx.fillStyle="rgba(0,229,255,.9)"; ctx.font="bold 22px -apple-system,sans-serif";
+    ctx.fillText("第 "+G.wave+" 波清除！", cx, cy);
+    ctx.fillStyle="rgba(220,230,255,.85)"; ctx.font="15px -apple-system,sans-serif";
+    ctx.fillText("下一波 "+Math.ceil(G.breakT)+" 秒后自动开始（空格立即开始）", cx, cy+28);
+    ctx.restore();
+  }
+  function drawSlowBadge(){
+    ctx.save();
+    ctx.textAlign="left";
+    ctx.fillStyle="rgba(0,229,255,.92)"; ctx.font="bold 14px -apple-system,sans-serif";
+    ctx.fillText("⏸ 慢动作 · 思考中", 16, 30);
+    ctx.restore();
+  }
 
   // ---------- HUD ----------
   function syncHUD(){
@@ -664,7 +695,10 @@
   function updateWaveBtn(){
     const b=document.getElementById("btn-wave");
     if(G.state==="wave"){ b.disabled=true; b.textContent="第 "+G.wave+" 波 · 进行中"; }
-    else if(G.state==="ready"){ b.disabled=false; b.textContent="开始第 "+(G.wave+1)+" 波"; }
+    else if(G.state==="ready"){
+      if(G.breakT>0){ b.disabled=false; b.textContent="下一波 "+Math.ceil(G.breakT)+"s ⏩"; }
+      else { b.disabled=false; b.textContent="开始第 "+(G.wave+1)+" 波"; }
+    }
     else if(G.state==="menu"){ b.disabled=false; b.textContent="开始第 1 波"; }
   }
 
@@ -733,6 +767,7 @@
     if(e.key>="1"&&e.key<="4"){ selectType(TOWER_ORDER[+e.key-1]); }
     else if(e.key===" "){ e.preventDefault(); if(G.state==="ready"||G.state==="menu") startWave(); }
     else if(e.key==="p"||e.key==="P"){ togglePause(); }
+    else if(e.key==="t"||e.key==="T"){ toggleTimestop(); }
     else if(e.key==="Escape"){ G.selType=null; clearSelBtns(); hidePanel(); }
   });
 
@@ -790,6 +825,15 @@
   document.getElementById("btn-speed").addEventListener("click",function(){
     G.speed = G.speed===1?2: G.speed===2?3:1; this.textContent= G.speed===1?"⏩": G.speed===2?"⏩⏩":"▶"; 
   });
+  function toggleTimestop(){
+    G.timestop=!G.timestop;
+    const b=document.getElementById("btn-timestop");
+    b.classList.toggle("active",G.timestop);
+    b.textContent=G.timestop?"⏸":"⏳";
+    toast(G.timestop?"时停 · 慢动作（便于思考）":"恢复正常速度");
+    beep(G.timestop?330:520,0.08,"sine",0.04);
+  }
+  document.getElementById("btn-timestop").addEventListener("click",toggleTimestop);
   function togglePause(){
     if(G.state!=="wave"&&G.state!=="ready") return;
     G.paused=!G.paused; toast(G.paused?"已暂停":"继续");
@@ -827,7 +871,7 @@
     G.money=200; G.lives=20; G.wave=0; G.score=0;
     G.enemies=[]; G.towers=[]; G.shots=[]; G.parts=[]; G.beams=[];
     G.spawnQ=[]; G.waveTime=0; G.waveActive=false; G.selType=null; G.selTower=null;
-    G.speed=1; G.paused=false; G.shake=0; G.state="ready";
+    G.speed=1; G.paused=false; G.shake=0; G.timestop=false; G.breakT=0; G.state="ready";
     document.getElementById("btn-speed").textContent="⏩";
     clearSelBtns(); hidePanel(); syncHUD(); updateWaveBtn();
   }
