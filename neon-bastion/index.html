@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a1012">
+<title>棱镜防线 · NEON BASTION</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="../" aria-label="返回工具首页"><span class="brand-icon">⬡</span><span>棱镜防线<small>NEON BASTION / TOWER DEFENSE</small></span></a>
+    <div class="top-actions"><span class="live"><i></i> SYSTEM ONLINE</span><button class="icon-btn" id="sound" aria-label="开启音效" title="切换音效">♪<span>音效关</span></button><button class="icon-btn" id="help" title="操作说明">?<span>指南</span></button></div>
+  </header>
+  <main>
+    <section class="intro"><div><div class="eyebrow">TACTICAL DEFENSE SIMULATOR <span>V.02</span></div><h1>让几何，成为你的防线<span>。</span></h1><p>部署炮塔 · 构筑火力网络 · 守住最后的能量核心</p></div><div class="sector"><span>当前战区</span><strong id="sector-title">01 / 星环边界</strong><small id="sector-code">SECTOR: ORBITAL FRONTIER</small></div></section>
+    <section class="mission-config" aria-label="战区设置">
+      <div class="config-top">
+        <label class="config-field"><span>战区 / MAP</span><select id="map-select" aria-describedby="map-tip"></select></label>
+        <label class="config-field difficulty-field"><span>难度 / THREAT LEVEL</span><select id="difficulty" aria-describedby="difficulty-tip"></select></label>
+        <label class="auto-toggle"><input id="auto-wave" type="checkbox"><span class="toggle-track"></span><span id="auto-label">自动开始下一波</span></label>
+        <span class="record" id="best">本战区纪录 0 / 20</span>
+      </div>
+      <div class="config-notes"><span id="map-tip"></span><span id="config-lock">开局前可自由切换地图与难度</span></div>
+      <div class="difficulty-tip" id="difficulty-tip"></div>
+    </section>
+    <div class="dashboard">
+      <section class="arena-panel">
+        <div class="stats">
+          <div class="stat"><span class="stat-icon mint">◈</span><div><small>能量晶体</small><strong id="credits">360</strong></div></div>
+          <div class="stat"><span class="stat-icon coral">♡</span><div><small>核心完整度</small><strong><span id="lives">20</span><em id="lives-max">/ 20</em></strong></div></div>
+          <div class="stat"><span class="stat-icon purple">≋</span><div><small>当前波次</small><strong><span id="wave">00</span><em>/ 20</em></strong></div></div>
+          <div class="stat"><span class="stat-icon gold">⌖</span><div><small>已消灭</small><strong id="kills">0</strong></div></div>
+        </div>
+        <div class="board-wrap">
+          <div class="board-label"><span class="tiny-cross">+</span> LIVE TACTICAL VIEW <span id="status">准备部署</span></div>
+          <canvas id="board" width="960" height="600" tabindex="0" aria-label="塔防战场。选择炮塔后点击网格部署；使用方向键移动网格光标，回车部署或选择炮塔。"></canvas>
+          <div class="board-bottom"><span><i></i> 路径已锁定</span><span>GRID 24 × 15 <b>+</b></span></div>
+          <div class="toast" id="toast" role="status" aria-live="polite"></div>
+          <div class="overlay" id="overlay" hidden><div class="result-symbol">⬡</div><div class="eyebrow">MISSION REPORT</div><h2 id="result-title"></h2><p id="result-text"></p><button class="primary" id="restart">重新部署 ↗</button></div>
+        </div>
+        <div class="arena-controls"><div class="speed-group"><button id="pause" title="暂停 / 继续（空格）" aria-label="暂停">Ⅱ</button><span class="divider"></span><button id="speed" title="切换战斗速度">1× <small>速度</small></button></div><span class="wave-hint" id="wave-hint">防线就绪，等待你的指令</span><button class="primary" id="start">开始第 01 波 <span>↗</span></button></div>
+      </section>
+      <aside class="sidebar">
+        <section class="arsenal"><div class="section-heading"><h2>防御阵列</h2><span>ARSENAL / 05</span></div><p class="section-desc">选择炮塔，再点击战场空地部署</p><div id="tower-list"></div><div class="build-hint"><span>⌁</span> 点击已部署炮塔，升级或回收<br><span class="hint-indent">按 1–5 选塔 · Esc 取消</span></div></section>
+        <section class="selection" id="selection"><div class="section-heading"><h2>防线情报</h2><span>INTEL</span></div><div id="details"><div class="intel-icon">◎</div><p>每一道棱角，都是一道防线。</p><small>没有免费炮塔：开局先建立火力。用铁柱延伸雷链，控制好晶体开支。</small></div></section>
+        <button class="ability" id="ability"><span class="ability-icon">✳</span><span><strong>核心过载 <em>SPACE-TIME PULSE</em></strong><small id="ability-text">全屏伤害 + 减速 · 按 Q 释放</small></span><b id="ability-state">就绪 ↗</b></button>
+      </aside>
+    </div>
+    <footer><span><i></i> 纯粹几何，无限火力。</span><span>20 WAVES <b>·</b> 4 TOWERS + RELAY <b>·</b> ONE CORE</span><button id="reset">重新开始 ↺</button></footer>
+  </main>
+</div>
+<dialog id="guide"><button class="close" id="close-help" aria-label="关闭指南">×</button><div class="eyebrow">FIELD MANUAL / 01</div><h2>选择战区，迎接挑战。</h2><p>敌人将沿发光路径入侵。守住能量核心，完成全部 20 波即可获胜。</p><ul><li><b>部署：</b>选择右侧炮塔，再点击战场空地。炮塔自动攻击射程内最靠近核心的敌人。</li><li><b>搭配：</b>脉冲塔快速射击，雷链塔连锁攻击，霜环塔减速，星陨塔造成范围伤害。</li><li><b>中继：</b>铁柱仅需 30 晶体，不主动攻击。连接雷链塔后，可逐根接力延伸射程；每跳保留 85% 伤害。雷链塔 1 / 2 / 3 级最多接力 3 / 4 / 5 根铁柱，升级铁柱增加接力距离，同一雷链塔不会因分叉额外开火。</li><li><b>战区：</b>4 张地图、4 档难度，开局后锁定；重新开始可更换。自动续波会在清场后倒计时 5 秒，暂停冻结倒计时，取消勾选即可停止；第一波需要手动开始。</li><li><b>成长：</b>消灭敌人和完成波次获得晶体。点击炮塔可升级（最高 3 级）或按总投入的 70% 回收。</li><li><b>支援：</b>核心过载对全场敌人造成伤害并减速，冷却 42 秒，仅在交战时恢复。每 5 波出现强敌，Boss 抗减速与过载；装甲敌人抵抗脉冲，护盾敌人抵抗雷链，注意组合火力。</li><li><b>快捷键：</b>1–5 选塔，Esc 取消，空格暂停，Q 过载；方向键 + 回车也能部署。</li></ul><p class="guide-note">手机上可直接触控。切换到其他页面时战斗会自动暂停。</p><button class="primary" id="guide-ok">了解，进入战场 ↗</button></dialog>
+<script src="game.js"></script>
+</body>
+</html>
