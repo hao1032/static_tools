@@ -16,6 +16,10 @@ const maps = [
  {id:'canyon',name:'折跃峡谷',en:'WARP CANYON',tip:'纵深战区 · 用中继串联分散的防线',color:'#b2a0ff',path:[[0,3],[7,3],[7,10],[14,10],[14,4],[20,4],[20,8],[23,8]]},
  {id:'echo',name:'回声回廊',en:'ECHO CORRIDOR',tip:'回环战区 · 敌人移速更快，利用重叠火力',color:'#7ddcff',path:[[0,11],[20,11],[20,3],[4,3],[4,7],[23,7]]},
  {id:'rift',name:'断层捷径',en:'RIFT SHORTCUT',tip:'短途战区 · 空间紧凑，优先减速与爆破',color:'#f2cd83',path:[[0,7],[7,7],[7,4],[14,4],[14,9],[19,9],[19,7],[23,7]]}
+ ,{id:'helix',name:'螺旋回廊',en:'HELIX RUN',tip:'多重转向战区 · 适合用霜环塔控制长距离回廊',color:'#ff9fbe',path:[[0,2],[5,2],[5,12],[11,12],[11,5],[17,5],[17,10],[23,10]]}
+ ,{id:'prism',name:'棱镜分界',en:'PRISM DIVIDE',tip:'交错分界战区 · 雷链塔可以借助中继覆盖中心区域',color:'#8fe7ff',path:[[0,10],[3,10],[3,4],[9,4],[9,9],[15,9],[15,2],[23,2]]}
+ ,{id:'gauntlet',name:'熔断回路',en:'FUSED GAUNTLET',tip:'连续折返战区 · 敌人路径较长，适合建立多层火力网',color:'#ffbd7a',path:[[0,5],[6,5],[6,12],[12,12],[12,3],[18,3],[18,8],[23,8]]}
+ ,{id:'zenith',name:'天顶航线',en:'ZENITH LINE',tip:'高低交错战区 · 入口与核心分处两侧，考验部署节奏',color:'#c6a6ff',path:[[0,12],[8,12],[8,8],[4,8],[4,2],[14,2],[14,6],[23,6]]}
 ];
 const difficulties = {
  casual:{name:'休闲',credits:440,lives:25,hp:.75,speed:.9,income:1.12,count:.9,gap:1.1,description:'容错充足 · 生命 ×0.75 / 移速 ×0.90 / 收入 ×1.12'},

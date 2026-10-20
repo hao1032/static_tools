@@ -3,9 +3,9 @@ const assert = require('node:assert/strict');
 const {loadGame} = require('./harness.cjs');
 const enemy=(x,y,d=0)=>({x,y,d,hp:1000,maxHp:1000,kind:'normal',reward:6,hit:0,slow:0,size:10,speed:0});
 
-test('all four maps have valid routes, forbidden roads, and separate records',()=>{
+test('all maps have valid routes, forbidden roads, and separate records',()=>{
  const {g,el}=loadGame();const keys=new Set();
- for(let m=0;m<4;m++)for(const difficulty of Object.keys(g.difficulties)){
+ for(let m=0;m<g.maps.length;m++)for(const difficulty of Object.keys(g.difficulties)){
   el('map-select').value=String(m);el('difficulty').value=difficulty;g.fresh();
   assert.equal(g.state.towers.length,0);assert.equal(g.state.credits,g.difficulties[difficulty].credits);
   for(const segment of g.segments){
@@ -14,7 +14,7 @@ test('all four maps have valid routes, forbidden roads, and separate records',()
   }
   assert.ok(g.pathLength>1200);assert.equal(g.position(g.pathLength).x,940);keys.add(g.recordKey());
  }
- assert.equal(keys.size,16);
+ assert.equal(keys.size,g.maps.length*Object.keys(g.difficulties).length);
 });
 
 test('building, upgrading and selling use actual crystal costs',()=>{
