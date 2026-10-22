@@ -108,8 +108,8 @@
     <p class="sub">实用小工具 · 小游戏 · 学习助手，全部纯静态、免费、双击即用。</p>
     <nav class="tabs" role="tablist" aria-label="分类切换">
       <button class="tab active" data-cat="tool" role="tab" aria-selected="true">工具 <span class="cnt">6</span></button>
-      <button class="tab" data-cat="game" role="tab" aria-selected="false">游戏 <span class="cnt">3</span></button>
-      <button class="tab" data-cat="edu" role="tab" aria-selected="false">教育 <span class="cnt">5</span></button>
+      <button class="tab" data-cat="game" role="tab" aria-selected="false">游戏 <span class="cnt">5</span></button>
+      <button class="tab" data-cat="edu" role="tab" aria-selected="false">教育 <span class="cnt">6</span></button>
     </nav>
   </header>
 
@@ -177,6 +177,12 @@
         <p>未来风塔防战场：8 张地图、4 档难度与 5 种炮塔组合，守住能量核心并完成 20 波进攻。</p>
       </a>
 
+      <a class="tool" data-cat="game" href="./pink-stack/">
+        <div class="ico">▦</div>
+        <h3>粉色方块：上涌危机</h3>
+        <p>在不断上升的粉色方块与碎屑带中旋转、移动并消行，看看能否撑过第五关。</p>
+      </a>
+
       <!-- 教育 -->
       <a class="tool" data-cat="edu" href="./clock-learning/">
         <div class="ico">钟</div>
@@ -222,6 +228,14 @@
     (function () {
       var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
       var tools = Array.prototype.slice.call(document.querySelectorAll('.tool'));
+      tabs.forEach(function (tab) {
+        var cat = tab.getAttribute('data-cat');
+        var count = tools.filter(function (tool) {
+          return tool.getAttribute('data-cat') === cat;
+        }).length;
+        var badge = tab.querySelector('.cnt');
+        if (badge) badge.textContent = count;
+      });
       function show(cat) {
         tools.forEach(function (t) {
           t.style.display = (t.getAttribute('data-cat') === cat) ? '' : 'none';
