@@ -4,3 +4,6 @@
 # 系统/编辑器
 .DS_Store
 Thumbs.db
+
+# Playwright 调试产物
+.playwright-mcp/

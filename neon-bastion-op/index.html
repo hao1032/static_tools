@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05080f">
+<title>霓虹堡垒：超载协议 · NEON BASTION OVERDRIVE</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="../" aria-label="返回工具首页">
+      <span class="brand-icon">✦</span>
+      <span class="brand-text">霓虹堡垒<small>NEON BASTION · OVERDRIVE PROTOCOL</small></span>
+    </a>
+    <div class="top-actions">
+      <span class="live"><i></i> LINK ESTABLISHED</span>
+      <button class="icon-btn" id="sound" aria-label="切换音效" title="切换音效">♪<span>音效开</span></button>
+      <button class="icon-btn" id="help" title="操作说明（H）">?<span>手册</span></button>
+    </div>
+  </header>
+
+  <!-- ══════════ 主菜单 ══════════ -->
+  <main id="screen-menu" class="screen">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">TACTICAL DEFENSE SIMULATOR <span>MK.III</span></div>
+        <h1>超载协议<span>。</span></h1>
+        <p>12 战区 · 13 防御阵列 · 19 种威胁 · 30 波终局 · 无尽挑战</p>
+      </div>
+      <div class="hero-stats">
+        <div><strong id="menu-best">00</strong><span>最高波次</span></div>
+        <div><strong id="menu-maps">12</strong><span>已解锁战区</span></div>
+        <div><strong id="menu-kills">0</strong><span>累计消灭</span></div>
+      </div>
+    </section>
+
+    <section class="mission">
+      <div class="mission-head">
+        <h2>选择战区</h2>
+        <span class="mission-note">点击卡片选定 · 难度影响收益与敌人强度</span>
+      </div>
+      <div class="map-grid" id="map-grid" role="listbox" aria-label="战区列表"></div>
+
+      <div class="mission-foot">
+        <div class="diff-picker" id="diff-picker" role="radiogroup" aria-label="难度"></div>
+        <div class="mission-actions">
+          <div class="sector-info">
+            <strong id="sector-name">01 / 星环边界</strong>
+            <small id="sector-en">SECTOR: ORBITAL FRONTIER</small>
+            <p id="sector-tip"></p>
+            <span id="sector-record">本战区纪录 0 / 30</span>
+          </div>
+          <button class="primary big" id="deploy">部署防线 <span>↗</span></button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="menu-foot">
+      <span><i></i> 纯粹几何，超载火力。</span>
+      <span>12 SECTORS · 13 TOWERS · 30 WAVES · ∞ ENDLESS</span>
+      <button id="reset-records">清除纪录</button>
+    </footer>
+  </main>
+
+  <!-- ══════════ 战场 ══════════ -->
+  <main id="screen-game" class="screen" hidden>
+    <div class="hud">
+      <div class="hud-stats">
+        <div class="stat"><span class="si mint">◈</span><div><small>晶体</small><strong id="credits">0</strong></div></div>
+        <div class="stat"><span class="si coral">♡</span><div><small>核心</small><strong><span id="lives">20</span><em id="lives-max">/20</em></strong></div></div>
+        <div class="stat"><span class="si purple">≋</span><div><small>波次</small><strong><span id="wave">00</span><em>/30</em></strong></div></div>
+        <div class="stat"><span class="si gold">⌖</span><div><small>击杀</small><strong id="kills">0</strong></div></div>
+        <div class="stat wide"><span class="si cyan">◈</span><div><small>本波收益</small><strong id="income">+0</strong></div></div>
+      </div>
+      <div class="hud-map">
+        <span class="sector-tag" id="hud-sector">01 / 星环边界</span>
+        <span class="sector-diff" id="hud-diff">标准</span>
+        <button class="ghost-btn" id="quit" title="返回菜单（进度不保留）">✕ 退出</button>
+      </div>
+    </div>
+
+    <div class="dashboard">
+      <section class="arena-panel">
+        <div class="board-wrap">
+          <canvas id="board" width="960" height="600" tabindex="0"
+            aria-label="塔防战场。选择炮塔后点击空地部署；方向键移动光标，回车部署。"></canvas>
+          <div class="board-top">
+            <span class="tiny-cross">+</span> LIVE TACTICAL VIEW
+            <span id="status" class="status-chip">准备部署</span>
+          </div>
+          <div class="board-bottom">
+            <span><i></i> <span id="wave-note">防线就绪，等待你的指令</span></span>
+            <span id="spawn-left">GRID 24 × 15</span>
+          </div>
+          <div class="toast" id="toast" role="status" aria-live="polite"></div>
+          <div class="overlay" id="overlay" hidden>
+            <div class="result-symbol" id="result-symbol">✦</div>
+            <div class="eyebrow" id="result-eyebrow">MISSION REPORT</div>
+            <h2 id="result-title"></h2>
+            <p id="result-text"></p>
+            <div class="result-actions">
+              <button class="primary" id="again">再来一局 <span>↺</span></button>
+              <button class="secondary" id="endless" hidden>进入无尽模式 <span>∞</span></button>
+              <button class="secondary" id="to-menu">返回菜单</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="arena-controls">
+          <div class="speed-group">
+            <button id="pause" title="暂停 / 继续（空格）" aria-label="暂停">Ⅱ</button>
+            <span class="divider"></span>
+            <button id="speed" title="切换战斗速度（F）">1× <small>速度</small></button>
+          </div>
+          <div class="ability-group" id="ability-group"></div>
+          <button class="primary" id="start">开始第 01 波 <span>↗</span></button>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <section class="arsenal">
+          <div class="section-heading"><h2>防御阵列</h2><span id="arsenal-count">ARSENAL / 13</span></div>
+          <p class="section-desc">选择炮塔，再点击战场的空地部署 · 数字键 1–9</p>
+          <div id="tower-list" class="tower-list"></div>
+          <div class="build-hint"><span>⌁</span> 点击已部署炮塔可升级或回收<span class="hint-indent">Esc 取消选择 · Tab 切换分类</span></div>
+        </section>
+        <section class="selection" id="selection">
+          <div class="section-heading"><h2>防线情报</h2><span>INTEL</span></div>
+          <div id="details">
+            <div class="intel-icon">◎</div>
+            <p>每一道棱角，都是一道防线。</p>
+            <small>开局先建立基础火力，再补减速与爆破。铁柱中继需连接雷链矩阵才能延伸射程。</small>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <dialog id="guide">
+    <button class="close" id="close-help" aria-label="关闭手册">×</button>
+    <div class="eyebrow">FIELD MANUAL / MK.III</div>
+    <h2>超载协议 · 作战手册</h2>
+    <p>敌人沿霓虹路径进攻能量核心。坚持 30 波即为通关，之后可进入无尽模式继续刷新纪录。</p>
+    <ul>
+      <li><b>部署：</b>选择右侧炮塔，点击路径旁的空地。悬停会显示射程圈。炮塔可升级 3 级，回收返还 70% 投入。</li>
+      <li><b>伤害类型：</b>动能 / 能量 / 冰霜 / 爆破 / 毒素 / 量子。敌人各有抗性，棱盾兵的护盾会吸收动能与能量，毒素与量子可穿透。</li>
+      <li><b>雷链中继：</b>铁柱不通电无效。雷链矩阵按等级可接力 3 / 4 / 5 根铁柱，每跳保留 85% 伤害。</li>
+      <li><b>棱镜增幅：</b>邻近炮塔获得 +20%/级 伤害与 +7%/级 射程，取最高值，不叠加。</li>
+      <li><b>威胁：</b>干扰者压制炮塔射速；自爆虫会瘫痪炮塔；相位体周期性减伤；方尖碑为敌人加速；先驱者持续召唤。</li>
+      <li><b>支援技能：</b>Q 核心过载 · E 轨道轰炸（点击战场指定位置）· R 时间凝滞 · F 核心修复。</li>
+      <li><b>快捷键：</b>1–9 选塔，Esc 取消，空格暂停，F 切换倍速，方向键移动光标，回车部署。</li>
+      <li><b>提示：</b>暂停时仍可建造与升级。Boss 波前预留晶体，优先覆盖路径折角。</li>
+    </ul>
+    <button class="primary" id="guide-ok">了解，进入战场 ↗</button>
+  </dialog>
+</div>
+
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script src="render.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

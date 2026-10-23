@@ -33,6 +33,13 @@
     └── problem.svg         # 原题示意图（按已验证模型重建）
 └── geometry-td/            # 工具十：几何塔防小游戏
     └── index.html          # 单文件，Canvas 霓虹风塔防，4 塔型 20 波
+└── neon-bastion-op/        # 工具十一：霓虹堡垒 · 超载协议（塔防重制版）
+    ├── index.html          # 主菜单 / 战场 / 手册
+    ├── data.js             # 12 地图 · 13 炮塔 · 19 敌人 · 30 波 · 难度
+    ├── engine.js           # 纯逻辑模拟（无 DOM，可注入随机种子）
+    ├── render.js           # Canvas 渲染（预烘焙辉光精灵与底图）
+    ├── app.js              # 界面、音频合成、输入与主循环
+    └── tests/              # node:test 引擎测试 + 自动玩家平衡模拟
 ```
 
 > 新增工具：在根目录建一个带 `index.html` 的文件夹（如 `qr-generator/`），然后在根目录 `index.html` 复制一张导航卡片链接过去即可。
@@ -78,6 +85,7 @@ npx http-server -p 8765
 | 数轴动线段 · 动画讲解 | <http://localhost:8765/number-line-animation/> |
 | 数轴动线段 · 制作过程 | <http://localhost:8765/number-line-making/> |
 | 几何塔防 | <http://localhost:8765/geometry-td/> |
+| 霓虹堡垒 · 超载协议 | <http://localhost:8765/neon-bastion-op/> |
 
 > 启动服务器时如果提示端口被占用，可用 `--bind 0.0.0.0` 或换一个端口（如 `8080`），并相应更新访问地址。
 >
