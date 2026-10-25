@@ -40,6 +40,8 @@
     ├── render.js           # Canvas 渲染（预烘焙辉光精灵与底图）
     ├── app.js              # 界面、音频合成、输入与主循环
     └── tests/              # node:test 引擎测试 + 自动玩家平衡模拟
+└── geo-defense/            # 工具十二：几何防线 GEO DEFENSE（几何塔防）
+    └── index.html          # 单文件：12 地图 · 30 武器 · 15 怪物 · 10 BOSS · Web Audio 音效（可开关）
 ```
 
 > 新增工具：在根目录建一个带 `index.html` 的文件夹（如 `qr-generator/`），然后在根目录 `index.html` 复制一张导航卡片链接过去即可。
@@ -86,6 +88,7 @@ npx http-server -p 8765
 | 数轴动线段 · 制作过程 | <http://localhost:8765/number-line-making/> |
 | 几何塔防 | <http://localhost:8765/geometry-td/> |
 | 霓虹堡垒 · 超载协议 | <http://localhost:8765/neon-bastion-op/> |
+| 几何防线 GEO DEFENSE | <http://localhost:8765/geo-defense/> |
 
 > 启动服务器时如果提示端口被占用，可用 `--bind 0.0.0.0` 或换一个端口（如 `8080`），并相应更新访问地址。
 >
