@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>五位数计数 · 动画讲解</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#0f172a; --ink2:#475569; --ink3:#8a97a8;
+    --line:#e5e9f0; --line2:#eef1f6;
+    --blue:#2563eb; --bluebg:#eaf0ff;
+    --orange:#ea580c; --orangebg:#fff1e7;
+    --red:#dc2626; --redbg:#fdecec;
+    --green:#15803d; --greenbg:#e8f6ec;
+    --violet:#7c3aed; --violetbg:#f1ecfe;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.7;
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:30px 30px 80px}
+  .crumb{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--ink3);margin-bottom:18px}
+  .crumb a{color:var(--blue);text-decoration:none}
+  .crumb a:hover{text-decoration:underline}
+  .crumb span{padding:2px 10px;border-radius:999px;background:var(--violetbg);color:var(--violet);font-weight:600}
+  .hero h1{font-size:30px;margin:0 0 10px;letter-spacing:.4px}
+  .hero .q{margin:0 0 6px;font-size:17px;color:var(--ink)}
+  .hero .q b{color:var(--red);background:var(--redbg);padding:1px 8px;border-radius:7px;margin:0 2px}
+  .hero .sub{margin:0 0 22px;color:var(--ink2);font-size:14.5px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+        padding:22px 26px;margin-bottom:20px;box-shadow:0 1px 2px rgba(16,24,40,.03)}
+  .card h2{font-size:19px;margin:0 0 6px}
+  .muted{color:var(--ink2)}
+  .small{font-size:13.5px}
+
+  /* ---- 步骤条 ---- */
+  .stage-head{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .steps{display:flex;gap:7px;flex-wrap:wrap}
+  .step-chip{border:1px solid var(--line);background:#fff;color:var(--ink2);font-family:inherit;
+    font-size:13px;font-weight:600;padding:7px 13px;border-radius:9px;cursor:pointer;transition:.16s;white-space:nowrap}
+  .step-chip:hover{border-color:#b9c8e4;background:#f8fafd}
+  .step-chip.on{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.2)}
+  .step-chip.done{background:var(--bluebg);border-color:#cddcff;color:#1e40af}
+  .rates{display:inline-flex;background:#f1f4f9;border-radius:9px;padding:3px;gap:3px}
+  .rates button{border:0;background:transparent;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink2);
+    padding:6px 10px;border-radius:7px;cursor:pointer}
+  .rates button.active{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(16,24,40,.12)}
+
+  /* ---- 填位顺序切换 ---- */
+  .order-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:-4px 0 18px;
+    padding:10px 12px;border:1px solid var(--line2);border-radius:11px;background:#fafbfd}
+  .order-label{font-size:13px;font-weight:700;color:var(--ink2);white-space:nowrap}
+  .seg{display:inline-flex;background:#eef2f8;border-radius:9px;padding:3px;gap:3px;flex-wrap:wrap}
+  .seg button{border:0;background:transparent;font-family:inherit;font-size:12.8px;font-weight:600;
+    color:var(--ink2);padding:7px 12px;border-radius:7px;cursor:pointer;transition:.16s;white-space:nowrap}
+  .seg button:hover{color:var(--blue)}
+  .seg button.active{background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(16,24,40,.13)}
+  .order-tip{font-size:12.8px;font-weight:600;padding:3px 10px;border-radius:7px;
+    background:var(--greenbg);color:#166534}
+  .order-tip.warn{background:var(--orangebg);color:#9a3412}
+  .order-tip.bad{background:var(--redbg);color:#b91c1c}
+  .factor.branch .fv{font-size:12px;letter-spacing:0}
+  .factor.branch.on{background:var(--orangebg);border-color:#f6c9ab;color:#9a3412}
+  .factor.branch.on .fp{color:#b4622c}
+  .branch-box{margin-top:14px;border:1px solid #f6c9ab;background:#fffaf5;border-radius:12px;padding:14px 18px}
+  .branch-box h3{margin:0 0 8px;font-size:15px;color:#9a3412}
+  .brow{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;font-size:13.5px;
+    padding:6px 0;border-bottom:1px dashed #f3ddc8}
+  .brow .bk{font-weight:700;min-width:148px;color:var(--ink)}
+  .brow .bf{font:700 14px ui-monospace,SFMono-Regular,Menlo,monospace;color:#9a3412}
+  .brow .bd{font-size:12.8px;color:var(--ink2)}
+  .brow.sum{background:var(--greenbg);border-radius:8px;padding:9px 12px;margin-top:8px;border:0}
+  .brow.sum .bk,.brow.sum .bf{color:#166534}
+
+  /* ---- 舞台 ---- */
+  .board{background:linear-gradient(180deg,#fbfcfe,#f7f9fd);border:1px solid var(--line2);
+         border-radius:14px;padding:26px 22px 20px}
+  .slots{display:flex;justify-content:center;gap:16px;margin-bottom:8px}
+  .slot-wrap{text-align:center}
+  .slot{width:96px;height:104px;border:2px dashed #c9d3e3;border-radius:14px;background:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font:700 50px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue);
+    transition:border-color .2s,background .2s,box-shadow .2s,transform .2s}
+  .slot.filled{border-style:solid;border-color:var(--blue);background:var(--bluebg);color:#1e40af}
+  .slot.target{border-color:var(--orange);background:var(--orangebg);box-shadow:0 0 0 5px rgba(234,88,12,.09)}
+  .slot.pop{animation:pop .42s cubic-bezier(.2,1.5,.4,1)}
+  @keyframes pop{0%{transform:scale(.78)}60%{transform:scale(1.09)}100%{transform:scale(1)}}
+  .plabel{font-size:12.5px;color:var(--ink3);margin-top:8px;white-space:nowrap}
+  .plabel b{color:var(--orange);font-weight:700}
+  .plabel.first b{color:var(--blue)}
+
+  .pool-title{text-align:center;font-size:12.5px;color:var(--ink3);margin:22px 0 10px;letter-spacing:.3px}
+  .pool{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
+  .d{width:52px;height:56px;border-radius:12px;border:1.5px solid #d8e0ec;background:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font:700 25px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    transition:background .3s,border-color .3s,color .3s,opacity .3s,transform .3s,box-shadow .3s}
+  .d.idle{color:var(--ink2)}
+  .d.free{background:#fff;border-color:#a8bff0;color:#1e40af;box-shadow:0 2px 7px rgba(37,99,235,.08)}
+  .d.banned{background:var(--redbg);border-color:#f3b9b9;color:#b91c1c;text-decoration:line-through;opacity:.9;transform:translateY(3px)}
+  .d.used{background:#eef1f6;border-color:#e5e9f0;color:#a7b1c0;opacity:.85}
+  .d.pick{background:var(--blue);border-color:var(--blue);color:#fff;transform:scale(1.12);box-shadow:0 8px 18px rgba(37,99,235,.3)}
+  .pool-legend{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;color:var(--ink2)}
+  .pool-legend i{display:inline-block;width:13px;height:13px;border-radius:4px;vertical-align:-2px;margin-right:5px;border:1.5px solid transparent}
+  .lg-free{background:#fff;border-color:#a8bff0!important}
+  .lg-ban{background:var(--redbg);border-color:#f3b9b9!important}
+  .lg-used{background:#eef1f6;border-color:#e5e9f0!important}
+  .ghost{position:fixed;z-index:99;border-radius:12px;background:var(--blue);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font:700 25px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    box-shadow:0 10px 26px rgba(37,99,235,.35);pointer-events:none}
+
+  /* ---- 讲解 ---- */
+  .explain{display:flex;gap:16px;margin-top:20px;padding:18px 20px;border:1px solid var(--line);
+    border-radius:12px;background:#f8fafd;min-height:118px}
+  .explain.flash{animation:fadein .34s ease}
+  @keyframes fadein{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .ex-no{flex:0 0 46px;height:46px;border-radius:12px;background:var(--blue);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;letter-spacing:.5px}
+  .ex-body{flex:1;min-width:0}
+  .ex-body h3{margin:0 0 4px;font-size:17px}
+  .ex-body p{margin:0;font-size:14.5px;color:var(--ink2)}
+  .ex-body p b{color:var(--ink)}
+  .ex-note{margin-top:10px;font-size:13.5px;color:#9a3412;background:var(--orangebg);
+    border-left:3px solid var(--orange);border-radius:0 8px 8px 0;padding:7px 12px}
+  .ex-note b{color:#7c2d12}
+
+  /* ---- 算式 ---- */
+  .calc{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px;padding:14px 18px;
+    border:1px solid var(--line2);border-radius:12px;background:#fff}
+  .calc-label{font-size:13px;font-weight:700;color:var(--ink2);margin-right:6px}
+  .factor{position:relative;min-width:50px;text-align:center;padding:8px 6px 6px;border-radius:9px;
+    border:1px solid var(--line);background:#f7f9fc;color:#b6c0cf;
+    font:700 20px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace;transition:.25s}
+  .factor.on{background:var(--bluebg);border-color:#c6d8ff;color:#1e40af}
+  .factor .fp{display:block;font-size:11px;font-weight:600;line-height:1.4;color:var(--ink3);margin-top:3px;letter-spacing:0}
+  .factor.on .fp{color:#4c6bb5}
+  .op{font:700 18px ui-monospace,Menlo,monospace;color:var(--ink3)}
+  .total{min-width:96px;text-align:center;font:700 27px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:#b6c0cf}
+  .total.done{color:var(--green)}
+  .calc-tip{width:100%;font-size:12.5px;color:var(--ink3);margin-top:4px}
+
+  /* ---- 控制 ---- */
+  .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);font-family:inherit;font-size:13.5px;
+    font-weight:600;padding:9px 16px;border-radius:9px;cursor:pointer;transition:.16s;display:inline-flex;
+    align-items:center;gap:7px}
+  .btn:hover{background:#f7f9fc;border-color:#c9d3e3}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.primary:hover{background:#1d4ed8}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .hint{font-size:12.5px;color:var(--ink3);margin-left:auto}
+
+  /* ---- 其它卡片 ---- */
+  details.problem summary,details.method summary{cursor:pointer;font-size:17px;font-weight:600;
+    list-style:none;display:flex;align-items:center;gap:9px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"▸";color:var(--ink3);transition:transform .2s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  .mbody{margin-top:16px}
+  .mrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;padding:11px 14px;border:1px solid var(--line2);
+    border-radius:10px;background:#fafbfd;margin-bottom:9px;font-size:14px}
+  .mrow .k{font-weight:700;min-width:132px}
+  .mrow .f{font:700 15px ui-monospace,SFMono-Regular,Menlo,monospace;color:#1e40af}
+  .mrow .desc{font-size:13px;color:var(--ink2)}
+  .mrow.bad .k{color:var(--red)} .mrow.bad .f{color:var(--red)}
+  .mrow.ok{background:var(--greenbg);border-color:#bfe3cb} .mrow.ok .k,.mrow.ok .f{color:#166534}
+  .bar{display:flex;height:26px;border-radius:8px;overflow:hidden;margin:16px 0 8px;background:#eef1f6}
+  .bar i{display:block;height:100%;width:0;transition:width .85s cubic-bezier(.2,.8,.2,1)}
+  .bar .g{background:#4ade80} .bar .b1{background:#f87171} .bar .b2{background:#fbbf24}
+  .bar-legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin-bottom:12px}
+  .bar-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+  .warnbox{border-left:3px solid #f59e0b;background:#fffbeb;border-radius:0 9px 9px 0;padding:10px 14px;
+    margin-top:12px;font-size:13.5px;color:#78500a}
+
+  .pitfalls{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:14px}
+  .pit{border:1px solid var(--line2);border-radius:11px;padding:13px 15px;background:#fafbfd}
+  .pit .n{display:inline-block;background:var(--redbg);color:#b91c1c;font-weight:700;font-size:12px;
+    border-radius:6px;padding:1px 8px;margin-bottom:6px}
+  .pit p{margin:0;font-size:13.5px;color:var(--ink2)}
+  .pit p b{color:var(--ink)}
+
+  .q{border-top:1px solid var(--line2);padding:14px 0 4px}
+  .q:first-of-type{border-top:0}
+  .q h3{margin:0 0 10px;font-size:14.5px}
+  .opts{display:flex;gap:9px;flex-wrap:wrap}
+  .opt{border:1px solid var(--line);background:#fff;font-family:inherit;font-size:13.5px;font-weight:600;
+    color:var(--ink2);padding:8px 15px;border-radius:9px;cursor:pointer;transition:.15s}
+  .opt:hover{border-color:#b9c8e4;background:#f8fafd}
+  .opt.right{background:var(--greenbg);border-color:#a7d9b8;color:#166534}
+  .opt.wrong{background:var(--redbg);border-color:#f3b9b9;color:#b91c1c}
+  .fb{font-size:13px;margin:9px 0 0;min-height:20px;color:var(--ink2)}
+  .fb.ok{color:#166534} .fb.no{color:#b91c1c}
+  footer{color:var(--ink3);font-size:13px;text-align:center;padding:10px 0 0}
+
+  @media (max-width:760px){
+    .wrap{padding:20px 14px 56px}
+    .card{padding:18px 15px}
+    .hero h1{font-size:23px}
+    .hero .q{font-size:15px}
+    .board{padding:20px 10px 16px}
+    .slots{gap:7px}
+    .slot{width:56px;height:66px;font-size:32px;border-radius:10px}
+    .plabel{font-size:11px}
+    .d{width:40px;height:46px;font-size:20px;border-radius:9px}
+    .pool{gap:6px}
+    .steps{gap:5px}
+    .step-chip{padding:6px 9px;font-size:12px}
+    .order-row{gap:8px;padding:9px}
+    .seg{width:100%}
+    .seg button{flex:1;padding:7px 5px;font-size:12px;white-space:normal}
+    .brow .bk{min-width:0}
+    .explain{padding:14px 12px;gap:11px}
+    .ex-no{flex-basis:40px;height:40px;font-size:12px}
+    .ex-body h3{font-size:15px}
+    .ex-body p{font-size:13.5px}
+    .hint{display:none}
+    .calc{gap:6px;padding:12px}
+    .factor{min-width:40px;font-size:17px}
+    .total{font-size:22px;min-width:76px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="crumb"><a href="../">← 返回首页</a><span>教育 · 计数与乘法原理</span></div>
+    <h1>有多少个这样的五位数？</h1>
+    <p class="q">条件：<b>不能被 5 整除</b>，<b>不能有重复数字</b>。</p>
+    <p class="sub">五个格子，一步一步填；可以切换填位顺序，看看先填前面或中间会发生什么。点「自动播放」可以一口气看完。</p>
+  </header>
+
+  <section class="card">
+    <div class="stage-head">
+      <div class="steps" id="steps"></div>
+      <div class="rates" id="rates">
+        <button data-sp="0.75">0.75×</button>
+        <button data-sp="1" class="active">1×</button>
+        <button data-sp="1.5">1.5×</button>
+        <button data-sp="2">2×</button>
+      </div>
+    </div>
+
+    <div class="order-row">
+      <span class="order-label">填位顺序</span>
+      <div class="seg" id="orderSeg">
+        <button data-order="0" class="active">个位优先 · 推荐</button>
+        <button data-order="1">万位优先 · 先填前面</button>
+        <button data-order="2">中间优先 · 先填中间</button>
+      </div>
+      <span class="order-tip" id="orderTip"></span>
+    </div>
+
+    <div class="board">
+      <div class="slots" id="slots"></div>
+      <div class="pool-title">数字池 0 – 9 · 每个数字只能用一次</div>
+      <div class="pool" id="pool"></div>
+      <div class="pool-legend">
+        <span><i class="lg-free"></i>本格可选</span>
+        <span><i class="lg-ban"></i>本格被规则禁用</span>
+        <span><i class="lg-used"></i>已被前面的格子用掉</span>
+      </div>
+    </div>
+
+    <div class="explain" id="explain">
+      <div class="ex-no" id="exNo">读题</div>
+      <div class="ex-body">
+        <h3 id="exTitle"></h3>
+        <p id="exText"></p>
+        <div class="ex-note" id="exNote"></div>
+      </div>
+    </div>
+
+    <div class="calc">
+      <span class="calc-label" id="calcLabel">乘法原理</span>
+      <div id="factors" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"></div>
+      <span class="op">=</span>
+      <span class="total" id="total">?</span>
+      <div class="calc-tip" id="calcTip">按填入顺序：个位 → 万位 → 千位 → 百位 → 十位（不是从左到右）</div>
+    </div>
+
+    <div class="branch-box" id="branchBox" hidden></div>
+
+    <div class="controls">
+      <button class="btn" id="prev">← 上一步</button>
+      <button class="btn" id="play">▶ 自动播放</button>
+      <button class="btn primary" id="next">下一步 →</button>
+      <button class="btn" id="replay">↺ 重播</button>
+      <button class="btn" id="shuffle">🎲 换一组数字</button>
+      <span class="hint">← → 翻页 · 空格播放 / 暂停</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <details class="method" id="method">
+      <summary>另一种解法：先算全部，再减掉「坏数」</summary>
+      <div class="mbody">
+        <div class="mrow"><span class="k">全部无重复五位数</span><span class="f">9 × 9 × 8 × 7 × 6 = 27216</span><span class="desc">首位 9 种（不能是 0），之后依次少 1 个</span></div>
+        <div class="mrow bad"><span class="k">减 · 个位是 0</span><span class="f">9 × 8 × 7 × 6 = 3024</span><span class="desc">末位固定为 0，首位 1–9 随便挑</span></div>
+        <div class="mrow bad"><span class="k">减 · 个位是 5</span><span class="f">8 × 8 × 7 × 6 = 2688</span><span class="desc">首位不能是 0，也不能是已用掉的 5 → 只有 8 种</span></div>
+        <div class="bar" id="bar"><i class="g"></i><i class="b1"></i><i class="b2"></i></div>
+        <div class="bar-legend">
+          <span><i style="background:#4ade80"></i>合格 21504（79.0%）</span>
+          <span><i style="background:#f87171"></i>个位 0 · 3024（11.1%）</span>
+          <span><i style="background:#fbbf24"></i>个位 5 · 2688（9.9%）</span>
+        </div>
+        <div class="mrow ok"><span class="k">两种方法答案一致</span><span class="f">27216 − 3024 − 2688 = 21504</span><span class="desc">个位是 0 或 5 的数才能被 5 整除，减干净即可</span></div>
+        <div class="warnbox">最容易写错的一处：「个位 = 5」时，万位只有 <b>8 种</b>，不是 9 种 —— 0 不能当首位，5 又已经被个位拿走了。</div>
+      </div>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>四个易错点</h2>
+    <div class="pitfalls">
+      <div class="pit"><span class="n">01</span><p><b>0 不能站首位，但可以站中间。</b>填万位时把 0 划掉，填千位时要把它放回数字池。</p></div>
+      <div class="pit"><span class="n">02</span><p><b>先填受限制的位置更省事。</b>个位（0、5 禁用）和万位（0 禁用）先定下来，后面每一位才是整齐的 8、7、6；先填前面或中间也能算，只是要分类讨论（在上方切换顺序即可对比）。</p></div>
+      <div class="pit"><span class="n">03</span><p><b>「不重复」是每填一格少一种。</b>不是每一位都有 9 种，也不是 10⁵ 直接除以 5。</p></div>
+      <div class="pit"><span class="n">04</span><p><b>「不能被 5 整除」≠「末位是奇数」。</b>末位 1 2 3 4 6 7 8 9 都行，共 8 种，偶数末位也可以。</p></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>自测 5 题</h2>
+    <p class="muted small" style="margin:0 0 6px">点选项立刻出结果，答错会给出解析。</p>
+    <div id="quiz"></div>
+  </section>
+
+  <footer>纯静态单文件 · 无外部依赖 · 所有动画在浏览器本地运行</footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var DIGITS=[0,1,2,3,4,5,6,7,8,9];
+  var POS=['万位','千位','百位','十位','个位'];
+  var SHORT=['万','千','百','十','个'];
+  var BAN={0:[0],1:[],2:[],3:[],4:[0,5]};   // 每个位置自带的禁用数字
+  var FILL=[], STEPS=[], orderIdx=0;          // 随「填位顺序」切换而重建
+
+  function ctx(s,ex){
+    var used=[];
+    for(var i=0;i<Math.min(s,5);i++) used.push(ex[FILL[i].pos]);
+    var num=[0,1,2,3,4].map(function(i){return ex[i];}).join('');
+    return {d:(s>=1&&s<=5)?ex[FILL[s-1].pos]:null, used:used, num:num, last:ex[4], first:ex[0]};
+  }
+
+  var INTRO={
+    title:'先把两个条件翻译成「填格子的规则」',
+    text:'五位数就是 5 个格子：<b>万 千 百 十 个</b>。「不能被 5 整除」只管个位 —— 个位不能是 0 或 5；「不能有重复数字」意思是每填一格，那个数字就从数字池里拿走，后面不能再用。',
+    note:'两个位置有额外限制：<b>个位</b>（整除规则）和 <b>万位</b>（首位不能是 0）。用上方「填位顺序」切换，可以对比先填前面或中间会怎样。'
+  };
+
+  // 三种填位顺序：答案都是 21504，区别只在「能不能直接乘」
+  var ORDERS=[
+    {
+      seq:[4,0,1,2,3], factors:[8,8,8,7,6], clean:true,
+      tip:'✓ 整齐好算 · 8 × 8 × 8 × 7 × 6 直接乘', tipCls:'',
+      calcTip:'按填入顺序：个位 → 万位 → 千位 → 百位 → 十位（不是从左到右）',
+      steps:[
+        {
+          title:'第 1 步 · 先填个位：8 种',
+          text:function(c){return '能被 5 整除的数，个位只能是 <b>0 或 5</b>。题目要求「不能被 5 整除」，所以先把这两张牌划掉，剩下 1 2 3 4 6 7 8 9 共 <b>8 种</b>。例子里挑 <b>'+c.d+'</b>。';},
+          note:'个位定下来，后面每一位都自动避开它 —— 这就是「先填特殊位置」的好处。'
+        },
+        {
+          title:'第 2 步 · 再填万位：8 种',
+          text:function(c){return '万位是首位，<b>不能填 0</b>（否则就变成四位数了）；也不能填已经被个位用掉的 <b>'+c.last+'</b>。10 个数字去掉这 2 个，还剩 <b>8 种</b>。例子里挑 <b>'+c.d+'</b>。';},
+          note:'0 在这一步被划掉，是「首位规则」造成的，不是因为它被用过了。'
+        },
+        {
+          title:'第 3 步 · 填千位：8 种（0 回来了！）',
+          text:function(c){return '千位不是首位，<b>0 又可以用了</b>。现在只需避开已经填过的 <b>'+c.used.slice(0,2).join('、')+'</b>，10 − 2 = <b>8 种</b>。例子里正好挑 <b>0</b>，看得更清楚。';},
+          note:'最容易错的一步：把 0 一路排除到底，会少算很多个数。'
+        },
+        {
+          title:'第 4 步 · 填百位：7 种',
+          text:function(c){return '已经用掉 <b>'+c.used.slice(0,3).join('、')+'</b> 共 3 个数字，池子里剩 <b>7 种</b>。例子里挑 <b>'+c.d+'</b>。';},
+          note:'每填一格，可选数字就少 1 个 —— 这就是「不重复」的含义。'
+        },
+        {
+          title:'第 5 步 · 填十位：6 种',
+          text:function(c){return '已经用掉 4 个数字，只剩 <b>6 种</b>。例子里挑 <b>'+c.d+'</b>，得到 <b>'+c.num+'</b>：五位数、没有重复数字、末位不是 0 或 5，两个条件都满足。';},
+          note:'换任何一组数字，每一步的可选种数都还是 8 · 8 · 8 · 7 · 6。'
+        }
+      ],
+      result:{
+        title:'乘法原理：把每一步的种数乘起来',
+        text:'每一位依次选择、互不影响，用<b>乘法原理</b>：8 × 8 × 8 × 7 × 6 = <b>21504</b>。所以这样的五位数一共有 <b>21504 个</b>。',
+        note:'算式的 5 个数对应填入顺序「个 → 万 → 千 → 百 → 十」，不是从左到右的五个格子。'
+      },
+      branchTitle:'', branch:[]
+    },
+    {
+      seq:[0,4,1,2,3], factors:[9,'分类',8,7,6], clean:false,
+      tip:'⚠ 要分 2 类 · 万位是不是 5 会影响个位', tipCls:'warn',
+      calcTip:'这个顺序第 2 步的种数不固定，不能把 9 × 分类 × 8 × 7 × 6 直接相乘',
+      steps:[
+        {
+          title:'第 1 步 · 先填万位：9 种',
+          text:function(c){return '万位是首位，<b>不能是 0</b>，所以从 1–9 里挑，共 <b>9 种</b>。例子里挑 <b>'+c.d+'</b>。这一格很整齐。';},
+          note:'看起来比个位优先还简单 —— 麻烦在下一步。'
+        },
+        {
+          title:'第 2 步 · 填个位：不能直接写「8 种」！',
+          text:'个位不能是 0 或 5，还要避开万位用掉的数字。可万位有没有挑中 <b>5</b>，会改变剩下的种数：万位 = 5 时个位还有 8 种；万位 ≠ 5 时，万位占走了一个本来可用的末位数字，个位只剩 <b>7 种</b>。<b>同一格出现两种答案，就不能直接乘了。</b>',
+          note:function(c){return '例子里万位挑了 <b>'+c.first+'</b>，属于「不是 5」那一类，所以这个例子的个位只有 7 种。';}
+        },
+        {
+          title:'第 3 步 · 填千位：8 种',
+          text:function(c){return '不管属于哪一类，到这里都已经用掉 2 个数字，剩下 8 个可用（0 也能用在中间），所以是 <b>8 种</b>。例子里挑 <b>'+c.d+'</b>。';},
+          note:'分类只影响第 2 步，后面三步又变整齐了。'
+        },
+        {
+          title:'第 4 步 · 填百位：7 种',
+          text:function(c){return '用掉 3 个数字，池子里剩 <b>7 种</b>。例子里挑 <b>'+c.d+'</b>。';},
+          note:'每填一格少一种。'
+        },
+        {
+          title:'第 5 步 · 填十位：6 种',
+          text:function(c){return '用掉 4 个数字，只剩 <b>6 种</b>。例子里挑 <b>'+c.d+'</b>，得到 <b>'+c.num+'</b>。';},
+          note:'注意 9 × 7 × 8 × 7 × 6 = 21168，比正确答案少 336 —— 万位 = 5 时个位其实有 8 种，被当成 7 种，少算了 1 × 1 × 8 × 7 × 6 = 336 个。'
+        }
+      ],
+      result:{
+        title:'先填前面：可以，但要分 2 类相加',
+        text:'万位优先完全合法，只是第 2 步要按「万位是不是 5」拆成两类分别用乘法原理，再相加：<b>2688 + 18816 = 21504</b>。答案不变，步骤变多了。',
+        note:'只要某一步的种数依赖前面选了什么，就必须分类讨论；这正是先填特殊位置的理由。'
+      },
+      branchTitle:'万位优先 · 两类分别计算',
+      branch:[
+        {k:'万位 = 5（1 种）', f:'1 × 8 × 8 × 7 × 6 = 2688', d:'个位仍有 8 种'},
+        {k:'万位 ≠ 5（8 种）', f:'8 × 7 × 8 × 7 × 6 = 18816', d:'个位只剩 7 种'},
+        {k:'两类相加', f:'2688 + 18816 = 21504', d:'与个位优先一致', sum:true}
+      ]
+    },
+    {
+      seq:[1,2,3,0,4], factors:[10,9,8,'分类','分类'], clean:false,
+      tip:'⚠ 要分 4 类 · 0 和 5 有没有被中间用掉', tipCls:'bad',
+      calcTip:'这个顺序的最后两步种数不固定，见结论处的 4 类算式',
+      steps:[
+        {
+          title:'第 1 步 · 先填千位：10 种',
+          text:function(c){return '中间这一位没有任何额外限制，0–9 随便挑，共 <b>10 种</b>。例子里挑 <b>'+c.d+'</b>（正好是 0）。';},
+          note:'注意：0 和 5 有没有在这一步被拿走，会一直影响最后两位。'
+        },
+        {
+          title:'第 2 步 · 填百位：9 种',
+          text:function(c){return '只要避开已用的数字，还剩 <b>9 种</b>。例子里挑 <b>'+c.d+'</b>。';},
+          note:'中间三位暂时都很整齐。'
+        },
+        {
+          title:'第 3 步 · 填十位：8 种',
+          text:function(c){return '避开已用的 2 个数字，还剩 <b>8 种</b>。例子里挑 <b>'+c.d+'</b>。';},
+          note:'一共 10 × 9 × 8 = 720 组中间填法，接下来要为每组分别数万位和个位。'
+        },
+        {
+          title:'第 4 步 · 填万位：6 或 7 种',
+          text:'还剩 7 个数字。万位不能是 0：如果 <b>0 已被中间三位用掉</b>，万位有 7 种；如果 0 还在，就只剩 <b>6 种</b>。',
+          note:'种数取决于前面选了什么 —— 第一次分类出现了。'
+        },
+        {
+          title:'第 5 步 · 填个位：4 ~ 6 种',
+          text:'个位不能是 0 或 5，还要避开万位。0、5 是否被中间三位占用、万位是不是 5，都会改变种数，必须按情况拆开算。',
+          note:'到这里需要「0 用没用 × 5 用没用」共 4 类，最容易漏。'
+        }
+      ],
+      result:{
+        title:'先填中间：可以，但要分 4 类相加',
+        text:'中间优先也能算：先按中间三位是否用掉 0 / 5 分 4 类，每类单独数万位与个位，最后相加 <b>2016 + 6048 + 5040 + 8400 = 21504</b>。答案一样，过程明显更绕。',
+        note:'三种顺序答案都是 21504 —— 顺序影响的是「好不好算」，不是「对不对」。'
+      },
+      branchTitle:'中间优先 · 按 0 / 5 是否被中间三位用掉分 4 类',
+      branch:[
+        {k:'0 和 5 都用了', f:'48 × (7 × 6) = 2016', d:'48 = 8 × 6 组；万位 7 种、个位 6 种'},
+        {k:'只用了 0', f:'168 × 36 = 6048', d:'168 = 28 × 6 组；万位 7 种，个位 5 或 6 种'},
+        {k:'只用了 5', f:'168 × 30 = 5040', d:'168 = 28 × 6 组；万位 6 种，个位 5 种'},
+        {k:'0、5 都没用', f:'336 × 25 = 8400', d:'336 = 8 × 7 × 6 组；万位 6 种，个位 4 或 5 种'},
+        {k:'四类相加', f:'2016 + 6048 + 5040 + 8400 = 21504', d:'720 = 10 × 9 × 8 组中间填法', sum:true}
+      ]
+    }
+  ];
+
+  var example={0:3,1:0,2:8,3:2,4:7};
+  var step=0, speed=1, auto=false, autoTimer=null, runToken=0;
+  var ghosts=[];
+
+  var slotEls=[], poolEls=[], factorEls=[], chipEls=[];
+  var slotsBox=document.getElementById('slots');
+  var poolBox=document.getElementById('pool');
+  var stepsBox=document.getElementById('steps');
+  var factorsBox=document.getElementById('factors');
+  var explainEl=document.getElementById('explain');
+  var exNo=document.getElementById('exNo'), exTitle=document.getElementById('exTitle');
+  var exText=document.getElementById('exText'), exNote=document.getElementById('exNote');
+  var totalEl=document.getElementById('total');
+  var orderSeg=document.getElementById('orderSeg');
+  var segBtns=Array.prototype.slice.call(orderSeg.querySelectorAll('button'));
+  var orderTipEl=document.getElementById('orderTip');
+  var calcTipEl=document.getElementById('calcTip');
+  var calcLabelEl=document.getElementById('calcLabel');
+  var branchBox=document.getElementById('branchBox');
+  var btnPrev=document.getElementById('prev'), btnNext=document.getElementById('next');
+  var btnPlay=document.getElementById('play');
+
+  // ---- 构建 DOM ----
+  POS.forEach(function(p,i){
+    var w=document.createElement('div'); w.className='slot-wrap';
+    var s=document.createElement('div'); s.className='slot'; s.id='slot'+i;
+    var l=document.createElement('div'); l.className='plabel'+(i===0?' first':'');
+    var extra=(i===0?'（首位）':(i===4?'（末位）':''));
+    l.innerHTML=(i===0||i===4?'<b>'+p+'</b>':'<span>'+p+'</span>')+extra;
+    w.appendChild(s); w.appendChild(l); slotsBox.appendChild(w);
+    slotEls.push(s);
+  });
+  DIGITS.forEach(function(d){
+    var e=document.createElement('div'); e.className='d idle'; e.textContent=d;
+    poolBox.appendChild(e); poolEls.push(e);
+  });
+  ['读题','①','②','③','④','⑤','结论'].forEach(function(t,i){
+    var b=document.createElement('button'); b.className='step-chip'; b.textContent=t;
+    b.addEventListener('click',function(){ stopAuto(); go(i,false); });
+    stepsBox.appendChild(b); chipEls.push(b);
+  });
+  [4,0,1,2,3].forEach(function(pos,i){
+    if(i>0){ var op=document.createElement('span'); op.className='op'; op.textContent='×'; factorsBox.appendChild(op); }
+    var f=document.createElement('div'); f.className='factor';
+    f.innerHTML='<span class="fv">·</span><span class="fp">'+SHORT[pos]+'位</span>';
+    factorsBox.appendChild(f); factorEls.push(f);
+  });
+
+  // ---- 状态 ----
+  function snapshot(n){
+    var used={};
+    for(var i=0;i<n;i++) used[FILL[i].pos]=example[FILL[i].pos];
+    return used;
+  }
+  function clearGhosts(){ ghosts.forEach(function(g){g.remove();}); ghosts=[]; }
+
+  function paint(used,s,target){
+    POS.forEach(function(_,i){
+      var el=slotEls[i];
+      if(used[i]!==undefined){ el.textContent=used[i]; el.classList.add('filled'); }
+      else { el.textContent=''; el.classList.remove('filled'); }
+      el.classList.toggle('target',i===target);
+    });
+    var ban=(s>=1&&s<=5)?FILL[s-1].ban:[];
+    var usedVals=Object.keys(used).map(function(k){return used[k];});
+    DIGITS.forEach(function(d,i){
+      var el=poolEls[i];
+      el.className='d';
+      el.style.transitionDelay=(i*26)+'ms';
+      if(usedVals.indexOf(d)>=0) el.classList.add('used');
+      else if(ban.indexOf(d)>=0) el.classList.add('banned');
+      else if(s>=1&&s<=5) el.classList.add('free');
+      else el.classList.add('idle');
+    });
+    factorEls.forEach(function(el,i){
+      var on=i<Math.min(s,5);
+      el.classList.toggle('on',on);
+      el.querySelector('.fv').textContent=on?FILL[i].f:'·';
+    });
+    totalEl.textContent=(s>=6)?'21504':'?';
+    totalEl.classList.toggle('done',s>=6);
+    chipEls.forEach(function(el,i){
+      el.classList.toggle('on',i===s);
+      el.classList.toggle('done',i<s);
+    });
+    btnPrev.disabled=(s===0);
+    btnNext.textContent=(s>=6)?'↺ 从头再看':'下一步 →';
+  }
+
+  function setExplain(s){
+    var st=STEPS[s], c=ctx(s,example);
+    exNo.textContent=(s===0?'读题':(s===6?'答案':'第'+s+'步'));
+    exTitle.textContent=st.title;
+    exText.innerHTML=(typeof st.text==='function')?st.text(c):st.text;
+    exNote.innerHTML=(typeof st.note==='function')?st.note(c):st.note;
+    explainEl.classList.remove('flash');
+    void explainEl.offsetWidth;
+    explainEl.classList.add('flash');
+  }
+
+  function fly(srcEl,dstEl,d,done){
+    var a=srcEl.getBoundingClientRect(), b=dstEl.getBoundingClientRect();
+    var g=document.createElement('div');
+    g.className='ghost'; g.textContent=d;
+    g.style.left=a.left+'px'; g.style.top=a.top+'px';
+    g.style.width=a.width+'px'; g.style.height=a.height+'px';
+    document.body.appendChild(g); ghosts.push(g);
+    var dx=(b.left+b.width/2)-(a.left+a.width/2);
+    var dy=(b.top+b.height/2)-(a.top+a.height/2);
+    var anim=g.animate([
+      {transform:'translate(0,0) scale(1)',opacity:1},
+      {transform:'translate('+(dx*.5)+'px,'+(dy-52)+'px) scale(1.2)',opacity:1,offset:.55},
+      {transform:'translate('+dx+'px,'+dy+'px) scale(.6)',opacity:.1}
+    ],{duration:560,easing:'cubic-bezier(.25,.8,.3,1)',fill:'forwards'});
+    anim.onfinish=function(){
+      g.remove();
+      dstEl.classList.remove('pop'); void dstEl.offsetWidth; dstEl.classList.add('pop');
+      setTimeout(function(){dstEl.classList.remove('pop');},440);
+      done();
+    };
+  }
+
+  function rollTotal(token){
+    var t0=performance.now(), dur=900;
+    function frame(t){
+      if(token!==runToken) return;
+      var p=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-p,3);
+      totalEl.textContent=String(Math.round(21504*e));
+      if(p<1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function render(s,animate){
+    var token=++runToken;
+    clearGhosts();
+    branchBox.hidden=!(s>=6&&!ORDERS[orderIdx].clean);
+    setExplain(s);
+    var cur=(s>=1&&s<=5)?FILL[s-1]:null;
+    if(animate&&cur){
+      paint(snapshot(s-1),s,cur.pos);
+      var d=example[cur.pos], src=poolEls[d], dst=slotEls[cur.pos];
+      src.classList.remove('free'); src.classList.add('pick');
+      setTimeout(function(){
+        if(token!==runToken) return;
+        fly(src,dst,d,function(){
+          if(token!==runToken) return;
+          paint(snapshot(s),s,-1);
+        });
+      },470);
+    } else {
+      paint(snapshot(Math.min(s,5)),s,-1);
+      if(s>=6&&animate) rollTotal(token);
+    }
+  }
+
+  function go(s,animate){
+    step=Math.max(0,Math.min(6,s));
+    render(step,!!animate);
+  }
+
+  // ---- 切换填位顺序 ----
+  function fillBranch(ord){
+    branchBox.innerHTML='';
+    if(ord.clean) return;
+    var h=document.createElement('h3'); h.textContent=ord.branchTitle; branchBox.appendChild(h);
+    ord.branch.forEach(function(row){
+      var d=document.createElement('div'); d.className='brow'+(row.sum?' sum':'');
+      d.innerHTML='<span class="bk">'+row.k+'</span><span class="bf">'+row.f+'</span>'+
+                  (row.d?'<span class="bd">'+row.d+'</span>':'');
+      branchBox.appendChild(d);
+    });
+  }
+
+  function applyOrder(i){
+    orderIdx=i;
+    var ord=ORDERS[i];
+    FILL=ord.seq.map(function(pos,k){
+      var f=ord.factors[k];
+      return {pos:pos, ban:BAN[pos], f:f, branch:(typeof f==='string'),
+              chip:'①②③④⑤'.charAt(k)+' '+SHORT[pos]+'位'};
+    });
+    STEPS=[INTRO].concat(ord.steps).concat([ord.result]);
+    chipEls.forEach(function(el,k){ if(k>0&&k<6) el.textContent=FILL[k-1].chip; });
+    factorEls.forEach(function(el,k){
+      el.querySelector('.fp').textContent=SHORT[FILL[k].pos]+'位';
+      el.classList.toggle('branch',FILL[k].branch);
+    });
+    calcTipEl.textContent=ord.calcTip;
+    calcLabelEl.textContent=ord.clean?'乘法原理':'分步种数';
+    orderTipEl.textContent=ord.tip;
+    orderTipEl.className='order-tip'+(ord.tipCls?' '+ord.tipCls:'');
+    segBtns.forEach(function(b,k){ b.classList.toggle('active',k===i); });
+    fillBranch(ord);
+    stopAuto();
+    go(0,false);
+  }
+
+  // ---- 自动播放 ----
+  function stopAuto(){
+    auto=false;
+    if(autoTimer){clearTimeout(autoTimer);autoTimer=null;}
+    btnPlay.textContent='▶ 自动播放';
+  }
+  function startAuto(){
+    if(auto){stopAuto();return;}
+    auto=true; btnPlay.textContent='❚❚ 暂停';
+    if(step>=6) go(0,false);
+    tick();
+    function tick(){
+      if(!auto) return;
+      autoTimer=setTimeout(function(){
+        if(!auto) return;
+        if(step>=6){stopAuto();return;}
+        go(step+1,true);
+        tick();
+      },2600/speed);
+    }
+  }
+
+  function rnd(a){return a[Math.floor(Math.random()*a.length)];}
+  function makeExample(){
+    var last=rnd([1,2,3,4,6,7,8,9]);
+    var first=rnd(DIGITS.filter(function(d){return d!==0&&d!==last;}));
+    var rest=DIGITS.filter(function(d){return d!==0&&d!==last&&d!==first;});
+    for(var i=rest.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=rest[i];rest[i]=rest[j];rest[j]=t;}
+    return {0:first,1:0,2:rest[0],3:rest[1],4:last};
+  }
+
+  btnPrev.addEventListener('click',function(){stopAuto();go(step-1,false);});
+  btnNext.addEventListener('click',function(){stopAuto();go(step>=6?0:step+1,step<6);});
+  btnPlay.addEventListener('click',startAuto);
+  document.getElementById('replay').addEventListener('click',function(){stopAuto();go(1,true);startAuto();});
+  document.getElementById('shuffle').addEventListener('click',function(){
+    stopAuto(); example=makeExample(); go(1,true); startAuto();
+  });
+  document.getElementById('rates').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    speed=parseFloat(b.getAttribute('data-sp'));
+    Array.prototype.forEach.call(this.querySelectorAll('button'),function(x){x.classList.toggle('active',x===b);});
+  });
+  orderSeg.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    applyOrder(parseInt(b.getAttribute('data-order'),10));
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'){e.preventDefault();stopAuto();go(Math.min(6,step+1),step<6);}
+    else if(e.key==='ArrowLeft'){e.preventDefault();stopAuto();go(step-1,false);}
+    else if(e.key===' '&&e.target===document.body){e.preventDefault();startAuto();}
+  });
+
+  // ---- 排除法条形图 ----
+  var method=document.getElementById('method'), bar=document.getElementById('bar');
+  function growBar(open){
+    var pcts=open?['79.01%','11.11%','9.88%']:['0','0','0'];
+    Array.prototype.forEach.call(bar.children,function(el,i){el.style.width=pcts[i];});
+  }
+  method.addEventListener('toggle',function(){growBar(method.open);});
+
+  // ---- 自测题 ----
+  var QUIZ=[
+    {q:'1. 只要求「无重复数字」的五位数，一共有多少个？',
+     opts:['30240','27216','15120','59049'],a:1,
+     why:'首位 9 种（1–9，不能是 0），之后依次 9、8、7、6 种 → 9 × 9 × 8 × 7 × 6 = 27216。30240 是忘了首位不能为 0。'},
+    {q:'2. 这些数里，能被 5 整除的有多少个？',
+     opts:['5712','6048','5376','5443'],a:0,
+     why:'个位 0：9 × 8 × 7 × 6 = 3024；个位 5：首位不能是 0 或 5，8 × 8 × 7 × 6 = 2688；合计 5712。'},
+    {q:'3. 用排除法算「个位 = 5」这一类时，万位有几种选法？',
+     opts:['9 种','8 种','10 种','7 种'],a:1,
+     why:'万位不能是 0，也不能是已被个位拿走的 5，所以是 8 种，写成 9 种就错了。'},
+    {q:'4. 把题目改成「四位数」，其余条件不变，答案是多少？',
+     opts:['3584','3024','4536','4032'],a:0,
+     why:'个位 8 种 → 首位 8 种 → 中间两位 8 × 7 种，乘起来 8 × 8 × 8 × 7 = 3584。'},
+    {q:'5. 先填万位时，为什么不能写成 9 × 8 × 8 × 7 × 6？',
+     opts:['万位不能是 0，所以只有 8 种','万位是不是 5 会改变个位的种数，必须分两类','0 不能放在中间三位','先填前面时答案会不一样'],a:1,
+     why:'万位 = 5 时个位 8 种，万位 ≠ 5 时个位 7 种，同一格出现两种种数就要分类：2688 + 18816 = 21504。硬凑成 9 × 7 × 8 × 7 × 6 只有 21168，少算的正是万位 = 5 时个位多出的那 1 种（336 个）。'}
+  ];
+  var quizBox=document.getElementById('quiz');
+  QUIZ.forEach(function(item){
+    var wrap=document.createElement('div'); wrap.className='q';
+    var h=document.createElement('h3'); h.textContent=item.q; wrap.appendChild(h);
+    var opts=document.createElement('div'); opts.className='opts'; wrap.appendChild(opts);
+    var fb=document.createElement('p'); fb.className='fb'; wrap.appendChild(fb);
+    var btns=item.opts.map(function(t,i){
+      var b=document.createElement('button'); b.className='opt'; b.textContent=t;
+      b.addEventListener('click',function(){
+        Array.prototype.forEach.call(opts.children,function(x){x.className='opt';});
+        if(i===item.a){
+          b.classList.add('right'); fb.className='fb ok';
+          fb.textContent='✓ 答对了。'+item.why;
+        } else {
+          b.classList.add('wrong'); fb.className='fb no';
+          fb.textContent='✗ 再想想。正确答案是「'+item.opts[item.a]+'」。'+item.why;
+        }
+      });
+      opts.appendChild(b); return b;
+    });
+    quizBox.appendChild(wrap);
+  });
+
+  applyOrder(0);
+})();
+</script>
+</body>
+</html>
