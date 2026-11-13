@@ -23,10 +23,9 @@
   // ---- 状态 ----
   var state = {
     background: "#2563eb",
-    transparent: false,
+    backgroundOpacity: 1,
     cornerRadius: 0,
-    border: false,
-    borderWidth: 16,
+    borderWidth: 0,
     borderColor: "#111827",
     fileName: "icon",
     sizes: EXPORT_SIZES.slice(),
@@ -44,6 +43,265 @@
   var layersEl = $("layers");
   var sizeListEl = $("sizeList");
   var tilesEl = $("tiles");
+
+  // 历史快照保留已解码图片的引用，避免复制大图或在恢复时重新异步加载。
+  var HISTORY_LIMIT = 100;
+  var undoStack = [];
+  var redoStack = [];
+  var historyCurrent = null;
+  var historyGroup = null;
+  var imageLoadGeneration = 0;
+  var imageLoads = new WeakMap();
+  var editorRevision = 0;
+
+  function captureHistory() {
+    return {
+      state: Object.assign({}, state, {
+        sizes: state.sizes.slice(),
+        layers: state.layers.map(function (layer) { return Object.assign({}, layer); })
+      }),
+      selectedIndex: state.layers.indexOf(selectedLayerRef)
+    };
+  }
+
+  function sameHistory(a, b) {
+    var left = a.state, right = b.state;
+    return Object.keys(left).every(function (key) {
+      if (key === "sizes") return left.sizes.length === right.sizes.length && left.sizes.every(function (s, i) { return s === right.sizes[i]; });
+      if (key === "layers") return left.layers.length === right.layers.length && left.layers.every(function (layer, i) {
+        return Object.keys(layer).every(function (field) { return layer[field] === right.layers[i][field]; });
+      });
+      return left[key] === right[key];
+    });
+  }
+
+  function updateHistoryButtons() {
+    $("undo").disabled = undoStack.length === 0;
+    $("redo").disabled = redoStack.length === 0;
+  }
+
+  // 同一控件的一次连续输入（或一次画布拖动）只占一个撤销步骤。
+  function recordHistory(group) {
+    var next = captureHistory();
+    if (sameHistory(historyCurrent, next)) return;
+    editorRevision++;
+    if (!group || historyGroup !== group) {
+      undoStack.push(historyCurrent);
+      if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+    }
+    redoStack = [];
+    historyCurrent = next;
+    historyGroup = group || null;
+    updateHistoryButtons();
+  }
+
+  function endHistoryGroup() { historyGroup = null; }
+
+  function restoreHistory(snapshot) {
+    editorRevision++;
+    state = Object.assign({}, snapshot.state, {
+      sizes: snapshot.state.sizes.slice(),
+      layers: snapshot.state.layers.map(function (layer) { return Object.assign({}, layer); })
+    });
+    selectedLayerRef = state.layers[snapshot.selectedIndex] || null;
+    dragging = null;
+    dragIndex = null;
+    preview.style.cursor = "grab";
+    imageLoadGeneration++;
+    endHistoryGroup();
+    $("bgColor").value = state.background;
+    $("backgroundOpacity").value = Math.round(state.backgroundOpacity * 100);
+    $("backgroundOpacityVal").textContent = Math.round(state.backgroundOpacity * 100) + "%";
+    $("cornerRadius").value = state.cornerRadius;
+    $("radiusVal").textContent = state.cornerRadius;
+    $("borderWidth").value = state.borderWidth;
+    $("borderWidthVal").textContent = state.borderWidth;
+    $("borderColor").value = state.borderColor;
+    $("fileName").value = state.fileName;
+    renderLayers();
+    renderProps();
+    renderSizeList();
+    drawPreview();
+    updateHistoryButtons();
+  }
+
+  function undo() {
+    if (!undoStack.length) return;
+    redoStack.push(historyCurrent);
+    historyCurrent = undoStack.pop();
+    restoreHistory(historyCurrent);
+  }
+
+  function redo() {
+    if (!redoStack.length) return;
+    undoStack.push(historyCurrent);
+    historyCurrent = redoStack.pop();
+    restoreHistory(historyCurrent);
+  }
+
+  function bindHistory() {
+    $("undo").addEventListener("click", undo);
+    $("redo").addEventListener("click", redo);
+    document.addEventListener("change", endHistoryGroup);
+    document.addEventListener("focusout", endHistoryGroup);
+    document.addEventListener("keydown", function (e) {
+      if (e.target === $("snapshotName")) return;
+      if (e.defaultPrevented || e.isComposing || e.altKey || !(e.ctrlKey || e.metaKey)) return;
+      var key = e.key.toLowerCase();
+      if (key === "z" || (key === "y" && !e.shiftKey)) {
+        e.preventDefault();
+        if (key === "y" || e.shiftKey) redo();
+        else undo();
+      }
+    });
+    historyCurrent = captureHistory();
+    updateHistoryButtons();
+  }
+
+  // ---- 持久快照（IndexedDB 可保存完整图片，不受 localStorage 小容量限制） ----
+  var snapshotDbPromise = null;
+  var snapshotLoadId = 0;
+
+  function snapshotStatus(message, error) {
+    $("snapshotStatus").textContent = message;
+    $("snapshotStatus").classList.toggle("error", !!error);
+  }
+
+  function snapshotStore(mode, action) {
+    if (!snapshotDbPromise) {
+      snapshotDbPromise = new Promise(function (resolve, reject) {
+        var request = indexedDB.open("icons-generator-snapshots", 1);
+        request.onupgradeneeded = function () {
+          request.result.createObjectStore("snapshots", { keyPath: "id", autoIncrement: true });
+        };
+        request.onsuccess = function () {
+          var db = request.result;
+          db.onversionchange = function () { db.close(); snapshotDbPromise = null; };
+          resolve(db);
+        };
+        request.onerror = function () { reject(request.error); };
+        request.onblocked = function () { reject(new Error("请关闭其他工具页后重试。")); };
+      }).catch(function (error) { snapshotDbPromise = null; throw error; });
+    }
+    return snapshotDbPromise.then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var transaction = db.transaction("snapshots", mode);
+        var request = action(transaction.objectStore("snapshots"));
+        transaction.oncomplete = function () { resolve(request.result); };
+        transaction.onabort = function () { reject(transaction.error || request.error || new Error("快照操作失败")); };
+        transaction.onerror = function () {}; // 由 onabort 统一报告，避免误报保存成功。
+      });
+    });
+  }
+
+  function snapshotError(error) {
+    snapshotStatus(error && error.name === "QuotaExceededError"
+      ? "保存失败：浏览器存储空间不足，请删除不需要的快照后重试。"
+      : "快照操作失败，无法读写浏览器存储，请重试。", true);
+  }
+
+  function refreshSnapshots() {
+    return snapshotStore("readonly", function (store) { return store.getAll(); }).then(function (items) {
+      var list = $("snapshotList");
+      list.innerHTML = "";
+      if (!items.length) {
+        list.innerHTML = '<p class="hint">还没有快照，保存当前图标即可留待下次继续编辑。</p>';
+        return;
+      }
+      items.sort(function (a, b) { return b.createdAt - a.createdAt || b.id - a.id; });
+      items.forEach(function (item) {
+        var row = document.createElement("div");
+        row.className = "snapshot-item";
+        row.innerHTML = '<img class="snapshot-thumb" src="' + escapeAttr(item.thumbnail) + '" alt="" />' +
+          '<div class="snapshot-info"><strong>' + escapeAttr(item.name) + '</strong><time>' +
+          escapeAttr(new Date(item.createdAt).toLocaleString()) + '</time></div>' +
+          '<div class="snapshot-actions"><button class="btn btn-mini" type="button" data-snapshot-load>载入</button>' +
+          '<button class="btn-mini btn-remove" type="button" data-snapshot-delete>删除</button></div>';
+        row.querySelector("[data-snapshot-load]").addEventListener("click", function () { loadSnapshot(item.id); });
+        row.querySelector("[data-snapshot-delete]").addEventListener("click", function () {
+          if (!confirm('删除快照“' + item.name + '”？')) return;
+          snapshotStore("readwrite", function (store) { return store.delete(item.id); }).then(function () {
+            snapshotStatus('已删除快照“' + item.name + '”。');
+            return refreshSnapshots();
+          }).catch(snapshotError);
+        });
+        list.appendChild(row);
+      });
+    });
+  }
+
+  function saveSnapshot() {
+    var button = $("saveSnapshot");
+    if (button.disabled) return;
+    endHistoryGroup();
+    var snapshot = captureHistory();
+    snapshot.state.layers.forEach(function (layer) { layer.img = null; });
+    var thumbnail = document.createElement("canvas");
+    drawToCanvas(thumbnail, 64);
+    var now = Date.now();
+    var name = $("snapshotName").value.trim() || (state.fileName || "图标") + " · " + new Date(now).toLocaleString();
+    button.disabled = true;
+    snapshotStatus("正在保存快照…");
+    snapshotStore("readwrite", function (store) {
+      return store.add({ version: 1, name: name, createdAt: now, snapshot: snapshot, thumbnail: thumbnail.toDataURL("image/png") });
+    }).then(function () {
+      snapshotStatus('已保存快照“' + name + '”。');
+      return refreshSnapshots();
+    }).catch(snapshotError).finally(function () { button.disabled = false; });
+  }
+
+  function decodeSnapshot(item) {
+    if (!item || item.version !== 1 || !item.snapshot || !item.snapshot.state ||
+        !Array.isArray(item.snapshot.state.layers) || !Array.isArray(item.snapshot.state.sizes)) {
+      return Promise.reject(new Error("快照数据不完整"));
+    }
+    var snapshot = item.snapshot;
+    var images = new Map();
+    return Promise.all(snapshot.state.layers.map(function (layer) {
+      layer.img = null;
+      if (!layer.src) return Promise.resolve();
+      if (!images.has(layer.src)) {
+        images.set(layer.src, new Promise(function (resolve, reject) {
+          var img = new Image();
+          img.onload = function () { resolve(img); };
+          img.onerror = function () { reject(new Error("快照图片解析失败")); };
+          img.src = layer.src;
+        }));
+      }
+      return images.get(layer.src).then(function (img) { layer.img = img; });
+    })).then(function () { return snapshot; });
+  }
+
+  function loadSnapshot(id) {
+    var loadId = ++snapshotLoadId;
+    var revision = editorRevision;
+    var name;
+    snapshotStatus("正在载入快照…");
+    snapshotStore("readonly", function (store) { return store.get(id); }).then(function (item) {
+      if (item) name = item.name;
+      return decodeSnapshot(item);
+    }).then(function (snapshot) {
+      if (loadId !== snapshotLoadId) return;
+      if (revision !== editorRevision) {
+        snapshotStatus("编辑内容已变化，请重新载入快照。");
+        return;
+      }
+      restoreHistory(snapshot);
+      recordHistory();
+      $("snapshotName").value = name;
+      snapshotStatus('已载入快照“' + name + '”，可以继续编辑。');
+    }).catch(function (error) {
+      if (loadId === snapshotLoadId) snapshotError(error);
+    });
+  }
+
+  function bindSnapshots() {
+    $("saveSnapshot").addEventListener("click", saveSnapshot);
+    $("snapshotName").addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); saveSnapshot(); }
+    });
+    refreshSnapshots().catch(snapshotError);
+  }
 
   // ---- 工具函数 ----
   function nextColor() {
@@ -98,15 +356,21 @@
       alert("请选择图片文件（PNG / JPG / SVG 等）。");
       return;
     }
+    var generation = imageLoadGeneration;
     var reader = new FileReader();
+    imageLoads.set(layer, reader);
     reader.onload = function () {
       var img = new Image();
       img.onload = function () {
+        // 撤销、删除或再次选图之后，旧的异步读取不应覆盖当前编辑。
+        if (generation !== imageLoadGeneration || state.layers.indexOf(layer) === -1 || imageLoads.get(layer) !== reader) return;
         layer.img = img;
         layer.src = String(reader.result);
         layer.imgName = file.name;
         if (!layer.scale) layer.scale = 100;
+        recordHistory();
         renderLayers();
+        renderProps();
         drawPreview();
       };
       img.onerror = function () { alert("图片解析失败，请换一张试试。"); };
@@ -171,14 +435,17 @@
     var scale = size / BASE;
     ctx.clearRect(0, 0, size, size);
 
-    if (!state.transparent) {
+    if (state.backgroundOpacity > 0) {
+      ctx.save();
+      ctx.globalAlpha = state.backgroundOpacity;
       roundRect(ctx, 0, 0, size, size, state.cornerRadius * scale);
       ctx.fillStyle = state.background;
       ctx.fill();
+      ctx.restore();
     }
 
-    // 边框：勾选后绘制，支持透明背景（仅边框环）；圆角沿用 cornerRadius
-    if (state.border) {
+    // 边框宽度为 0 时不绘制；透明背景下仍可单独显示边框。
+    if (state.borderWidth > 0) {
       var bw = state.borderWidth * scale;
       var inset = bw / 2;
       ctx.save();
@@ -363,10 +630,11 @@
           if (a === "del") {
             state.layers.splice(i, 1);
             if (selectedLayerRef === layer) selectedLayerRef = state.layers[Math.min(i, state.layers.length - 1)] || null;
+            recordHistory();
             renderLayers(); drawPreview(); renderProps();
           }
           else if (a === "pick") { var fi = card.querySelector("[data-file]"); if (fi) fi.click(); }
-          else if (a === "clearimg") { layer.img = null; layer.src = ""; layer.imgName = ""; renderLayers(); drawPreview(); }
+          else if (a === "clearimg") { imageLoads.delete(layer); layer.img = null; layer.src = ""; layer.imgName = ""; recordHistory(); renderLayers(); renderProps(); drawPreview(); }
         }
       });
 
@@ -399,9 +667,9 @@
       layer[f] = num;
       var valSpan = input.parentNode.querySelector(".val");
       if (valSpan) {
-        valSpan.textContent = (f === "opacity" || f === "scale")
+        valSpan.textContent = f === "opacity"
           ? Math.round(num * 100) + "%"
-          : (f === "rotation" ? Math.round(num) + "°" : String(Math.round(num)));
+          : (f === "scale" ? num + "%" : (f === "rotation" ? Math.round(num) + "°" : String(Math.round(num))));
       }
     } else {
       layer[f] = input.value;
@@ -411,6 +679,8 @@
         if (nameEl) nameEl.textContent = layerName(layer);
       }
     }
+    recordHistory(input);
+    if (f === "text" && layer === selectedLayerRef) $("propsTitle").textContent = "属性 · " + layerName(layer);
     drawPreview();
   }
 
@@ -439,6 +709,7 @@
   function switchMode(card, layer, m) {
     if (layer.mode === m) return;
     layer.mode = m;
+    recordHistory();
     card.querySelectorAll("[data-mode]").forEach(function (b) {
       b.classList.toggle("on", b.getAttribute("data-mode") === m);
     });
@@ -449,6 +720,7 @@
     });
     var nameEl = card.querySelector(".layer-name");
     if (nameEl) nameEl.textContent = layerName(layer);
+    renderProps();
     drawPreview();
   }
 
@@ -465,6 +737,7 @@
     var arr = state.layers;
     var item = arr.splice(from, 1)[0];
     arr.splice(to, 0, item);
+    recordHistory();
     renderLayers();
     drawPreview();
   }
@@ -485,6 +758,7 @@
         } else {
           state.sizes = state.sizes.filter(function (x) { return x !== s; });
         }
+        recordHistory();
       });
       row.querySelector("button").addEventListener("click", function () {
         downloadSingleIco(s);
@@ -634,7 +908,9 @@
   }
 
   function setSelectedLayer(idx) {
+    endHistoryGroup();
     selectedLayerRef = state.layers[idx] || null;
+    if (historyCurrent) historyCurrent.selectedIndex = state.layers.indexOf(selectedLayerRef);
     Array.prototype.forEach.call(layersEl.children, function (card, ci) {
       card.classList.toggle("selected", state.layers[ci] === selectedLayerRef);
     });
@@ -686,57 +962,61 @@
       var layer = state.layers[dragging.index];
       layer.x = Math.round(clamp(p.vx + dragging.offsetX, 0, BASE));
       layer.y = Math.round(clamp(p.vy + dragging.offsetY, 0, BASE));
+      recordHistory(preview);
       syncLayerXY(dragging.index);
       drawPreview();
     });
     function endDrag() {
       if (dragging) { dragging = null; preview.style.cursor = "grab"; }
+      endHistoryGroup();
     }
     preview.addEventListener("pointerup", endDrag);
     preview.addEventListener("pointercancel", endDrag);
+    preview.addEventListener("lostpointercapture", endDrag);
   }
 
   // ---- 全局控件绑定 ----
   function bindGlobal() {
     var bgColor = $("bgColor");
-    var transparent = $("transparent");
+    var backgroundOpacity = $("backgroundOpacity");
     var cornerRadius = $("cornerRadius");
     var radiusVal = $("radiusVal");
-    var border = $("border");
     var borderWidth = $("borderWidth");
     var borderWidthVal = $("borderWidthVal");
     var borderColor = $("borderColor");
     var fileName = $("fileName");
 
-    transparent.addEventListener("change", function () {
-      state.transparent = transparent.checked;
-      bgColor.disabled = state.transparent;
+    backgroundOpacity.addEventListener("input", function () {
+      state.backgroundOpacity = Number(backgroundOpacity.value) / 100;
+      $("backgroundOpacityVal").textContent = backgroundOpacity.value + "%";
+      recordHistory(backgroundOpacity);
       drawPreview();
     });
     bgColor.addEventListener("input", function () {
       state.background = bgColor.value;
+      recordHistory(bgColor);
       drawPreview();
     });
     cornerRadius.addEventListener("input", function () {
       state.cornerRadius = parseFloat(cornerRadius.value);
       radiusVal.textContent = cornerRadius.value;
-      drawPreview();
-    });
-    border.addEventListener("change", function () {
-      state.border = border.checked;
+      recordHistory(cornerRadius);
       drawPreview();
     });
     borderWidth.addEventListener("input", function () {
       state.borderWidth = parseFloat(borderWidth.value);
       borderWidthVal.textContent = borderWidth.value;
+      recordHistory(borderWidth);
       drawPreview();
     });
     borderColor.addEventListener("input", function () {
       state.borderColor = borderColor.value;
+      recordHistory(borderColor);
       drawPreview();
     });
     fileName.addEventListener("input", function () {
       state.fileName = fileName.value.replace(/[^\w\-]+/g, "_");
+      recordHistory(fileName);
     });
 
     function addLayer() {
@@ -747,6 +1027,7 @@
       });
       renderLayers();
       drawPreview();
+      recordHistory();
       setSelectedLayer(state.layers.length - 1);
     }
 
@@ -756,7 +1037,6 @@
   }
 
   // ---- 初始化 ----
-  $("bgColor").disabled = state.transparent;
 
   // 属性面板（右侧）：编辑激活层的缩放/透明度/位置/旋转
   var propsCard = $("propsCard");
@@ -771,4 +1051,6 @@
   bindPreviewDrag();
   setSelectedLayer(0);
   drawPreview();
+  bindHistory();
+  bindSnapshots();
 })();

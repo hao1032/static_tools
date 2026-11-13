@@ -22,6 +22,7 @@ body {
 /* 顶部栏 */
 .topbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 16px;
   padding: 16px 24px;
@@ -36,6 +37,7 @@ body {
   white-space: nowrap;
 }
 .back:hover { color: var(--accent); }
+.history-actions { display: flex; gap: 8px; margin-left: auto; }
 
 /* 布局 */
 .layout {
@@ -102,6 +104,8 @@ input[type="color"] {
 }
 .btn:hover { border-color: var(--accent); }
 .btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .45; cursor: default; transform: none; }
+.btn:disabled:hover { border-color: var(--border); }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
 .btn-block { width: 100%; margin-top: 6px; padding: 11px; }
@@ -213,7 +217,21 @@ input[type="color"] {
 /* 添加层按钮（位于图层列表下方） */
 .add-layer-wrap { margin-top: 16px; }
 .add-layer-wrap .btn-block { width: 100%; }
-}
+
+/* 本地快照 */
+.snapshot-save { display: flex; flex-wrap: wrap; gap: 10px; }
+.snapshot-save .text-input { min-width: 0; flex: 1 1 150px; }
+.snapshot-save .btn { flex-shrink: 0; }
+.snapshot-status { color: var(--muted); font-size: 13px; margin: 12px 0; }
+.snapshot-status:empty { display: none; }
+.snapshot-status.error { color: #dc2626; }
+.snapshot-list { display: grid; gap: 10px; margin-top: 16px; }
+.snapshot-item { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
+.snapshot-thumb { width: 48px; height: 48px; flex-shrink: 0; object-fit: contain; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
+.snapshot-info { flex: 1; min-width: 100px; overflow-wrap: anywhere; }
+.snapshot-info strong { display: block; font-size: 14px; }
+.snapshot-info time { color: var(--muted); font-size: 12px; }
+.snapshot-actions { display: flex; gap: 6px; }
 
 /* 属性面板（右侧，编辑激活层） */
 .props-card { margin-top: 36px; }
