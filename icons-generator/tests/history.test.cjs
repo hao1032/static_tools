@@ -128,6 +128,51 @@ test('editor undo/redo in a real browser', { skip: !browserPath, timeout: 60000 
     assert.equal(await evaluate(`$('#preview').getContext('2d').getImageData(8, 256, 1, 1).data[3]`), 0);
   });
 
+  await t.test('rounded borders share the background outline at every preview size', async () => {
+    await reset();
+    const violations = await evaluate(`(() => {
+      edit('[data-f="text"]', ''); edit('#bgColor', '#00aaff'); edit('#borderColor', '#111827');
+      const failures = [];
+      // Signed distance to the expected rounded rectangle, in base canvas coordinates.
+      const distance = (x, y, inset, radius) => {
+        const half = 128 - inset, r = Math.min(radius, half);
+        const dx = Math.abs(x - 128) - (half - r), dy = Math.abs(y - 128) - (half - r);
+        return Math.hypot(Math.max(dx, 0), Math.max(dy, 0)) + Math.min(Math.max(dx, dy), 0) - r;
+      };
+      for (const [radius, width] of [[88, 36], [8, 36], [0, 64], [128, 64], [128, 1]]) {
+        edit('#cornerRadius', radius); edit('#borderWidth', width);
+        for (const opacity of [0, 50, 100]) {
+          edit('#backgroundOpacity', opacity);
+          for (const canvas of [$('#preview'), ...document.querySelectorAll('#tiles canvas')]) {
+            const size = canvas.width, scale = size / 256, margin = 2 / scale;
+            const pixels = canvas.getContext('2d').getImageData(0, 0, size, size).data;
+            let mismatch = null;
+            for (let y = 0; y < size && !mismatch; y++) for (let x = 0; x < size; x++) {
+              const vx = (x + 0.5) / scale, vy = (y + 0.5) / scale;
+              const outer = distance(vx, vy, 0, radius);
+              const inner = distance(vx, vy, width, Math.max(0, radius - width));
+              if (Math.abs(outer) <= margin || Math.abs(inner) <= margin) continue;
+              const expected = outer > 0 ? [0, 0, 0, 0] : inner > 0 ? [17, 24, 39, 255]
+                : opacity === 0 ? [0, 0, 0, 0] : [0, 170, 255, Math.round(opacity * 2.55)];
+              const actual = Array.from(pixels.slice((y * size + x) * 4, (y * size + x) * 4 + 4));
+              if (actual.some((value, i) => Math.abs(value - expected[i]) > 2)) {
+                mismatch = { radius, width, opacity, size, x, y, expected, actual }; break;
+              }
+            }
+            if (mismatch) failures.push(mismatch);
+          }
+        }
+      }
+      return failures;
+    })()`);
+    assert.deepEqual(violations, [], 'border ring must follow both rounded rectangle outlines');
+    if (process.env.ICONS_SCREENSHOT_DIR) {
+      await evaluate(`edit('[data-f="text"]', '容'); edit('#cornerRadius', 88); edit('#borderWidth', 36); edit('#backgroundOpacity', 100);`);
+      const screenshot = await send('Page.captureScreenshot', { captureBeyondViewport: true, format: 'png' });
+      fs.writeFileSync(path.join(process.env.ICONS_SCREENSHOT_DIR, 'icons-border.png'), Buffer.from(screenshot.data, 'base64'));
+    }
+  });
+
   await t.test('add, reorder, delete all layers and selection restoration', async () => {
     await reset();
     await evaluate(`click('#addLayer'); edit('#layers .layer-card:last-child [data-f="text"]', 'second');

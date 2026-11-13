@@ -381,10 +381,10 @@
   }
 
   // ---- 绘图 ----
-  function roundRect(ctx, x, y, w, h, r) {
+  function roundRect(ctx, x, y, w, h, r, append) {
     r = Math.min(r, w / 2, h / 2);
     if (r < 0) r = 0;
-    ctx.beginPath();
+    if (!append) ctx.beginPath();
     ctx.moveTo(x + r, y);
     ctx.arcTo(x + w, y, x + w, y + h, r);
     ctx.arcTo(x + w, y + h, x, y + h, r);
@@ -447,13 +447,15 @@
     // 边框宽度为 0 时不绘制；透明背景下仍可单独显示边框。
     if (state.borderWidth > 0) {
       var bw = state.borderWidth * scale;
-      var inset = bw / 2;
+      var radius = state.cornerRadius * scale;
       ctx.save();
       ctx.globalAlpha = 1;
-      ctx.strokeStyle = state.borderColor;
-      ctx.lineWidth = bw;
-      roundRect(ctx, inset, inset, size - bw, size - bw, state.cornerRadius * scale);
-      ctx.stroke();
+      ctx.fillStyle = state.borderColor;
+      // 外沿与背景共用轮廓，内沿向内缩进边框宽度，圆角半径同步缩小。
+      // 使用圆角矩形环，避免居中描边在大圆角、粗边框时露出背景。
+      roundRect(ctx, 0, 0, size, size, radius);
+      roundRect(ctx, bw, bw, size - 2 * bw, size - 2 * bw, Math.max(0, radius - bw), true);
+      ctx.fill("evenodd");
       ctx.restore();
     }
 
