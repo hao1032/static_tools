@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>绝对值连等式 · 动画讲解</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#0f172a; --ink2:#475569; --ink3:#8a97a8;
+    --line:#e5e9f0; --line2:#eef1f6;
+    --blue:#2563eb; --bluebg:#eaf0ff;
+    --orange:#ea580c; --orangebg:#fff1e7;
+    --red:#dc2626; --redbg:#fdecec;
+    --green:#15803d; --greenbg:#e8f6ec;
+    --violet:#7c3aed; --violetbg:#f1ecfe;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.7;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:30px 30px 80px}
+  .crumb{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--ink3);margin-bottom:18px}
+  .crumb a{color:var(--blue);text-decoration:none}
+  .crumb a:hover{text-decoration:underline}
+  .crumb span{padding:2px 10px;border-radius:999px;background:var(--violetbg);color:var(--violet);font-weight:600}
+  .hero h1{font-size:30px;margin:0 0 10px;letter-spacing:.4px}
+  .hero .q{margin:0 0 6px;font-size:17px;color:var(--ink)}
+  .hero .q b{color:var(--red);background:var(--redbg);padding:1px 8px;border-radius:7px;margin:0 2px}
+  .hero .sub{margin:0 0 22px;color:var(--ink2);font-size:14.5px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+        padding:22px 26px;margin-bottom:20px;box-shadow:0 1px 2px rgba(16,24,40,.03)}
+  .card h2{font-size:19px;margin:0 0 6px}
+  .card h2 .tag{font-size:12px;font-weight:600;color:var(--violet);background:var(--violetbg);
+        padding:2px 9px;border-radius:999px;margin-left:8px;vertical-align:2px}
+  .muted{color:var(--ink2)}
+  .small{font-size:13.5px}
+
+  /* ---- 数学排版（零依赖，纯 HTML） ---- */
+  .m{font-family:"Cambria Math","Times New Roman",Georgia,serif;letter-spacing:.2px;white-space:nowrap}
+  .m i{font-style:italic}
+  .m sub{font-size:.66em;line-height:0;vertical-align:-.28em}
+  .m sup{font-size:.66em;line-height:0}
+  .fx{overflow-x:auto;padding:2px 0;scrollbar-width:thin}
+  .formula{font-family:"Cambria Math","Times New Roman",Georgia,serif;font-size:20px;
+    white-space:nowrap;padding:9px 12px;line-height:1.9}
+  .formula.big{font-size:23px}
+  .prow,.formula,.bigcalc,.sumline,.eqstep,.labeq{overflow-x:auto;scrollbar-width:thin}
+  .swipe-hint{display:none;font-size:12.5px;color:var(--ink3);margin:-6px 0 12px}
+  .hl{background:var(--bluebg);color:#1e40af;border-radius:6px;padding:0 5px}
+  .hl-o{background:var(--orangebg);color:#9a3412;border-radius:6px;padding:0 5px}
+  .hl-g{background:var(--greenbg);color:#166534;border-radius:6px;padding:0 5px}
+  .hl-r{background:var(--redbg);color:#b91c1c;border-radius:6px;padding:0 5px}
+  .dim{color:var(--ink3)}
+
+  /* ---- 原题 ---- */
+  details.problem summary,details.method summary{cursor:pointer;font-size:17px;font-weight:600;
+    list-style:none;display:flex;align-items:center;gap:9px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"▸";color:var(--ink3);transition:transform .2s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  .mbody{margin-top:16px}
+  .prow{padding:9px 14px;border-left:3px solid var(--blue);background:#f8fafd;border-radius:0 9px 9px 0;
+    margin-bottom:10px;font-size:15px}
+  .prow .kw{font-weight:700;color:var(--blue);margin-right:8px;font-family:inherit}
+  .prow.ask{border-left-color:var(--red);background:#fff8f8}
+  .prow.ask .kw{color:var(--red)}
+
+  /* ---- 步骤条 ---- */
+  .stage-head{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .stage-head h2{margin:0}
+  .rates{display:inline-flex;background:#f1f4f9;border-radius:9px;padding:3px;gap:3px}
+  .rates button{border:0;background:transparent;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink2);
+    padding:6px 10px;border-radius:7px;cursor:pointer}
+  .rates button.active{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(16,24,40,.12)}
+  .steps{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .step-chip{border:1px solid var(--line);background:#fff;color:var(--ink2);font-family:inherit;
+    font-size:13px;font-weight:600;padding:7px 12px;border-radius:9px;cursor:pointer;transition:.16s;white-space:nowrap}
+  .step-chip:hover{border-color:#b9c8e4;background:#f8fafd}
+  .step-chip.on{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.2)}
+  .step-chip.done{background:var(--bluebg);border-color:#cddcff;color:#1e40af}
+  .step-chip .n{opacity:.6;margin-right:4px;font-size:11.5px}
+
+  /* ---- 舞台 ---- */
+  .board{background:linear-gradient(180deg,#fbfcfe,#f7f9fd);border:1px solid var(--line2);
+         border-radius:14px;padding:24px 22px;min-height:326px}
+  .scene{display:none}
+  .scene.active{display:block}
+  .scene-t{font-size:13px;font-weight:700;color:var(--blue);letter-spacing:1px;margin-bottom:16px}
+  [data-anim]{opacity:0;transform:translateY(12px);
+    transition:opacity .42s ease,transform .42s cubic-bezier(.2,.85,.25,1)}
+  [data-anim].show{opacity:1;transform:none}
+  .line{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:9px 0}
+  .note{margin-top:14px;font-size:13.5px;color:#9a3412;background:var(--orangebg);
+    border-left:3px solid var(--orange);border-radius:0 8px 8px 0;padding:8px 13px}
+  .note b{color:#7c2d12}
+  .tipbox{margin-top:12px;font-size:13.5px;color:#1e40af;background:var(--bluebg);
+    border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:8px 13px}
+  .okbox{margin-top:12px;font-size:14px;font-weight:600;color:#166534;background:var(--greenbg);
+    border-left:3px solid var(--green);border-radius:0 8px 8px 0;padding:9px 13px}
+
+  .chain{font-family:"Cambria Math","Times New Roman",Georgia,serif;font-size:18px;
+    background:#fff;border:1px solid var(--line);border-radius:11px;padding:13px 16px;line-height:2.1;
+    overflow-x:auto;white-space:nowrap}
+  .chain .abs{background:var(--bluebg);border-radius:6px;padding:1px 5px;color:#1e40af}
+  .down{text-align:center;font-size:13px;color:var(--ink3);margin:12px 0 8px}
+
+  .boxes{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin:16px 0}
+  .box{min-width:78px;text-align:center;border:1.5px solid #c9d8f5;background:#fff;border-radius:11px;
+    padding:9px 8px;box-shadow:0 2px 7px rgba(37,99,235,.06)}
+  .box.flip{transform:perspective(600px) rotateY(85deg) translateY(10px);
+    transition:opacity .32s ease,transform .55s cubic-bezier(.2,.8,.2,1)}
+  .box.flip.show{transform:none;opacity:1}
+  .box .bi{font:700 15px "Cambria Math",Georgia,serif;color:var(--blue)}
+  .box .bv{font:600 12px "Cambria Math",Georgia,serif;color:var(--ink2);margin-top:2px}
+  .box.dots{border-style:dashed;background:transparent;box-shadow:none;color:var(--ink3);
+    display:flex;align-items:center;justify-content:center;font-size:19px;letter-spacing:2px}
+  .box.plus{border-color:#a8c6f5;background:var(--bluebg)}
+  .box.minus{border-color:#f6c9ab;background:var(--orangebg)}
+  .box.plus .bi{color:#1e40af} .box.minus .bi{color:#9a3412}
+  .box.zero{border-color:#a7d9b8;background:var(--greenbg)} .box.zero .bi{color:#166534}
+
+  .sumline{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:10px 0;padding:10px 13px;
+    border:1px solid var(--line2);border-radius:10px;background:#fff;font-family:"Cambria Math",Georgia,serif;font-size:17px}
+  .sumline .lab{font-family:inherit;font-size:12.5px;font-weight:700;color:var(--ink2);min-width:74px}
+  .pill{border-radius:8px;padding:3px 9px;font-weight:600}
+  .pill.b{background:var(--bluebg);color:#1e40af}
+  .pill.o{background:var(--orangebg);color:#9a3412}
+  .pill.g{background:var(--greenbg);color:#166534}
+  .pill.v{background:var(--violetbg);color:#5b21b6}
+  .pairline{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:7px 0;font-family:"Cambria Math",Georgia,serif;font-size:16px}
+  .pairline .idx{font:700 12px ui-monospace,Menlo,monospace;color:var(--ink3);min-width:44px}
+  .arrow{color:var(--ink3);font-size:15px}
+  .slick{white-space:nowrap}
+  .slick.l{transform:translateX(-22px);transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .4s}
+  .slick.r{transform:translateX(22px);transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .4s}
+  .slick.l.show,.slick.r.show{transform:none}
+
+  .bigcalc{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0;padding:13px 16px;
+    border:1px solid var(--line);border-radius:11px;background:#fff;
+    font-family:"Cambria Math",Georgia,serif;font-size:19px}
+  .num{font:700 20px ui-monospace,SFMono-Regular,Menlo,monospace;color:#1e40af}
+  .num.g{color:#166534}
+  .zerores{font:700 30px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--green)}
+
+  .pair{display:inline-flex;align-items:center;justify-content:center;min-width:62px;height:46px;
+    border:1.5px solid #c9d8f5;border-radius:10px;background:#fff;font:700 17px "Cambria Math",Georgia,serif;
+    transition:opacity .5s,transform .5s,background .5s,border-color .5s}
+  .pair.p{background:var(--bluebg);border-color:#a8c6f5;color:#1e40af}
+  .pair.m{background:var(--orangebg);border-color:#f6c9ab;color:#9a3412}
+  .pair.out{opacity:.16;transform:scale(.82);text-decoration:line-through}
+  .pair.lonely{background:var(--redbg);border-color:#f3b9b9;color:#b91c1c;
+    box-shadow:0 0 0 5px rgba(220,38,38,.09);transform:scale(1.12)}
+  .pairwrap{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin:18px 0 6px}
+
+  .eqstep{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin:11px 0;padding:10px 14px;
+    border:1px solid var(--line2);border-radius:10px;background:#fff;
+    font-family:"Cambria Math",Georgia,serif;font-size:19px}
+  .eqstep .why{font-family:inherit;font-size:12.5px;color:var(--ink3);margin-left:auto;white-space:nowrap}
+  .eqstep .strike{transition:opacity .45s,color .45s}
+  .eqstep .strike.done{opacity:.32;text-decoration:line-through}
+  .eqstep.final{background:var(--greenbg);border-color:#bfe3cb;font-size:22px}
+  .answer{display:inline-block;font:700 64px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:var(--green);letter-spacing:-2px}
+  .answer.show{animation:pop .6s cubic-bezier(.2,1.5,.4,1) both}
+  @keyframes pop{0%{transform:scale(.7);opacity:0}65%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:14px}
+  .fnode{background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:13.5px;font-weight:600}
+  .fnode b{color:var(--blue)}
+
+  /* ---- 讲解 ---- */
+  .explain{display:flex;gap:16px;margin-top:20px;padding:18px 20px;border:1px solid var(--line);
+    border-radius:12px;background:#f8fafd;min-height:126px}
+  .explain.flash{animation:fadein .34s ease}
+  @keyframes fadein{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .ex-no{flex:0 0 46px;height:46px;border-radius:12px;background:var(--blue);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;letter-spacing:.5px}
+  .ex-body{flex:1;min-width:0}
+  .ex-body h3{margin:0 0 4px;font-size:17px}
+  .ex-body p{margin:0;font-size:14.5px;color:var(--ink2)}
+  .ex-body p b{color:var(--ink)}
+  .ex-note{margin-top:10px;font-size:13.5px;color:#9a3412;background:var(--orangebg);
+    border-left:3px solid var(--orange);border-radius:0 8px 8px 0;padding:7px 12px}
+
+  /* ---- 控制 ---- */
+  .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);font-family:inherit;font-size:13.5px;
+    font-weight:600;padding:9px 16px;border-radius:9px;cursor:pointer;transition:.16s;display:inline-flex;
+    align-items:center;gap:7px}
+  .btn:hover{background:#f7f9fc;border-color:#c9d3e3}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.primary:hover{background:#1d4ed8}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .hint{font-size:12.5px;color:var(--ink3);margin-left:auto}
+
+  /* ---- 奇偶实验台 ---- */
+  .labbar{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin:4px 0 12px}
+  .seg{display:inline-flex;background:#eef2f8;border-radius:9px;padding:3px;gap:3px;flex-wrap:wrap}
+  .seg button{border:0;background:transparent;font-family:inherit;font-size:12.8px;font-weight:600;
+    color:var(--ink2);padding:7px 12px;border-radius:7px;cursor:pointer;transition:.16s;white-space:nowrap}
+  .seg button:hover{color:var(--blue)}
+  .seg button.active{background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(16,24,40,.13)}
+  .slider{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--ink2)}
+  .slider input[type=range]{width:150px;accent-color:var(--blue)}
+  .slider b{font:700 15px ui-monospace,Menlo,monospace;color:var(--ink);min-width:34px;text-align:right}
+  .labvis{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;
+    padding:15px;border:1px dashed #d7dfec;border-radius:11px;background:#fafbfd;min-height:66px}
+  .cell{min-width:56px;text-align:center;border-radius:9px;padding:7px 9px;font:700 16px "Cambria Math",Georgia,serif;
+    transition:.2s}
+  .cell.p{background:var(--bluebg);color:#1e40af;border:1.5px solid #a8c6f5}
+  .cell.m{background:var(--orangebg);color:#9a3412;border:1.5px solid #f6c9ab}
+  .cell.dot{background:transparent;border:0;color:var(--ink3);letter-spacing:2px}
+  .labeq{margin:14px 0 6px;font-family:"Cambria Math",Georgia,serif;font-size:19px;text-align:center}
+  .labstate{text-align:center;font-size:13.5px;font-weight:600;border-radius:10px;padding:10px 14px}
+  .labstate.bad{background:var(--redbg);color:#b91c1c}
+  .labstate.ok{background:var(--greenbg);color:#166534}
+  .labstate.warn{background:var(--bluebg);color:#1e40af}
+  .quick{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;font-size:13px;color:var(--ink2)}
+  .quick .btn{padding:6px 11px;font-size:12.5px}
+
+  /* ---- 小 n 验算 ---- */
+  .vrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;padding:10px 14px;margin-bottom:9px;
+    border:1px solid var(--line2);border-radius:10px;background:#fafbfd;font-size:14px;
+    opacity:0;transform:translateY(9px);transition:opacity .4s,transform .4s}
+  .vrow.show{opacity:1;transform:none}
+  .vrow .vk{flex:0 0 88px;font-weight:700;color:var(--blue);font-size:13px}
+  .vrow .vf{font-family:"Cambria Math",Georgia,serif;font-size:16px}
+  .vrow .vd{font-size:12.5px;color:var(--ink2)}
+  .vrow.ok{background:var(--greenbg);border-color:#bfe3cb}
+  .vrow.ok .vk{color:#166534}
+
+  /* ---- 文字卡片 ---- */
+  .deriv{margin-top:14px}
+  .deriv p{margin:0 0 12px;font-size:14.5px;color:var(--ink2)}
+  .deriv .step{padding:11px 15px;border-left:3px solid var(--blue);background:#f8fafd;
+    border-radius:0 9px 9px 0;margin-bottom:10px}
+  .deriv .step b{color:var(--ink)}
+  .deriv .step .t{font-weight:700;color:var(--blue);font-size:13.5px;display:block;margin-bottom:3px}
+  .pitfalls{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:14px}
+  .pit{border:1px solid var(--line2);border-radius:11px;padding:13px 15px;background:#fafbfd}
+  .pit .n{display:inline-block;background:var(--redbg);color:#b91c1c;font-weight:700;font-size:12px;
+    border-radius:6px;padding:1px 8px;margin-bottom:6px}
+  .pit p{margin:0;font-size:13.5px;color:var(--ink2)}
+  .pit p b{color:var(--ink)}
+
+  /* ---- 自测题 ---- */
+  .q{border-top:1px solid var(--line2);padding:14px 0 4px}
+  .q:first-of-type{border-top:0}
+  .q h3{margin:0 0 10px;font-size:14.5px}
+  .opts{display:flex;gap:9px;flex-wrap:wrap}
+  .opt{border:1px solid var(--line);background:#fff;font-family:inherit;font-size:13.5px;font-weight:600;
+    color:var(--ink2);padding:8px 15px;border-radius:9px;cursor:pointer;transition:.15s}
+  .opt:hover{border-color:#b9c8e4;background:#f8fafd}
+  .opt.right{background:var(--greenbg);border-color:#a7d9b8;color:#166534}
+  .opt.wrong{background:var(--redbg);border-color:#f3b9b9;color:#b91c1c}
+  .fb{font-size:13px;margin:9px 0 0;min-height:20px;color:var(--ink2)}
+  .fb.ok{color:#166534} .fb.no{color:#b91c1c}
+  footer{color:var(--ink3);font-size:13px;text-align:center;padding:10px 0 0}
+
+  /* ---- 双模式切换 ---- */
+  .modebar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 18px;padding:13px 15px;
+    border:1px solid #cddcff;background:#f5f8ff;border-radius:12px}
+  .modebar .mt{font-size:13.5px;font-weight:700;color:var(--ink2);margin-right:2px}
+  .modebtn{border:1px solid #c9d8f5;background:#fff;color:var(--ink);font-family:inherit;text-align:left;
+    padding:9px 14px;border-radius:10px;cursor:pointer;transition:.16s;line-height:1.45}
+  .modebtn b{display:block;font-size:14.5px}
+  .modebtn small{display:block;font-size:12px;color:var(--ink2);margin-top:2px}
+  .modebtn:hover{border-color:var(--blue)}
+  .modebtn.active{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 5px 14px rgba(37,99,235,.2)}
+  .modebtn.active small{color:#e5edff}
+  .modehint{font-size:12.5px;color:var(--ink3);margin-left:auto}
+  .kidbar{margin:0 0 20px;padding:12px 16px;border-radius:12px;background:var(--greenbg);
+    border-left:4px solid var(--green);font-size:14.5px;color:#166534}
+  .kidbar b{font-size:15px}
+
+  /* ---- 入门版舞台：大字、具体数字、少符号 ---- */
+  .easy-lead{font-size:15px;color:var(--ink2);margin:0 0 12px}
+  .say{font-size:17px;font-weight:700;color:var(--blue);margin:14px 0 8px;line-height:1.6}
+  .minirow{display:flex;flex-wrap:wrap;align-items:baseline;gap:9px;padding:10px 14px;margin-bottom:9px;
+    border-left:3px solid var(--blue);background:#f8fafd;border-radius:0 10px 10px 0;font-size:15px;overflow-x:auto}
+  .minirow .kw{font-weight:700;color:var(--blue);min-width:38px}
+  .minirow.ask{border-left-color:var(--red);background:#fff8f8}
+  .minirow.ask .kw{color:var(--red)}
+  .minirow .m{font-size:17px}
+  .card3{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:16px 0}
+  .mini{width:166px;border:2px solid #c9d8f5;border-radius:14px;background:#fff;padding:12px 10px;text-align:center}
+  .mini .no{font-size:12px;color:var(--ink3);font-weight:700}
+  .mini .val{font:700 20px/1.4 "Cambria Math",Georgia,serif;color:#1e40af;margin-top:4px;white-space:nowrap}
+  .mini .val.sm{font-size:16px}
+  .mini .cap{font-size:12px;color:var(--ink2);margin-top:6px}
+  .mini.warm{border-color:#f6c9ab;background:var(--orangebg)}
+  .mini.warm .val{color:#9a3412}
+  .mini.good{border-color:#a7d9b8;background:var(--greenbg)}
+  .mini.good .val{color:#166534}
+  .rowcalc{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:11px 14px;margin:9px 0;
+    border:1px solid var(--line2);border-radius:10px;background:#fff;
+    font-family:"Cambria Math",Georgia,serif;font-size:18px;overflow-x:auto;scrollbar-width:thin}
+  .rowcalc .lead{font-family:inherit;font-size:12.5px;font-weight:700;color:var(--ink3);min-width:64px}
+  .bignum{font:700 22px ui-monospace,Menlo,monospace;color:#1e40af}
+  .bignum.neg{color:var(--red)} .bignum.pos{color:var(--green)}
+  .combo{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:8px 13px;margin:7px 0;
+    border:1px solid var(--line2);border-radius:9px;background:#fff;
+    font-family:"Cambria Math",Georgia,serif;font-size:17px;overflow-x:auto}
+  .combo .res{margin-left:auto;font-weight:700;color:var(--red);font-size:19px}
+  .combo.ok .res{color:var(--green)}
+  .plain{font-size:14.5px;color:var(--ink2);background:#f8fafd;border:1px solid var(--line2);
+    border-radius:10px;padding:11px 14px;margin:10px 0}
+  .plain b{color:var(--ink)}
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:14px 0;border:1px solid var(--line2);border-radius:11px;overflow:hidden}
+  .compare>div{padding:9px 14px;font-size:14px;border-bottom:1px solid var(--line2)}
+  .compare .h{background:#f1f5fc;font-weight:700;color:var(--ink)}
+  .compare .l{background:#fff;color:var(--ink2)}
+  .compare .r{background:#fff;color:var(--ink)}
+  .compare .same{background:var(--greenbg);color:#166534;font-weight:700}
+  .recap{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
+  .recap div{border:1px solid #bfe3cb;background:var(--greenbg);border-radius:11px;padding:12px 14px;font-size:14px;color:#166534}
+  .recap b{display:block;font-size:15px;margin-bottom:3px}
+
+  /* ---- 凑 0 挑战 ---- */
+  .toy{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:18px 0 12px}
+  .coin{width:72px;height:72px;border-radius:14px;border:2px solid #a8c6f5;background:var(--bluebg);
+    color:#1e40af;font:700 26px/1 ui-monospace,Menlo,monospace;cursor:pointer;transition:.18s;
+    display:flex;align-items:center;justify-content:center}
+  .coin.m{border-color:#f6c9ab;background:var(--orangebg);color:#9a3412}
+  .coin:hover{transform:translateY(-3px);box-shadow:0 6px 14px rgba(16,24,40,.12)}
+  .coin.pop{animation:pop .35s cubic-bezier(.2,1.5,.4,1)}
+  .toyresult{text-align:center;font-family:"Cambria Math",Georgia,serif;font-size:21px;margin:6px 0 12px}
+  .toyresult b{font:700 28px ui-monospace,Menlo,monospace}
+  .toyresult b.zero{color:var(--green)} .toyresult b.nonzero{color:var(--red)}
+
+  @media (max-width:760px){
+    .compare{grid-template-columns:1fr}
+    .modehint{width:100%;margin-left:0}
+    .mini{width:142px}
+    .coin{width:60px;height:60px;font-size:22px}
+    .wrap{padding:20px 14px 60px}
+    .card{padding:18px 15px}
+    .hero h1{font-size:24px}
+    .board{padding:18px 13px}
+    .formula{font-size:17px}
+    .formula.big{font-size:19px}
+    .prow .m{white-space:normal}
+    .swipe-hint{display:block}
+    .answer{font-size:48px}
+    .hint{margin-left:0;width:100%}
+    .eqstep .why{margin-left:0}
+  }
+  @media (prefers-reduced-motion:reduce){
+    [data-anim],.box.flip,.slick,.vrow,.pair,.eqstep .strike{transition-duration:.01ms!important}
+    .answer.show{animation:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../">← 返回首页</a><span>教育 · 动画讲解</span></div>
+
+  <header class="hero">
+    <h1>绝对值连等式 · 动画讲解</h1>
+    <p class="q">2027 个绝对值全都相等，求 <b>x<sub>1</sub> − 2x<sub>2</sub> − 3x<sub>3</sub></b> 的值</p>
+    <p class="sub">看着像要解 2027 个未知数，其实只用到三件事：把式子全加起来、看清「奇数」、代入两次。<b>建议先选「从 3 个数开始」</b>，用具体数字把方法看明白。</p>
+  </header>
+
+  <div class="kidbar"><b>给七年级的读法：</b>别被 2027 吓到。下面默认用「只有 3 个数」的小题目，每一步都算成看得见的具体数字；看懂之后再把 3 换回 2027。两个版本方法一样，答案都是 −3。</div>
+
+  <details class="card problem">
+    <summary>原题长这样（先不用看，点开 / 收起）</summary>
+    <div class="mbody">
+      <div class="prow"><span class="kw">已知</span>
+        <span class="m"><i>x</i><sub>1</sub> + <i>x</i><sub>2</sub> + ⋯ + <i>x</i><sub>2027</sub> = ½ × (1 + 2 + ⋯ + 2027)</span>
+      </div>
+      <div class="prow"><span class="kw">并且</span>
+        <span class="m">|<i>x</i><sub>1</sub> − 3<i>x</i><sub>2</sub> + 1| = |<i>x</i><sub>2</sub> − 3<i>x</i><sub>3</sub> + 2| = ⋯ = |<i>x</i><sub>2026</sub> − 3<i>x</i><sub>2027</sub> + 2026| = |<i>x</i><sub>2027</sub> − 3<i>x</i><sub>1</sub> + 2027|</span>
+      </div>
+      <div class="prow ask"><span class="kw">求</span>
+        <span class="m"><i>x</i><sub>1</sub> − 2<i>x</i><sub>2</sub> − 3<i>x</i><sub>3</sub> 的值</span>
+      </div>
+      <p class="small muted" style="margin:12px 0 0">注意最后一项：下标绕回 <span class="m"><i>x</i><sub>1</sub></span>，常数是 2027，正好和项数一致。题目里 2027 个数的下标是<b>首尾相接的环</b>。</p>
+    </div>
+  </details>
+
+  <!-- ================= 分步动画 ================= -->
+  <section class="card">
+    <div class="stage-head">
+      <h2 id="stageTitle">跟着动画走一遍（3 个数版） <span class="tag" id="stageTag">8 步 · 点步骤名可跳转</span></h2>
+      <div class="rates" id="rates">
+        <button data-sp="0.7">0.7×</button>
+        <button data-sp="1" class="active">1×</button>
+        <button data-sp="1.6">1.6×</button>
+      </div>
+    </div>
+
+    <div class="modebar" id="modeBar">
+      <span class="mt">先看哪个版本？</span>
+      <button class="modebtn active" data-mode="easy"><b>① 从 3 个数开始</b><small>推荐 · 全用具体数字，一步一步算给你看</small></button>
+      <button class="modebtn" data-mode="hard"><b>② 原题 2027 个</b><small>进阶 · 用字母写成严谨证明</small></button>
+      <span class="modehint">同一个方法，两个版本答案都是 −3</span>
+    </div>
+
+    <div class="steps" id="steps"></div>
+    <div class="swipe-hint">提示：公式较长时，可在公式区域左右滑动查看完整内容。</div>
+
+    <!-- ============ 入门版：先用 3 个数，全用具体数字 ============ -->
+    <div class="board" id="boardEasy" data-board="easy">
+      <div class="scene active" data-scene="0">
+        <div class="scene-t" data-anim>第 1 步 · 先把 2027 换成 3，题目变小就好懂了</div>
+        <div class="plain" data-anim>2027 个未知数太吓人。我们把题目里的 <b>2027 改成 3</b>，别的都不变，先看懂方法；最后再把 3 换回去。</div>
+        <div class="card3">
+          <div class="mini" data-anim><div class="no">原题</div><div class="val">2027 个</div><div class="cap">一眼看不清</div></div>
+          <div class="mini good" data-anim><div class="no">先看这个</div><div class="val">3 个</div><div class="cap">能手算</div></div>
+        </div>
+        <div class="minirow" data-anim><span class="kw">已知</span><span class="m">x₁ + x₂ + x₃ = ½ × (1 + 2 + 3) = <b>3</b></span></div>
+        <div class="minirow" data-anim><span class="kw">并且</span><span class="m">|x₁ − 3x₂ + 1| = |x₂ − 3x₃ + 2| = |x₃ − 3x₁ + 3|</span></div>
+        <div class="minirow ask" data-anim><span class="kw">求</span><span class="m">x₁ − 2x₂ − 3x₃</span></div>
+        <div class="tipbox" data-anim>只有 <b>3 个绝对值</b>，可以一个一个用手算。最后一项 <span class="m">x₃ − 3x₁ + 3</span> 绕回了 x₁，像三个人围成一圈传接力。</div>
+      </div>
+
+      <div class="scene" data-scene="1">
+        <div class="scene-t" data-anim>第 2 步 · 先复习：绝对值是「把负号擦掉」</div>
+        <div class="plain" data-anim>绝对值只管<b>大小</b>，不管正负：<span class="m">|5| = 5</span>，<span class="m">|−5| = 5</span>。所以「绝对值相等」<b>不等于</b>「里面相等」。</div>
+        <div class="card3">
+          <div class="mini" data-anim><div class="no">里面是 +5</div><div class="val">|+5| = 5</div><div class="cap">大小是 5</div></div>
+          <div class="mini warm" data-anim><div class="no">里面是 −5</div><div class="val">|−5| = 5</div><div class="cap">大小还是 5</div></div>
+          <div class="mini good" data-anim><div class="no">里面是 0</div><div class="val">|0| = 0</div><div class="cap">只有它是 0</div></div>
+        </div>
+        <div class="say" data-anim>假如三个盒子的绝对值都是 2，里面可能是 +2，也可能是 −2。</div>
+        <div class="card3">
+          <div class="mini warm" data-anim><div class="no">盒子①</div><div class="val">+2 或 −2</div></div>
+          <div class="mini warm" data-anim><div class="no">盒子②</div><div class="val">+2 或 −2</div></div>
+          <div class="mini warm" data-anim><div class="no">盒子③</div><div class="val">+2 或 −2</div></div>
+        </div>
+        <div class="tipbox" data-anim>接下来的关键：要证明这个「2」其实只能是 <b>0</b>。做到这一步，绝对值号就能直接拿掉了。</div>
+      </div>
+
+      <div class="scene" data-scene="2">
+        <div class="scene-t" data-anim>第 3 步 · 把 3 个盒子里的东西全加起来</div>
+        <div class="card3">
+          <div class="mini" data-anim><div class="no">盒子① 里装</div><div class="val sm">x₁ − 3x₂ + 1</div></div>
+          <div class="mini" data-anim><div class="no">盒子② 里装</div><div class="val sm">x₂ − 3x₃ + 2</div></div>
+          <div class="mini" data-anim><div class="no">盒子③ 里装</div><div class="val sm">x₃ − 3x₁ + 3</div></div>
+        </div>
+        <div class="plain" data-anim>把三个盒子<b>一起</b>加起来，分成「字母」和「数字」两堆：</div>
+        <div class="rowcalc" data-anim><span class="lead">字母</span><span class="m">(x₁+x₂+x₃) − 3(x₂+x₃+x₁) = −2 × (x₁+x₂+x₃) = −2 × 3 =</span><span class="bignum neg">−6</span></div>
+        <div class="rowcalc" data-anim><span class="lead">数字</span><span class="m">1 + 2 + 3 =</span><span class="bignum pos">6</span></div>
+        <div class="rowcalc" data-anim><span class="lead">合起来</span><span class="m">−6 + 6 =</span><span class="zerores">0</span></div>
+        <div class="say" data-anim>三个盒子里的数加起来，正好是 0 ！</div>
+        <div class="note" data-anim><b>为什么 x₂+x₃+x₁ 也等于 3？</b>它只是把 x₁+x₂+x₃ 换了个顺序，加法换顺序结果不变；题目已经告诉我们这个和是 3。</div>
+      </div>
+
+      <div class="scene" data-scene="3">
+        <div class="scene-t" data-anim>第 4 步 · 3 个「一样大」的数，加起来能等于 0 吗？</div>
+        <div class="plain" data-anim>假设每个盒子的绝对值是 <b>2</b>，里面只能是 +2 或 −2。把所有搭配都列出来：</div>
+        <div class="combo" data-anim><span class="m">+2 + 2 + 2 =</span><span class="res">6</span></div>
+        <div class="combo" data-anim><span class="m">+2 + 2 − 2 =</span><span class="res">2</span></div>
+        <div class="combo" data-anim><span class="m">+2 − 2 − 2 =</span><span class="res">−2</span></div>
+        <div class="combo" data-anim><span class="m">−2 − 2 − 2 =</span><span class="res">−6</span></div>
+        <div class="say" data-anim>一个都不等于 0！因为 3 是奇数，+2 和 −2 没法两两配成对。</div>
+        <div class="okbox" data-anim>所以「一样大的那个数」只能是 <b>0</b>：三个盒子里全都是 0。</div>
+        <div class="tipbox" data-anim>换成 5、−5 或任何不是 0 的数都一样，总会多出一个落单的。想自己点着试？下面有「凑 0 挑战」。</div>
+      </div>
+
+      <div class="scene" data-scene="4">
+        <div class="scene-t" data-anim>第 5 步 · 绝对值外壳可以拿掉了</div>
+        <div class="plain" data-anim>只有 <span class="m">|0| = 0</span>。所以每个盒子里面就是 0，绝对值号直接擦掉：</div>
+        <div class="eqstep" data-anim><span class="m">盒子①：x₁ − 3x₂ + 1 = 0 → <span class="hl">x₁ = 3x₂ − 1</span></span></div>
+        <div class="eqstep" data-anim><span class="m">盒子②：x₂ − 3x₃ + 2 = 0 → <span class="hl">x₂ = 3x₃ − 2</span></span></div>
+        <div class="eqstep" data-anim><span class="m">盒子③：这次用不上，先放一边</span></div>
+        <div class="say" data-anim>题目问的式子只用到 x₁、x₂、x₃，有这两个式子就够了！</div>
+      </div>
+
+      <div class="scene" data-scene="5">
+        <div class="scene-t" data-anim>第 6 步 · 像换零件一样，把 x₁、x₂ 换掉</div>
+        <div class="eqstep" data-anim><span class="m">要算：x₁ − 2x₂ − 3x₃</span></div>
+        <div class="eqstep" data-anim><span class="m">① 把 x₁ 换成 (3x₂ − 1)： (3x₂ − 1) − 2x₂ − 3x₃ = x₂ − 1 − 3x₃</span></div>
+        <div class="eqstep" data-anim><span class="m">② 把 x₂ 换成 (3x₃ − 2)： (3x₃ − 2) − 1 − 3x₃ = <b>−3</b></span></div>
+        <div class="say" data-anim>3x₃ 和 −3x₃ 正好抵消，x₃ 不见了，只剩 −3 ！</div>
+        <div class="tipbox" data-anim>这里只用到「代入」：把等号右边整块塞进另一个式子里，七年级已经学过，不是新知识。</div>
+      </div>
+
+      <div class="scene" data-scene="6">
+        <div class="scene-t" data-anim>第 7 步 · 不放心？把真的 x 代回去验一遍</div>
+        <div class="plain" data-anim>由三个方程能解出：<span class="m">x₁ = 17/13，x₂ = 10/13，x₃ = 12/13</span>。代回去看看：</div>
+        <div class="combo ok" data-anim><span class="m">x₁ + x₂ + x₃ = (17+10+12)/13 = 39/13 = 3</span><span class="res">✓</span></div>
+        <div class="combo ok" data-anim><span class="m">盒子① = 17/13 − 30/13 + 1 = 0，盒子② = 10/13 − 36/13 + 2 = 0</span><span class="res">✓</span></div>
+        <div class="combo ok" data-anim><span class="m">x₁ − 2x₂ − 3x₃ = (17 − 20 − 36)/13 = −39/13 = −3</span><span class="res">✓</span></div>
+        <div class="okbox" data-anim>全对！说明前面不是变魔术，答案确实是 <b>−3</b>。</div>
+      </div>
+
+      <div class="scene" data-scene="7">
+        <div class="scene-t" data-anim>第 8 步 · 把 3 换回 2027，答案还是 −3</div>
+        <div class="compare">
+          <div class="h" data-anim>3 个数的小题目</div><div class="h" data-anim>原题 2027 个数</div>
+          <div class="l" data-anim>和 = 3</div><div class="r" data-anim>和 = ½(1+2+⋯+2027) = 1 027 689</div>
+          <div class="l" data-anim>全部加起来：−6 + 6 = 0</div><div class="r" data-anim>全部加起来：−2 055 378 + 2 055 378 = 0</div>
+          <div class="l" data-anim>3 是奇数，凑不出 0</div><div class="r" data-anim>2027 也是奇数，凑不出 0</div>
+          <div class="same" data-anim>三个盒子里全是 0</div><div class="same" data-anim>2027 个盒子里全是 0</div>
+          <div class="same" data-anim>答案 −3</div><div class="same" data-anim>答案 −3</div>
+        </div>
+        <div class="say" data-anim>题目特意选 2027，就因为它是奇数；换成任何一个奇数，答案都不变。</div>
+        <div class="okbox" data-anim><b>记住三句话：</b>全部加起来 = 0 → 奇数个一样大的数只能全是 0 → 用头两个盒子代入两次。</div>
+        <div class="tipbox" data-anim>看懂了就点上面的「② 原题 2027 个」，看看怎么用字母把同样的想法写成严谨证明。</div>
+      </div>
+    </div>
+
+    <!-- ============ 进阶版：原题 2027 个，严谨写法 ============ -->
+    <div class="board" id="boardHard" data-board="hard" style="display:none">
+      <!-- 0 拆盒 -->
+      <div class="scene active" data-scene="0">
+        <div class="scene-t" data-anim>STEP 0 · 把长链条拆成 2027 个小盒子</div>
+        <div class="chain" data-anim>
+          <span class="abs">|<i>x</i><sub>1</sub> − 3<i>x</i><sub>2</sub> + 1|</span> =
+          <span class="abs">|<i>x</i><sub>2</sub> − 3<i>x</i><sub>3</sub> + 2|</span> = ⋯ =
+          <span class="abs">|<i>x</i><sub>2026</sub> − 3<i>x</i><sub>2027</sub> + 2026|</span> =
+          <span class="abs">|<i>x</i><sub>2027</sub> − 3<i>x</i><sub>1</sub> + 2027|</span>
+        </div>
+        <div class="down" data-anim>↓ 每个绝对值里，装的是同一个模样的小式子 ↓</div>
+        <div class="boxes" id="boxes0"></div>
+        <div class="line" data-anim>
+          <span class="pill v">记</span>
+          <span class="m"><i>A</i><sub>i</sub> = <i>x</i><sub>i</sub> − 3<i>x</i><sub>i+1</sub> + i</span>
+          <span class="small muted">（i = 1 … 2026），最后一项</span>
+          <span class="m"><i>A</i><sub>2027</sub> = <i>x</i><sub>2027</sub> − 3<i>x</i><sub>1</sub> + 2027</span>
+        </div>
+        <div class="tipbox" data-anim><b>下标是循环的</b>：把 <span class="m"><i>x</i><sub>2028</sub></span> 看成 <span class="m"><i>x</i><sub>1</sub></span>，2027 个式子就写成了统一的形式。这个「环」是下一步求和的关键。</div>
+      </div>
+
+      <!-- 1 设 c -->
+      <div class="scene" data-scene="1">
+        <div class="scene-t" data-anim>STEP 1 · 绝对值相等，里面只有两种可能</div>
+        <div class="formula big" data-anim>
+          |<i>A</i><sub>1</sub>| = |<i>A</i><sub>2</sub>| = ⋯ = |<i>A</i><sub>2027</sub>| = <span class="hl">c</span> &nbsp;(c ≥ 0)
+        </div>
+        <div class="down" data-anim>逐个翻牌：把绝对值号拿掉，每个盒子只能是 +c 或 −c</div>
+        <div class="boxes" id="boxes1"></div>
+        <div class="line" data-anim>
+          <span class="pill v">结论</span>
+          <span class="m"><i>A</i><sub>i</sub> ∈ { +c, −c }</span>
+          <span class="small muted">共 2027 个，正负各几个还不知道</span>
+        </div>
+        <div class="note" data-anim><b>别急着擦绝对值号。</b>「|A₁| = |A₂|」只能推出 A₁ = ±A₂，不能推出 A₁ = A₂。现在连 c 是不是 0 都还不知道。</div>
+      </div>
+
+      <!-- 2 求和 -->
+      <div class="scene" data-scene="2">
+        <div class="scene-t" data-anim>STEP 2 · 把 2027 个 Aᵢ 全部加起来</div>
+        <div class="sumline" data-anim><span class="lab">全部相加</span>
+          <span class="m">Σ<i>A</i><sub>i</sub> = <i>A</i><sub>1</sub> + <i>A</i><sub>2</sub> + ⋯ + <i>A</i><sub>2027</sub></span>
+        </div>
+        <div class="sumline" data-anim><span class="lab">拆成三堆</span>
+          <span class="pill b m">(x₁ + x₂ + ⋯ + x₂₀₂₇)</span>
+          <span class="pill o m">− 3 (x₂ + x₃ + ⋯ + x₂₀₂₇ + x₁)</span>
+          <span class="pill g m">+ (1 + 2 + ⋯ + 2027)</span>
+        </div>
+        <div class="tipbox" data-anim>橙色括号里是<b>同一批数换了个顺序</b>：<span class="m">{x₂, x₃, …, x₂₀₂₇, x₁}</span> 与 <span class="m">{x₁, …, x₂₀₂₇}</span> 只是排队方式不同，和完全相等。</div>
+        <div class="down" data-anim>于是每个 xᵢ 都拿到「+1 份」和「−3 份」，净得 −2 份 ↓</div>
+        <div class="pairline" data-anim><span class="idx">i = 1</span>
+          <span class="pill b m slick l">+ x₁</span><span class="pill o m slick r">− 3x₁</span>
+          <span class="arrow">→</span><span class="pill v m">− 2x₁</span></div>
+        <div class="pairline" data-anim><span class="idx">i = 2</span>
+          <span class="pill b m slick l">+ x₂</span><span class="pill o m slick r">− 3x₂</span>
+          <span class="arrow">→</span><span class="pill v m">− 2x₂</span></div>
+        <div class="pairline" data-anim><span class="idx">⋮</span><span class="small muted">每一个 xᵢ 都一样，包括最后那个绕回来的 x₁</span></div>
+        <div class="sumline" data-anim><span class="lab">合起来</span>
+          <span class="m">Σ<i>A</i><sub>i</sub> = −2 (<i>x</i><sub>1</sub> + ⋯ + <i>x</i><sub>2027</sub>) + S = <span class="hl">−2Σx + S</span></span>
+          <span class="small muted">其中 S = 1 + 2 + ⋯ + 2027</span>
+        </div>
+      </div>
+
+      <!-- 3 代入 -->
+      <div class="scene" data-scene="3">
+        <div class="scene-t" data-anim>STEP 3 · 代入题目给的和，总和居然是 0</div>
+        <div class="bigcalc" data-anim>
+          <span class="m">S = 1 + 2 + ⋯ + 2027 = 2027 × 2028 / 2 =</span>
+          <span class="num">2 055 378</span>
+        </div>
+        <div class="bigcalc" data-anim>
+          <span class="m">Σx = ½ S =</span>
+          <span class="num" id="rollSumX">1 027 689</span>
+          <span class="small muted">（这就是题目第一行的条件）</span>
+        </div>
+        <div class="bigcalc" data-anim>
+          <span class="m">ΣAᵢ = −2 × 1 027 689 + 2 055 378 = −2 055 378 + 2 055 378 =</span>
+          <span class="zerores">0</span>
+        </div>
+        <div class="okbox" data-anim>✓ 2027 个数 <span class="m">A₁, A₂, …, A₂₀₂₇</span> 加在一起 <b>恰好等于 0</b>——这个 0 是后面所有推理的支点。</div>
+        <div class="note" data-anim>题目给的「和 = ½(1+2+⋯+2027)」不是随便写的：它正好让 <span class="m">−2Σx + S = 0</span>。</div>
+      </div>
+
+      <!-- 4 奇偶 -->
+      <div class="scene" data-scene="4">
+        <div class="scene-t" data-anim>STEP 4 · 2027 是奇数，逼出 c = 0</div>
+        <div class="formula" data-anim>设 k 个 +c、2027 − k 个 −c，则
+          <span class="m">Σ<i>A</i><sub>i</sub> = c·k − c·(2027 − k) = <span class="hl-o">c (2k − 2027)</span></span>
+        </div>
+        <div class="down" data-anim>用 7 个方块示意：正负两两抵消，因为总数是奇数，永远会剩一个</div>
+        <div class="pairwrap" id="pairs4"></div>
+        <div class="formula" data-anim>
+          <span class="m">2k − 2027</span> 是<b>奇数</b>，不可能等于 0 &nbsp;→&nbsp;
+          若 c &gt; 0，则 ΣAᵢ ≠ 0，与上一步的 <span class="hl-g">ΣAᵢ = 0</span> 矛盾
+        </div>
+        <div class="okbox" data-anim>所以只能是 <span class="m hl-g">c = 0</span> &nbsp;⇒&nbsp; 每个 <span class="m">|Aᵢ| = 0</span> &nbsp;⇒&nbsp; <b>所有 Aᵢ = 0</b>。</div>
+        <div class="note" data-anim><b>「奇数」就是题眼。</b>如果项数是偶数，正负各占一半就能凑出 0，这一步就推不动了。下方的实验台可以自己试。</div>
+      </div>
+
+      <!-- 5 脱绝对值 -->
+      <div class="scene" data-scene="5">
+        <div class="scene-t" data-anim>STEP 5 · 绝对值全部脱掉，但只用前两个式子</div>
+        <div class="eqstep" data-anim>
+          <span class="m"><i>A</i><sub>1</sub> = 0 ⇒ <i>x</i><sub>1</sub> − 3<i>x</i><sub>2</sub> + 1 = 0 ⇒ <span class="hl">x₁ = 3x₂ − 1</span></span>
+          <span class="why">第 1 个方程</span>
+        </div>
+        <div class="eqstep" data-anim>
+          <span class="m"><i>A</i><sub>2</sub> = 0 ⇒ <i>x</i><sub>2</sub> − 3<i>x</i><sub>3</sub> + 2 = 0 ⇒ <span class="hl">x₂ = 3x₃ − 2</span></span>
+          <span class="why">第 2 个方程</span>
+        </div>
+        <div class="line" data-anim><span class="pill g">剩下的 2025 个方程</span>
+          <span class="small muted">一个都用不上，也不用真的解出每个 xᵢ</span></div>
+        <div class="tipbox" data-anim>真要去解这个 2027 元方程组，会出现 <span class="m">3<sup>2027</sup></span> 这样的天文数字；而要求的式子只涉及 <span class="m">x₁, x₂, x₃</span>，两次代入就够了。</div>
+      </div>
+
+      <!-- 6 消元 -->
+      <div class="scene" data-scene="6">
+        <div class="scene-t" data-anim>STEP 6 · 两次代入，未知数自己消掉</div>
+        <div class="eqstep" data-anim><span class="m">目标 = <i>x</i><sub>1</sub> − 2<i>x</i><sub>2</sub> − 3<i>x</i><sub>3</sub></span><span class="why">原式</span></div>
+        <div class="eqstep" data-anim>
+          <span class="m">= (<span class="hl">3<i>x</i><sub>2</sub> − 1</span>) − 2<i>x</i><sub>2</sub> − 3<i>x</i><sub>3</sub></span>
+          <span class="why">把 x₁ 换成 3x₂ − 1</span>
+        </div>
+        <div class="eqstep" data-anim><span class="m">= <i>x</i><sub>2</sub> − 1 − 3<i>x</i><sub>3</sub></span><span class="why">合并 3x₂ − 2x₂</span></div>
+        <div class="eqstep" data-anim>
+          <span class="m">= (<span class="hl-o">3<i>x</i><sub>3</sub> − 2</span>) − 1 − 3<i>x</i><sub>3</sub></span>
+          <span class="why">把 x₂ 换成 3x₃ − 2</span>
+        </div>
+        <div class="eqstep" data-anim>
+          <span class="m">= <span class="strike" id="strike1">3<i>x</i><sub>3</sub></span> − 2 − 1 − <span class="strike" id="strike2">3<i>x</i><sub>3</sub></span></span>
+          <span class="why">含 x₃ 的两项抵消</span>
+        </div>
+        <div class="eqstep final" data-anim><span class="m">= −3</span><span class="why">x₃ 完全消失，答案与 xᵢ 无关</span></div>
+      </div>
+
+      <!-- 7 结论 -->
+      <div class="scene" data-scene="7">
+        <div class="scene-t" data-anim>STEP 7 · 答案与复盘</div>
+        <div class="line" data-anim style="justify-content:center;margin:6px 0 14px">
+          <span class="m" style="font-size:23px"><i>x</i><sub>1</sub> − 2<i>x</i><sub>2</sub> − 3<i>x</i><sub>3</sub> =</span>
+          <span class="answer" id="answerEl">−3</span>
+        </div>
+        <div class="flow" data-anim>
+          <span class="fnode"><b>①</b> 循环求和 → ΣAᵢ = 0</span><span class="arrow">→</span>
+          <span class="fnode"><b>②</b> 项数是奇数 → c = 0</span><span class="arrow">→</span>
+          <span class="fnode"><b>③</b> A₁、A₂ 两次代入 → −3</span>
+        </div>
+        <div class="okbox" data-anim>看起来是 2027 元方程组，实质只考了三件事：<b>循环下标的求和</b>、<b>奇偶性</b>、<b>代入消元</b>。换任意奇数 n、系数不变，答案仍然是 −3。</div>
+        <div class="tipbox" data-anim>想亲手核对？下面两个小工具：<b>奇偶实验台</b>看为什么必须是 2027，<b>n = 3 数值验算</b>把分数解代回去逐项验一遍。</div>
+      </div>
+    </div>
+
+    <div class="explain" id="explain">
+      <div class="ex-no" id="exNo">01</div>
+      <div class="ex-body">
+        <h3 id="exTitle"></h3>
+        <p id="exBody"></p>
+        <div class="ex-note" id="exNote"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn" id="btnPrev">← 上一步</button>
+      <button class="btn primary" id="btnNext">下一步 →</button>
+      <button class="btn" id="btnPlay">▶ 自动播放</button>
+      <button class="btn" id="btnReplay">↺ 从头重播</button>
+      <span class="hint">键盘：← → 切换步骤，空格播放 / 暂停</span>
+    </div>
+  </section>
+
+  <!-- ================= 三句话复盘 ================= -->
+  <section class="card">
+    <h2>只要记住这三句话 <span class="tag">看完动画回头瞄一眼</span></h2>
+    <div class="recap">
+      <div><b>1 · 全部加起来 = 0</b>把每个绝对值里的式子全相加，字母部分和数字部分正好抵消。小题目是 −6 + 6，原题是 −2 055 378 + 2 055 378。</div>
+      <div><b>2 · 奇数个一样大的数，凑不出 0</b>每个盒子里只能是「+ 某个数」或「− 某个数」，两两配对后总会剩一个落单的。所以那个「某个数」只能是 0。</div>
+      <div><b>3 · 只代入两次</b>盒子里是 0 ⇒ x₁ = 3x₂ − 1、x₂ = 3x₃ − 2。换进目标式，x₃ 自动抵消，得 −3。</div>
+    </div>
+  </section>
+
+  <!-- ================= 凑 0 挑战 ================= -->
+  <section class="card">
+    <h2>动手玩：凑 0 挑战 <span class="tag">点卡片翻正负</span></h2>
+    <p class="small muted" style="margin:0 0 14px">每个盒子里只能装 <b>+2</b> 或 <b>−2</b>（它们「一样大」）。点一下卡片翻面，试着让总和变成 0。</p>
+    <div class="seg" id="toyN">
+      <button data-n="3" class="active">3 个盒子（奇数）</button>
+      <button data-n="4">4 个盒子（偶数）</button>
+      <button data-n="5">5 个盒子（奇数）</button>
+    </div>
+    <div class="toy" id="toyCards"></div>
+    <div class="toyresult" id="toySum"></div>
+    <div class="labstate" id="toyState"></div>
+  </section>
+
+  <!-- ================= 奇偶实验台（进阶） ================= -->
+  <section class="card">
+    <h2>再玩一次：为什么奇数很关键 <span class="tag">进阶 · 动手试</span></h2>
+    <p class="small muted" style="margin:0 0 14px">进阶玩法：把刚才的「凑 0 挑战」写成算式。拨动项数 n、盒子的大小 c、正号个数 k，看总和 <span class="m">c(2k − n)</span> 能不能等于 0。</p>
+    <div class="labbar">
+      <div class="seg" id="labN">
+        <button data-n="5">5 个（奇数）</button>
+        <button data-n="6">6 个（偶数）</button>
+        <button data-n="2027" class="active">2027 个（原题）</button>
+      </div>
+      <label class="slider">c = <input type="range" id="labC" min="1" max="5" value="2"><b id="labCv">2</b></label>
+      <label class="slider">正号个数 k = <input type="range" id="labK" min="0" max="2027" value="1013"><b id="labKv">1013</b></label>
+    </div>
+    <div class="quick" id="labQuick">
+      <span>快捷：</span>
+      <button class="btn" data-k="1013">k = 1013</button>
+      <button class="btn" data-k="1014">k = 1014</button>
+      <button class="btn" data-k="half">离 0 最近的 k</button>
+    </div>
+    <div class="labvis" id="labVis"></div>
+    <div class="labeq" id="labEq"></div>
+    <div class="labstate" id="labState"></div>
+  </section>
+
+  <!-- ================= 小 n 数值验算 ================= -->
+  <section class="card">
+    <h2>把 n = 3 的小题目算到底 <span class="tag">逐行验算</span></h2>
+    <p class="small muted" style="margin:0 0 14px">同样结构、只把 2027 换成 3：由 <span class="m">A₁ = A₂ = A₃ = 0</span> 解出具体分数，再逐项代回原题核对。</p>
+    <button class="btn primary" id="btnVerify">▶ 逐行验算</button>
+    <div style="margin-top:16px" id="verifyRows"></div>
+  </section>
+
+  <!-- ================= 完整推导 ================= -->
+  <details class="card method">
+    <summary>完整推导（进阶 · 用字母写，可收起）</summary>
+    <div class="deriv mbody">
+      <p class="small">记 <span class="m">S = 1 + 2 + ⋯ + 2027 = 2027 × 2028 / 2 = 2 055 378</span>，题设 <span class="m">Σx = S/2</span>。把下标看成循环（<span class="m">x₂₀₂₈ = x₁</span>），定义</p>
+      <div class="step"><span class="t">① 统一记号</span>
+        <span class="m">Aᵢ = xᵢ − 3xᵢ₊₁ + i（i = 1…2027）</span>，题设即 <span class="m">|A₁| = |A₂| = ⋯ = |A₂₀₂₇| = c</span>。
+      </div>
+      <div class="step"><span class="t">② 全体求和</span>
+        <span class="m">Σ Aᵢ = Σ(xᵢ − 3xᵢ₊₁) + Σ i = (Σx − 3Σx) + S = −2Σx + S</span>。这里用到 <span class="m">Σxᵢ₊₁ = Σxᵢ</span>（循环下标只是换序）。
+      </div>
+      <div class="step"><span class="t">③ 代入已知</span>
+        <span class="m">−2 · (S/2) + S = 0</span>，即 <b>ΣAᵢ = 0</b>。
+      </div>
+      <div class="step"><span class="t">④ 奇偶性</span>
+        每个 <span class="m">Aᵢ = ±c</span>。设其中 k 个取 +c，则 <span class="m">ΣAᵢ = c[k − (2027 − k)] = c(2k − 2027)</span>。因 2027 为奇数，<span class="m">2k − 2027 ≠ 0</span>；又 ΣAᵢ = 0，故 <b>c = 0</b>，从而所有 <b>Aᵢ = 0</b>。
+      </div>
+      <div class="step"><span class="t">⑤ 取前两式消元</span>
+        <span class="m">x₁ = 3x₂ − 1</span>，<span class="m">x₂ = 3x₃ − 2</span>，于是<br>
+        <span class="m">x₁ − 2x₂ − 3x₃ = (3x₂ − 1) − 2x₂ − 3x₃ = x₂ − 1 − 3x₃ = (3x₃ − 2) − 1 − 3x₃ = <b>−3</b></span>。
+      </div>
+      <p class="small">补充：由 2027 个 <span class="m">Aᵢ = 0</span> 组成的循环线性方程组确实有唯一实数解（系数矩阵的行列式为 <span class="m">1 − 3²⁰²⁷ ≠ 0</span>），且该解自动满足 <span class="m">Σx = S/2</span>，与题设相容；只是求它完全没有必要。</p>
+    </div>
+  </details>
+
+  <!-- ================= 易错点 ================= -->
+  <section class="card">
+    <h2>进阶：四个最容易踩的坑</h2>
+    <div class="pitfalls">
+      <div class="pit"><span class="n">坑 1</span><p>看到 <b>绝对值相等</b> 就写成里面相等。实际上可能是相反数，必须先靠「总和 = 0 + 项数为奇数」把 c 逼成 0，才能脱掉绝对值号。</p></div>
+      <div class="pit"><span class="n">坑 2</span><p>求和时把最后一项 <b>x₂₀₂₇ − 3x₁ + 2027</b> 漏掉或写成 −3x₂₀₂₈。下标是绕回 x₁ 的环，正因为绕回来，<span class="m">Σxᵢ₊₁ = Σxᵢ</span> 才成立。</p></div>
+      <div class="pit"><span class="n">坑 3</span><p>忘了用<b>「2027 是奇数」</b>。若项数为偶数，正负各一半就能让 ΣAᵢ = 0，此时 c 未必是 0，后面全部推不出来。</p></div>
+      <div class="pit"><span class="n">坑 4</span><p>硬去解 2027 个未知数。分母会出现 <span class="m">3²⁰²⁷</span>；题目只问 <span class="m">x₁ − 2x₂ − 3x₃</span>，用头两个方程两次代入即可。</p></div>
+    </div>
+  </section>
+
+  <!-- ================= 基础自测 ================= -->
+  <section class="card">
+    <h2>先做这 4 道小题 <span class="tag">点选项立即判题</span></h2>
+    <p class="small muted" style="margin:0 0 6px">都是七年级学过的：绝对值、正负数相加、移项、代入。做完再看下面的进阶题。</p>
+    <div id="quizEasy"></div>
+  </section>
+
+  <!-- ================= 进阶自测 ================= -->
+  <section class="card">
+    <h2>进阶自测 5 题 <span class="tag">看懂原题后再做</span></h2>
+    <div id="quiz"></div>
+  </section>
+
+  <footer>纯静态单文件 · 无外部依赖 · 结论已用精确分数（n = 3 / 5 / 7 / 2027）验证</footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ==================== 分步动画 ==================== */
+  var STEPS_HARD = [
+    {chip:'拆盒命名',
+     title:'① 把 2027 个绝对值拆成小盒子',
+     body:'每个绝对值里都是同一个模样：<b>xᵢ − 3xᵢ₊₁ + i</b>。给它起名 <b>Aᵢ</b>，整条等式链就变成「|A₁| = |A₂| = ⋯ = |A₂₀₂₇|」。',
+     note:'最后一项是 x₂₀₂₇ − 3x₁ + 2027：下标绕回 x₁，常数也正好是 2027。把 x₂₀₂₈ 看成 x₁，就能写成统一形式。'},
+    {chip:'设公共值 c',
+     title:'② 绝对值相等 ⇒ 里面只有两种可能',
+     body:'设公共值 <b>|Aᵢ| = c ≥ 0</b>，那么每个 Aᵢ 只能是 <b>+c</b> 或 <b>−c</b>，至于正负各几个，现在还不知道。',
+     note:'最常见的错误是直接擦掉绝对值写成 A₁ = A₂ = ⋯。绝对值相等只说明「大小相等」，符号可能相反。'},
+    {chip:'全部加起来',
+     title:'③ 把 2027 个 Aᵢ 全部加起来',
+     body:'ΣAᵢ = (所有 x) − 3(所有 x 换个顺序) + (1+2+⋯+2027)。因为两批 x 是同一批数，每个 xᵢ 净得 +1 − 3 = <b>−2</b> 份，所以 <b>ΣAᵢ = −2Σx + S</b>。',
+     note:'这一步不依赖 c，也不依赖任何 x 的具体值——只对「整个环」做了一次求和。'},
+    {chip:'代入得 0',
+     title:'④ 代入题目给的和，总和恰好是 0',
+     body:'S = 2027×2028/2 = 2 055 378，Σx = S/2 = 1 027 689，于是 −2×1 027 689 + 2 055 378 = <b>0</b>。',
+     note:'题面第一行的「和 = ½(1+2+⋯+2027)」就是为了让 −2Σx + S 归零而设计的，不是多余条件。'},
+    {chip:'奇数判决',
+     title:'⑤ 2027 是奇数 ⇒ c 只能等于 0',
+     body:'设 k 个 +c、2027−k 个 −c，则 ΣAᵢ = c·(2k − 2027)。括号里永远是奇数、不可能为 0；若 c > 0 就与上一步的 ΣAᵢ = 0 矛盾，所以 <b>c = 0</b>，所有 <b>Aᵢ = 0</b>。',
+     note:'「奇数」是题眼：正负两两抵消后总会剩一个。项数若为偶数，正负各半就能凑出 0，这步就失效了。'},
+    {chip:'脱绝对值',
+     title:'⑥ 绝对值全部脱掉，只取前两个式子',
+     body:'c = 0 ⇒ A₁ = 0、A₂ = 0，即 <b>x₁ = 3x₂ − 1</b>、<b>x₂ = 3x₃ − 2</b>。剩下 2025 个方程一个都不用。',
+     note:'不必解出每个 xᵢ：真解会出现 3²⁰²⁷ 量级的分母，而目标式只涉及 x₁、x₂、x₃。'},
+    {chip:'两次代入',
+     title:'⑦ 两次代入，未知数自己消掉',
+     body:'先把 x₁ 换成 3x₂ − 1，得 x₂ − 1 − 3x₃；再把 x₂ 换成 3x₃ − 2，3x₃ 与 −3x₃ 抵消，只剩 <b>−3</b>。',
+     note:'目标式里 1、−2、−3 这组系数是配好的：两次替换后 x₃ 恰好被消掉。'},
+    {chip:'答案复盘',
+     title:'⑧ 答案 −3',
+     body:'三步收尾：<b>循环求和得 0</b> → <b>奇数项逼出 c = 0</b> → <b>前两式两次代入</b>。看似 2027 元方程组，其实只要两行加减。',
+     note:'换成任意奇数 n、系数与条件不变，答案仍是 −3；页面下方的 n = 3 数值验算可以亲自核对。'}
+  ];
+
+  /* 入门版：全部用具体数字，不出现 Σ / Aᵢ / c 等抽象记号 */
+  var STEPS_EASY = [
+    {chip:'题目变小',
+     title:'第 1 步 · 先把 2027 换成 3',
+     body:'2027 个未知数太吓人，先把题目里的 <b>2027 改成 3</b>：x₁ + x₂ + x₃ = 3，只有 3 个绝对值，能手算。方法完全一样，最后再换回去。',
+     note:'最后一项是 x₃ − 3x₁ + 3，绕回 x₁，像三个人围成一圈。原题最后一项也是这样绕回 x₁ 的。'},
+    {chip:'复习绝对值',
+     title:'第 2 步 · |−5| 和 |5| 都等于 5',
+     body:'绝对值只看<b>大小</b>不看正负。所以三个绝对值相等，不代表里面三个数相等 —— 可能是 +2，也可能是 −2。',
+     note:'这一步最容易想错：千万别直接把绝对值号擦掉，写成「里面都相等」。'},
+    {chip:'全部加起来',
+     title:'第 3 步 · 三个盒子全加起来 = 0',
+     body:'字母部分：(x₁+x₂+x₃) − 3(x₂+x₃+x₁) = −2 × 3 = <b>−6</b>；数字部分：1 + 2 + 3 = <b>6</b>；合起来 <b>−6 + 6 = 0</b>。',
+     note:'x₂+x₃+x₁ 只是换了个顺序，和还是题目给的 3。这里全是具体数字，可以拿笔跟着算。'},
+    {chip:'凑不出 0',
+     title:'第 4 步 · 3 个 ±2 怎么摆都凑不出 0',
+     body:'6、2、−2、−6，四种搭配全试过了，<b>没有一个是 0</b>。因为 3 是奇数，+2 和 −2 两两配对后总会剩一个。所以那个「一样大的数」只能是 <b>0</b>。',
+     note:'这就是题目选 2027（奇数）的原因。下面的「凑 0 挑战」可以自己点着试。'},
+    {chip:'拿掉外壳',
+     title:'第 5 步 · 盒子里全是 0',
+     body:'只有 |0| = 0。于是盒子①给出 <b>x₁ = 3x₂ − 1</b>，盒子②给出 <b>x₂ = 3x₃ − 2</b>。盒子③这次用不上。',
+     note:'移项注意符号：x₁ − 3x₂ + 1 = 0 移过来是 x₁ = 3x₂ − 1，不是 +1。'},
+    {chip:'代入两次',
+     title:'第 6 步 · 换两次，x₃ 自己消失',
+     body:'把 x₁ 换成 3x₂ − 1，得到 x₂ − 1 − 3x₃；再把 x₂ 换成 3x₃ − 2，3x₃ 和 −3x₃ 抵消，只剩 <b>−3</b>。',
+     note:'只用到「代入」，七年级已经学过：把等号右边整块塞进另一个式子里。'},
+    {chip:'验算一遍',
+     title:'第 7 步 · 把真的 x 代回去验一遍',
+     body:'解出 x₁ = 17/13、x₂ = 10/13、x₃ = 12/13，代回去：和 = 3 ✓，三个盒子都是 0 ✓，目标式 = <b>−3</b> ✓。',
+     note:'这一步只是让你放心：前面的推理真的能解出数，不是变魔术。'},
+    {chip:'换回 2027',
+     title:'第 8 步 · 把 3 换回 2027，答案不变',
+     body:'原题全部加起来同样是 0（−2 055 378 + 2 055 378），2027 也是奇数，所以所有盒子里还是 0，答案仍是 <b>−3</b>。',
+     note:'三句话记住：全部加起来 = 0 → 奇数个一样大的数只能全是 0 → 头两个盒子代入两次。'}
+  ];
+
+  var mode = 'easy', step = 0, speed = 1, auto = false, autoTimer = null, runToken = 0;
+  function curSteps(){ return mode === 'easy' ? STEPS_EASY : STEPS_HARD; }
+  function curLen(){ return curSteps().length; }
+  function curBoard(){ return document.getElementById(mode === 'easy' ? 'boardEasy' : 'boardHard'); }
+  function curScenes(){ return Array.prototype.slice.call(curBoard().querySelectorAll('.scene')); }
+  var stepsBox = document.getElementById('steps');
+  var exBox = document.getElementById('explain');
+  var btnPlay = document.getElementById('btnPlay');
+  var modeBtns = Array.prototype.slice.call(document.querySelectorAll('#modeBar .modebtn'));
+
+  /* 生成 0 / 1 / 4 号场景里的小方块 */
+  var b0 = document.getElementById('boxes0');
+  var labels0 = ['A₁','A₂','A₃','⋯','Aᵢ','⋯','A₂₀₂₆','A₂₀₂₇'];
+  labels0.forEach(function(t){
+    var d = document.createElement('div');
+    d.className = 'box' + (t === '⋯' ? ' dots' : '');
+    if (t === '⋯') { d.textContent = '⋯'; }
+    else { d.innerHTML = '<div class="bi">' + t + '</div><div class="bv">xᵢ − 3xᵢ₊₁ + i</div>'; }
+    d.setAttribute('data-anim','');
+    b0.appendChild(d);
+  });
+
+  var b1 = document.getElementById('boxes1');
+  ['+c','−c','+c','⋯','−c','+c','Aᵢ = ±c'].forEach(function(t,i){
+    var d = document.createElement('div');
+    if (t === '⋯') { d.className = 'box dots'; d.textContent = '⋯'; }
+    else if (t === 'Aᵢ = ±c') {
+      d.className = 'box flip zero';
+      d.innerHTML = '<div class="bi">' + t + '</div><div class="bv">共 2027 个</div>';
+    } else {
+      d.className = 'box flip ' + (t === '+c' ? 'plus' : 'minus');
+      d.innerHTML = '<div class="bi">' + t + '</div><div class="bv">A' + (i+1) + '</div>';
+    }
+    d.setAttribute('data-anim','');
+    b1.appendChild(d);
+  });
+
+  var p4 = document.getElementById('pairs4');
+  ['+c','−c','+c','−c','+c','−c','+c'].forEach(function(t,i){
+    var d = document.createElement('span');
+    d.className = 'pair ' + (t === '+c' ? 'p' : 'm') + (i < 6 ? ' pairkill' : ' pairlast');
+    d.textContent = t;
+    d.setAttribute('data-anim','');
+    p4.appendChild(d);
+  });
+
+  /* 步骤条：切换模式时重建 */
+  var chipEls = [];
+  function buildChips(){
+    stepsBox.innerHTML = '';
+    chipEls = curSteps().map(function(s,i){
+      var b = document.createElement('button');
+      b.className = 'step-chip';
+      b.innerHTML = '<span class="n">' + (i+1) + '</span>' + s.chip;
+      b.addEventListener('click',function(){ stopAuto(); go(i,false); });
+      stepsBox.appendChild(b);
+      return b;
+    });
+  }
+
+  function setExplain(k){
+    var s = curSteps()[k];
+    document.getElementById('exNo').textContent = String(k+1).padStart(2,'0');
+    document.getElementById('exTitle').textContent = s.title;
+    document.getElementById('exBody').innerHTML = s.body;
+    document.getElementById('exNote').innerHTML = s.note;
+    exBox.classList.remove('flash'); void exBox.offsetWidth; exBox.classList.add('flash');
+  }
+
+  function resetSpecials(){
+    var kills = p4.querySelectorAll('.pairkill'), last = p4.querySelector('.pairlast');
+    kills.forEach(function(e){ e.classList.remove('out'); });
+    if (last) last.classList.remove('lonely');
+    ['strike1','strike2'].forEach(function(id){
+      var e = document.getElementById(id); if (e) e.classList.remove('done');
+    });
+    var roll = document.getElementById('rollSumX');
+    if (roll) roll.textContent = '1 027 689';
+  }
+
+  function rollNumber(el, to, token, delay){
+    if (!el) return;
+    var dur = 900, t0 = null;
+    function frame(t){
+      if (token !== runToken) return;
+      if (t0 === null) t0 = t;
+      var p = Math.min(1,(t - t0)/dur), e = 1 - Math.pow(1-p,3);
+      el.textContent = Math.round(to * e).toLocaleString('en-US').replace(/,/g,' ');
+      if (p < 1) requestAnimationFrame(frame);
+      else el.textContent = '1 027 689';
+    }
+    setTimeout(function(){
+      if (token !== runToken) return;
+      el.textContent = '0';
+      requestAnimationFrame(frame);
+    }, delay / speed);
+  }
+
+  function special(k, animate, token){
+    if (mode !== 'hard') return;   // 入门版靠 CSS stagger 就够了
+    if (k === 3 && animate) rollNumber(document.getElementById('rollSumX'), 1027689, token, 700);
+    if (k === 4){
+      var kills = p4.querySelectorAll('.pairkill'), last = p4.querySelector('.pairlast');
+      if (!animate){
+        kills.forEach(function(e){ e.classList.add('out'); });
+        if (last) last.classList.add('lonely');
+      } else {
+        var d = 2100 / speed;
+        kills.forEach(function(e,i){
+          setTimeout(function(){
+            if (token !== runToken) return;
+            e.classList.add('out');
+          }, d + i*110/speed);
+        });
+        setTimeout(function(){
+          if (token === runToken && last) last.classList.add('lonely');
+        }, d + kills.length*110/speed + 160/speed);
+      }
+    }
+    if (k === 6){
+      var s1 = document.getElementById('strike1'), s2 = document.getElementById('strike2');
+      if (!animate){ if (s1) s1.classList.add('done'); if (s2) s2.classList.add('done'); }
+      else setTimeout(function(){
+        if (token !== runToken) return;
+        if (s1) s1.classList.add('done'); if (s2) s2.classList.add('done');
+      }, 1750/speed);
+    }
+  }
+
+  function render(k, animate){
+    var token = ++runToken;
+    step = Math.max(0, Math.min(curLen()-1, k));
+    chipEls.forEach(function(el,i){
+      el.classList.toggle('on', i === step);
+      el.classList.toggle('done', i < step);
+    });
+    var scenes = curScenes();
+    scenes.forEach(function(sc,i){ sc.classList.toggle('active', i === step); });
+    resetSpecials();
+    var sc = scenes[step];
+    var els = Array.prototype.slice.call(sc.querySelectorAll('[data-anim]'));
+    els.forEach(function(e){ e.classList.remove('show'); });
+    var gap = (step === 0 || step === 1 || step === 4 || step === 6) ? 150 : 190;
+    els.forEach(function(e,i){
+      var d = (animate ? (90 + i*gap/speed) : 0);
+      // 出现顺序只由 setTimeout 控制；若再设 CSS delay，会被叠加成两倍时长，
+      // 后面的行要好几秒才出现，自动播放时根本看不到。
+      e.style.transitionDelay = '0ms';
+      e.style.animationDelay = '0ms';
+      if (animate) setTimeout(function(){
+        if (token === runToken) e.classList.add('show');
+      }, d);
+      else e.classList.add('show');
+    });
+    setExplain(step);
+    special(step, animate, token);
+    document.getElementById('btnPrev').disabled = (step === 0);
+    document.getElementById('btnNext').textContent = (step === curLen()-1) ? '↺ 回到第一步' : '下一步 →';
+  }
+
+  function go(k, animate){ render(k, !!animate); }
+
+  function stopAuto(){
+    auto = false;
+    if (autoTimer){ clearTimeout(autoTimer); autoTimer = null; }
+    btnPlay.textContent = '▶ 自动播放';
+  }
+  function startAuto(){
+    if (auto){ stopAuto(); return; }
+    auto = true; btnPlay.textContent = '❚❚ 暂停';
+    if (step >= curLen()-1) go(0,false);
+    tick();
+    function tick(){
+      if (!auto) return;
+      var wait = (mode === 'easy' ? 3400 : (step === 0 || step === 2 || step === 4 || step === 6 ? 3600 : 2800)) / speed;
+      autoTimer = setTimeout(function(){
+        if (!auto) return;
+        if (step >= curLen()-1){ stopAuto(); return; }
+        go(step+1,true);
+        tick();
+      }, wait);
+    }
+  }
+
+  document.getElementById('btnPrev').addEventListener('click',function(){ stopAuto(); go(step-1,false); });
+  document.getElementById('btnNext').addEventListener('click',function(){
+    stopAuto();
+    if (step >= curLen()-1) go(0,true); else go(step+1,true);
+  });
+  btnPlay.addEventListener('click',startAuto);
+  document.getElementById('btnReplay').addEventListener('click',function(){ stopAuto(); go(0,true); startAuto(); });
+  document.getElementById('rates').addEventListener('click',function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    speed = parseFloat(b.getAttribute('data-sp'));
+    Array.prototype.forEach.call(this.querySelectorAll('button'),function(x){ x.classList.toggle('active', x === b); });
+  });
+  document.addEventListener('keydown',function(e){
+    if (e.key === 'ArrowRight'){ e.preventDefault(); stopAuto(); go(Math.min(curLen()-1, step+1),true); }
+    else if (e.key === 'ArrowLeft'){ e.preventDefault(); stopAuto(); go(step-1,false); }
+    else if (e.key === ' ' && e.target === document.body){ e.preventDefault(); startAuto(); }
+  });
+
+  /* ==================== 模式切换 ==================== */
+  function applyMode(m){
+    mode = m;
+    document.getElementById('boardEasy').style.display = (m === 'easy' ? '' : 'none');
+    document.getElementById('boardHard').style.display = (m === 'hard' ? '' : 'none');
+    modeBtns.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-mode') === m); });
+    var title = document.getElementById('stageTitle');
+    title.firstChild.nodeValue = (m === 'easy' ? '跟着动画走一遍（3 个数版） ' : '分步动画（原题 2027 个） ');
+    document.getElementById('stageTag').textContent = (m === 'easy' ? '8 步 · 全用具体数字' : '8 步 · 用字母写严谨证明');
+    stopAuto();
+    buildChips();
+    go(0,false);
+  }
+  document.getElementById('modeBar').addEventListener('click',function(e){
+    var b = e.target.closest('.modebtn'); if (!b) return;
+    applyMode(b.getAttribute('data-mode'));
+  });
+
+  /* ==================== 凑 0 挑战 ==================== */
+  var toyN = 3, toySigns = [1,1,1];
+  var toyNBox = document.getElementById('toyN');
+  var toyCards = document.getElementById('toyCards');
+  var toySum = document.getElementById('toySum');
+  var toyState = document.getElementById('toyState');
+
+  function drawToy(){
+    toyCards.innerHTML = '';
+    toySigns.forEach(function(v,i){
+      var b = document.createElement('button');
+      b.className = 'coin' + (v < 0 ? ' m' : '');
+      b.textContent = (v > 0 ? '+2' : '−2');
+      b.setAttribute('aria-label','第 ' + (i+1) + ' 个盒子，点一下翻面');
+      b.addEventListener('click',function(){
+        toySigns[i] = -v;
+        drawToy();
+        var nb = toyCards.children[i];
+        nb.classList.add('pop');
+        setTimeout(function(){ nb.classList.remove('pop'); }, 380);
+      });
+      toyCards.appendChild(b);
+    });
+    var sum = toySigns.reduce(function(a,v){ return a + v*2; }, 0);
+    var plus = toySigns.filter(function(v){ return v > 0; }).length;
+    var minus = toyN - plus;
+    var sumText = sum === 0 ? '0' : (sum > 0 ? '+' : '−') + Math.abs(sum);
+    toySum.innerHTML = toySigns.map(function(v){ return v > 0 ? '+2' : '−2'; }).join(' &nbsp; ') +
+      ' &nbsp;= <b class="' + (sum === 0 ? 'zero' : 'nonzero') + '">' + sumText + '</b>';
+    if (sum === 0){
+      toyState.className = 'labstate ok';
+      toyState.innerHTML = '凑出 0 了！' + toyN + ' 是<b>偶数</b>，+2 和 −2 刚好各 ' + plus +
+        ' 个 —— 所以项数为偶数时，不能断定盒子里全是 0。题目选 2027 正是为了避开这种情况。';
+    } else if (toyN % 2 === 1){
+      toyState.className = 'labstate bad';
+      toyState.innerHTML = toyN + ' 是<b>奇数</b>：+2 有 ' + plus + ' 个、−2 有 ' + minus +
+        ' 个，怎么点都会多出一个落单的（现在总和 ' + sumText +
+        '）。想让总和 = 0，只能让每个盒子都变成 0。';
+    } else {
+      toyState.className = 'labstate warn';
+      toyState.innerHTML = toyN + ' 是<b>偶数</b>：现在 +2 有 ' + plus + ' 个、−2 有 ' + minus +
+        ' 个，总和 ' + sumText + '。再翻几张，让正负各 ' + (toyN/2) +
+        ' 个就能凑出 0 —— 原题特意用 2027 个（奇数个）盒子，就是为了让这招行不通。';
+    }
+  }
+  toyNBox.addEventListener('click',function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    toyN = parseInt(b.getAttribute('data-n'),10);
+    toySigns = [];
+    for (var i=0;i<toyN;i++) toySigns.push(1);
+    Array.prototype.forEach.call(this.querySelectorAll('button'),function(x){ x.classList.toggle('active', x === b); });
+    drawToy();
+  });
+
+  /* ==================== 奇偶实验台 ==================== */
+  var nVal = 2027, cVal = 2, kVal = 1013;
+  var labN = document.getElementById('labN'), labC = document.getElementById('labC'), labK = document.getElementById('labK');
+  var labVis = document.getElementById('labVis'), labEq = document.getElementById('labEq'), labState = document.getElementById('labState');
+
+  function drawLab(){
+    document.getElementById('labCv').textContent = cVal;
+    document.getElementById('labKv').textContent = kVal;
+    labC.value = cVal; labK.value = kVal;
+    labVis.innerHTML = '';
+    var cells = [];
+    if (nVal <= 8){
+      for (var i=0;i<nVal;i++) cells.push(i < kVal ? '+c' : '−c');
+    } else {
+      cells = ['+c','−c','+c','⋯','−c', (kVal >= nVal ? '+c' : '−c')];
+    }
+    cells.forEach(function(t){
+      var d = document.createElement('span');
+      if (t === '⋯'){ d.className = 'cell dot'; d.textContent = '⋯'; }
+      else {
+        d.className = 'cell ' + (t === '+c' ? 'p' : 'm');
+        d.textContent = (t === '+c' ? '+' : '−') + cVal;
+      }
+      labVis.appendChild(d);
+    });
+    if (nVal > 8){
+      var note = document.createElement('div');
+      note.className = 'small muted';
+      note.style.width = '100%';
+      note.style.textAlign = 'center';
+      note.textContent = '示意：2027 个只画了前几个；实际有 ' + kVal + ' 个 +' + cVal + '、' + (nVal-kVal) + ' 个 −' + cVal + '。';
+      labVis.appendChild(note);
+    }
+    var diff = 2*kVal - nVal, sum = cVal*diff;
+    var signed = function(v){ return v === 0 ? '0' : (v > 0 ? '+' : '−') + Math.abs(v); };
+    labEq.innerHTML = 'ΣAᵢ = c × (2k − n) = ' + cVal + ' × (2×' + kVal + ' − ' + nVal + ') = ' + cVal + ' × (' + signed(diff) + ') = <b>' + signed(sum) + '</b>';
+    if (nVal % 2 === 1){
+      labState.className = 'labstate bad';
+      labState.innerHTML = '项数是奇数 → 2k − n = <b>' + signed(diff) + '</b> 一定是奇数，乘上 c 仍不为 0。要让 ΣAᵢ = 0，只能 <b>c = 0</b>。';
+    } else if (diff === 0){
+      labState.className = 'labstate ok';
+      labState.innerHTML = '正负各一半，ΣAᵢ = 0 <b>而 c = ' + cVal + ' &gt; 0</b>！项数为偶数时这一步推不出 c = 0 —— 这就是题目选 2027 的原因。';
+    } else {
+      labState.className = 'labstate warn';
+      labState.innerHTML = '这组符号不行（ΣAᵢ = ' + signed(sum) + '），但把 k 调到 <b>' + (nVal/2) + '</b> 就能凑出 0，所以偶数项时不能断定 c = 0。';
+    }
+  }
+
+  labN.addEventListener('click',function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    nVal = parseInt(b.getAttribute('data-n'),10);
+    Array.prototype.forEach.call(this.querySelectorAll('button'),function(x){ x.classList.toggle('active', x === b); });
+    labK.max = nVal;
+    kVal = Math.min(kVal, nVal);
+    if (nVal === 2027 && kVal < 1000) kVal = 1013;
+    drawLab();
+  });
+  labC.addEventListener('input',function(){ cVal = parseInt(this.value,10); drawLab(); });
+  labK.addEventListener('input',function(){ kVal = parseInt(this.value,10); drawLab(); });
+  document.getElementById('labQuick').addEventListener('click',function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    var v = b.getAttribute('data-k');
+    if (v === 'half') kVal = nVal % 2 === 1 ? Math.floor(nVal/2) : nVal/2;
+    else kVal = Math.min(parseInt(v,10), nVal);
+    drawLab();
+  });
+
+  /* ==================== n = 3 数值验算 ==================== */
+  var VROWS = [
+    {k:'条件',f:'x₁ + x₂ + x₃ = ½ × (1 + 2 + 3) = 3',d:'把 2027 换成 3，结构完全一样'},
+    {k:'解出 x',f:'x₁ = 17/13，x₂ = 10/13，x₃ = 12/13',d:'由 A₁ = A₂ = A₃ = 0 解三元一次方程组'},
+    {k:'验条件',f:'Σx = (17 + 10 + 12)/13 = 39/13 = 3 ✓',d:'与题设的 3 一致',ok:true},
+    {k:'验绝对值',f:'A₁ = 17/13 − 30/13 + 1 = 0，A₂ = 10/13 − 36/13 + 2 = 0，A₃ = 12/13 − 51/13 + 3 = 0 ✓',d:'三个绝对值全都等于 0',ok:true},
+    {k:'验答案',f:'x₁ − 2x₂ − 3x₃ = (17 − 20 − 36)/13 = −39/13 = −3 ✓',d:'和 2027 项的答案完全相同',ok:true}
+  ];
+  var verifyBox = document.getElementById('verifyRows'), verifyTimer = null;
+  var vEls = VROWS.map(function(r){
+    var d = document.createElement('div');
+    d.className = 'vrow' + (r.ok ? ' ok' : '');
+    d.innerHTML = '<span class="vk">' + r.k + '</span><span class="vf">' + r.f + '</span><span class="vd">' + r.d + '</span>';
+    verifyBox.appendChild(d);
+    return d;
+  });
+  document.getElementById('btnVerify').addEventListener('click',function(){
+    if (verifyTimer){ clearTimeout(verifyTimer); verifyTimer = null; }
+    vEls.forEach(function(e){ e.classList.remove('show'); });
+    var i = 0;
+    (function next(){
+      vEls[i].classList.add('show');
+      i++;
+      if (i < vEls.length) verifyTimer = setTimeout(next, 620/speed);
+    })();
+  });
+
+  /* ==================== 自测题 ==================== */
+  var QUIZ = [
+    {q:'1. ΣAᵢ = −2Σx + S 这一步，最关键的依据是什么？',
+     opts:['每个 Aᵢ 都等于 0','循环下标让 Σxᵢ₊₁ = Σxᵢ','2027 是奇数','绝对值都相等'],a:1,
+     why:'因为下标绕成环，{x₂,…,x₂₀₂₇,x₁} 与 {x₁,…,x₂₀₂₇} 是同一批数，和相等，才有 Σ(xᵢ − 3xᵢ₊₁) = −2Σx。这一步与 c、奇偶都无关。'},
+    {q:'2. 如果把 2027 改成 2026（偶数），还能断言每个绝对值里的式子都等于 0 吗？',
+     opts:['能，推理完全一样','不能，正负各一半就能让总和为 0','能，因为项数更多了','不能，因为方程组无解'],a:1,
+     why:'偶数项时可以取 1013 个 +c、1013 个 −c，ΣAᵢ = 0 而 c > 0，奇偶性这一步就拦不住非零的 c 了。'},
+    {q:'3. 求 x₁ − 2x₂ − 3x₃ 实际用到了几个方程？',
+     opts:['全部 2027 个','前 3 个','前 2 个（A₁ = 0、A₂ = 0）','1 个'],a:2,
+     why:'只用 A₁ = 0 得 x₁ = 3x₂ − 1、A₂ = 0 得 x₂ = 3x₃ − 2，两次代入后 x₃ 自动抵消。'},
+    {q:'4. 由 A₁ = 0 可以直接得到下面哪个式子？',
+     opts:['x₁ = 3x₂ + 1','x₁ = 3x₂ − 1','x₂ = 3x₁ − 1','x₁ = x₂ − 1'],a:1,
+     why:'A₁ = x₁ − 3x₂ + 1 = 0，移项得 x₁ = 3x₂ − 1。常数项的符号最容易抄错。'},
+    {q:'5. 题目为什么要给「Σx = ½(1+2+⋯+2027)」这个条件？',
+     opts:['为了能解出每个 xᵢ','为了让 ΣAᵢ = −2Σx + S = 0','为了说明 xᵢ 都是正数','这是多余条件'],a:1,
+     why:'代入后 −2·(S/2) + S = 0，才有了后面「总和为 0」的支点；没有它，c 未必被逼成 0。'}
+  ];
+  function makeQuiz(boxId, items){
+    var box = document.getElementById(boxId);
+    items.forEach(function(item){
+      var wrap = document.createElement('div'); wrap.className = 'q';
+      var h = document.createElement('h3'); h.textContent = item.q; wrap.appendChild(h);
+      var opts = document.createElement('div'); opts.className = 'opts'; wrap.appendChild(opts);
+      var fb = document.createElement('p'); fb.className = 'fb'; wrap.appendChild(fb);
+      item.opts.forEach(function(t,i){
+        var b = document.createElement('button'); b.className = 'opt'; b.textContent = t;
+        b.addEventListener('click',function(){
+          Array.prototype.forEach.call(opts.children,function(x){ x.className = 'opt'; });
+          if (i === item.a){ b.classList.add('right'); fb.className = 'fb ok'; fb.textContent = '✓ 答对了。' + item.why; }
+          else { b.classList.add('wrong'); fb.className = 'fb no'; fb.textContent = '✗ 再想想。正确答案是「' + item.opts[item.a] + '」。' + item.why; }
+        });
+        opts.appendChild(b);
+      });
+      box.appendChild(wrap);
+    });
+  }
+
+  /* 七年级基础题：只考绝对值、正负数相加、移项、代入 */
+  var QUIZ_EASY = [
+    {q:'1. |−5| 等于多少？',
+     opts:['−5','5','0','不知道'], a:1,
+     why:'绝对值只看大小不看正负，所以 |−5| = 5，|5| 也等于 5。'},
+    {q:'2. 三个数，每个只能是 +2 或 −2，加起来能等于 0 吗？',
+     opts:['能，随便摆都行','不能，总会多出一个','能，只要两个 −2','要看 x 是多少'], a:1,
+     why:'+2+2+2=6、+2+2−2=2、+2−2−2=−2、−2−2−2=−6，四种搭配都不是 0；3 是奇数，正负没法两两配对。'},
+    {q:'3. 由 x₁ − 3x₂ + 1 = 0，移项后 x₁ 等于什么？',
+     opts:['3x₂ + 1','3x₂ − 1','x₂ − 1','−3x₂ − 1'], a:1,
+     why:'把 −3x₂ 和 +1 移到右边都要变号：x₁ = 3x₂ − 1。常数项的符号最容易抄错。'},
+    {q:'4. 四个数，每个只能是 +2 或 −2，能凑出 0 吗？',
+     opts:['不能','能，两个 +2 两个 −2','能，三个 +2 一个 −2','只有全是 0 才行'], a:1,
+     why:'+2 +2 −2 −2 = 0。所以题目必须用奇数个（2027）；如果换成偶数个，就推不出「盒子里全是 0」了。'}
+  ];
+
+  makeQuiz('quizEasy', QUIZ_EASY);
+  makeQuiz('quiz', QUIZ);
+
+  drawLab();
+  drawToy();
+  applyMode('easy');
+})();
+</script>
+</body>
+</html>
