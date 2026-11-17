@@ -44,8 +44,14 @@
     └── index.html          # 单文件：12 地图 · 30 武器 · 15 怪物 · 10 BOSS · Web Audio 音效（可开关）
 └── five-digit-count/       # 教育：五位数计数 · 动画讲解
     └── index.html          # 单文件：三种填位顺序对比 / 数字池 / 乘法原理 / 排除法对照 / 自测题
-└── absolute-chain/         # 教育：绝对值连等式 · 动画讲解
-    └── index.html          # 单文件：3 个数入门版 + 2027 完整版双模式各 8 步动画 / 凑 0 挑战 / 奇偶实验台 / 分数验算 / 两组自测题
+├── absolute-chain/         # 教育：绝对值连等式 · 动画讲解
+│   └── index.html          # 单文件：3 个数入门版 + 2027 完整版双模式各 8 步动画 / 凑 0 挑战 / 奇偶实验台 / 分数验算 / 两组自测题
+└── pdf-a4/                 # 工具：PDF 分页 · 适配 A4 打印
+    ├── index.html          # 上传 / 模式 / 参数 / 切分示意 / PDF 预览
+    ├── app.js              # 交互与预览（浏览器本地处理）
+    ├── a4-core.js          # 分页核心（浏览器 + Node 共用）
+    ├── pdf-lib.min.js      # 本地内置 pdf-lib 1.17.1（无 CDN）
+    └── cli.cjs             # Node 命令行版，可批量转换
 ```
 
 > 新增工具：在根目录建一个带 `index.html` 的文件夹（如 `qr-generator/`），然后在根目录 `index.html` 复制一张导航卡片链接过去即可。
@@ -95,6 +101,7 @@ npx http-server -p 8765
 | 几何防线 GEO DEFENSE | <http://localhost:8765/geo-defense/> |
 | 五位数计数 · 动画讲解 | <http://localhost:8765/five-digit-count/> |
 | 绝对值连等式 · 动画讲解 | <http://localhost:8765/absolute-chain/> |
+| PDF 分页 · 适配 A4 打印 | <http://localhost:8765/pdf-a4/> |
 
 > 启动服务器时如果提示端口被占用，可用 `--bind 0.0.0.0` 或换一个端口（如 `8080`），并相应更新访问地址。
 >
@@ -295,9 +302,28 @@ window.WORD_BANK = {
 
 > 口型按音标推算，不是波形对齐；用于示意发音部位，不等于录音本身。
 
+## PDF 分页 · 适配 A4 打印（`pdf-a4/`）
+
+把 A3 横向 / 拼版 PDF 变成能直接在 A4 纸上打印的版本，全部在本地完成，文件不上传。
+
+- **按栏切分**（推荐给三栏试卷）：按栏间空白切开，每栏一张 A4 竖版，字号 1:1 不变。切线用百分比输入，可微调到不切字的位置；内置「三栏试卷 34/65」「三等分」「对开 50」「四等分」预设。
+- **整页缩放**：整页等比缩到一张 A4 横向，版面完整，字约为原来的 70%。
+- **对开 / 网格**：A3 横向对开成 2 张 A4 竖版，或自定义 N 列 × M 行。
+- 支持页边距、切块重叠、源页范围、A4/A5/B5/Letter 与横竖方向；右侧实时显示切分示意和转换后的 PDF 预览。
+- 切割用矢量裁剪（`clip` + 变换矩阵），源页以 Form XObject 嵌入，文字仍可选中、复制、无损放大，不会变成位图。
+
+也可直接用命令行版批量处理（与网页版共用 `a4-core.js`）：
+
+```bash
+node pdf-a4/cli.cjs 试卷.pdf -o 试卷_A4.pdf --mode columns --cuts 0,34,65,100
+node pdf-a4/cli.cjs 试卷.pdf -o 试卷_A4横.pdf --mode fit --paper A4-landscape
+```
+
+`--pages 1-3,5`、`--rows 2`、`--margin 14`、`--scale 1:1`、`--info` 等参数见 `cli.cjs` 文件头。实现上手工补偿了 pdf-lib 忽略 `/Rotate` 的问题，并在 `clip` 后补 `endPath`（否则 macOS 预览器不应用裁剪）。
+
 ## 技术说明
 
-- 纯 HTML / CSS / 原生 JavaScript，无框架、无第三方依赖。
+- 纯 HTML / CSS / 原生 JavaScript，无框架、无 CDN；`pdf-a4` 内置一份本地 `pdf-lib.min.js`（513 KB，仅该工具使用）。
 - **全站唯一的网络请求**：`word-pronunciation` 工具在选「真人发音」时会向有道词典发音接口请求音频，只发送要朗读的单词/例句文本；其余工具零请求。
 - ICO 采用标准 **PNG-in-ICO** 封装（ICONDIR + ICONDIRENTRY + PNG 数据，小端字节序），Windows 与浏览器均兼容。
 - 坐标 / 字号 / 圆角基于 256×256 虚拟画布定义，导出时按比例缩放到各目标尺寸。
