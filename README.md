@@ -44,6 +44,8 @@
     └── index.html          # 单文件：12 地图 · 30 武器 · 15 怪物 · 10 BOSS · Web Audio 音效（可开关）
 └── five-digit-count/       # 教育：五位数计数 · 动画讲解
     └── index.html          # 单文件：三种填位顺序对比 / 数字池 / 乘法原理 / 排除法对照 / 自测题
+└── absolute-chain/         # 教育：绝对值连等式 · 动画讲解
+    └── index.html          # 单文件：3 个数入门版 + 2027 完整版双模式各 8 步动画 / 凑 0 挑战 / 奇偶实验台 / 分数验算 / 两组自测题
 ```
 
 > 新增工具：在根目录建一个带 `index.html` 的文件夹（如 `qr-generator/`），然后在根目录 `index.html` 复制一张导航卡片链接过去即可。
@@ -92,6 +94,7 @@ npx http-server -p 8765
 | 霓虹堡垒 · 超载协议 | <http://localhost:8765/neon-bastion-op/> |
 | 几何防线 GEO DEFENSE | <http://localhost:8765/geo-defense/> |
 | 五位数计数 · 动画讲解 | <http://localhost:8765/five-digit-count/> |
+| 绝对值连等式 · 动画讲解 | <http://localhost:8765/absolute-chain/> |
 
 > 启动服务器时如果提示端口被占用，可用 `--bind 0.0.0.0` 或换一个端口（如 `8080`），并相应更新访问地址。
 >
