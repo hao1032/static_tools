@@ -28,9 +28,6 @@
 │   └── app.js
 ├── number-line-animation/  # 工具八：数轴动线段 · 动画讲解
 │   └── index.html          # 单文件，canvas 实时绘制数轴与 L(t) 曲线
-└── number-line-making/     # 工具九：数轴动线段 · 制作过程（溯源）
-    ├── index.html          # 单文件，记录提示词 / 题目图片 / 工具 / 步骤
-    └── problem.svg         # 原题示意图（按已验证模型重建）
 └── geometry-td/            # 工具十：几何塔防小游戏
     └── index.html          # 单文件，Canvas 霓虹风塔防，4 塔型 20 波
 └── neon-bastion-op/        # 工具十一：霓虹堡垒 · 超载协议（塔防重制版）
@@ -95,7 +92,6 @@ npx http-server -p 8765
 | 照片排版 · 拼版打印 | <http://localhost:8765/photo-layout/> |
 | 英文单词发音练习 | <http://localhost:8765/word-pronunciation/> |
 | 数轴动线段 · 动画讲解 | <http://localhost:8765/number-line-animation/> |
-| 数轴动线段 · 制作过程 | <http://localhost:8765/number-line-making/> |
 | 几何塔防 | <http://localhost:8765/geometry-td/> |
 | 霓虹堡垒 · 超载协议 | <http://localhost:8765/neon-bastion-op/> |
 | 几何防线 GEO DEFENSE | <http://localhost:8765/geo-defense/> |
