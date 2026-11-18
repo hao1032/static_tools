@@ -99,6 +99,22 @@
       font-size: 16px; color: var(--accent); font-weight: 700; text-align: center; line-height: 1.1;
     }
     .tile small { font-size: 10px; font-weight: 500; opacity: .8; white-space: nowrap; }
+    /* 可拖动的分割线：透明命中区 12px，中间 2px 实线，拖动时高亮 */
+    .cut-line { position: absolute; z-index: 6; touch-action: none; }
+    .cut-line.v { top: 0; bottom: 0; width: 12px; margin-left: -6px; cursor: col-resize; }
+    .cut-line.h { left: 0; right: 0; height: 12px; margin-top: -6px; cursor: row-resize; }
+    .cut-line .bar { position: absolute; background: #f59e0b; box-shadow: 0 0 0 1px rgba(255,255,255,.9); }
+    .cut-line.v .bar { left: 5px; right: 5px; top: 0; bottom: 0; }
+    .cut-line.h .bar { top: 5px; bottom: 5px; left: 0; right: 0; }
+    .cut-line .grip {
+      position: absolute; background: #f59e0b; color: #fff; font-size: 10px; font-weight: 700;
+      padding: 1px 5px; border-radius: 4px; white-space: nowrap; pointer-events: none; line-height: 1.4;
+    }
+    .cut-line.v .grip { left: 50%; top: 5px; transform: translateX(-50%); }
+    .cut-line.h .grip { top: 50%; left: 5px; transform: translateY(-50%); }
+    .cut-line:hover .bar, .cut-line.dragging .bar { background: #d97706; }
+    .cut-line:hover .grip, .cut-line.dragging .grip { background: #d97706; }
+    .cut-line:focus-visible { outline: 2px solid #d97706; outline-offset: 1px; }
     .mapnote { font-size: 12px; color: var(--muted); margin: 9px 0 20px; }
     .mapnote.short { margin-bottom: 10px; }
     .pdfbox {
@@ -152,7 +168,7 @@
           <button data-cuts="0,50,100">对开 50</button>
           <button data-cuts="0,25,50,75,100">四等分</button>
         </div>
-        <div class="hint">切线画在栏间空白上，题目不会被拦腰切断。可在右侧示意图里核对。</div>
+        <div class="hint">切线画在栏间空白上，题目不会被拦腰切断。也可以直接拖动右侧示意图上的橙色分割线微调，松手即重新生成。</div>
       </div>
 
       <div class="row2" id="gridField" style="display:none">
@@ -202,6 +218,7 @@
         <p><b>按栏切分</b>：A3 横向三栏试卷的推荐做法，每栏变一张 A4 竖版，字号 1:1 不变，左右留白略多，最适合打印做题。</p>
         <p><b>整页缩放</b>：整页缩到一张 A4 横向，三栏版面完整，但字缩小到约 70%。</p>
         <p><b>对开两页</b>：A3 横向从中间切成 2 张 A4 竖版；若原页是三栏，中间那栏会被切断，建议改用按栏切分。</p>
+        <p>切线除了手动输入，也能在右侧示意图上拖动橙色分割线：竖线调分栏、横线调网格行（选中「网格切分」且行数 &gt; 1 时出现），拖动时蓝框实时跟着动，松手后重新生成。键盘可用方向键以 0.5% 步进微调。</p>
         <p>切割用矢量裁剪，不会转图片；源文件里的文字在结果中仍可复制、搜索。</p>
         <p>也可用同目录的命令行版批量处理：<code>node cli.cjs 输入.pdf -o 输出.pdf --cuts 0,34,65,100</code></p>
       </details>
@@ -210,7 +227,7 @@
     <section class="panel">
       <div class="phead"><h2>切分示意</h2><span id="mapInfo">等待文件</span></div>
       <div class="mapwrap"><div class="map" id="map"></div></div>
-      <div class="mapnote short" id="mapNote">虚线框代表一页原件，蓝框是每张 A4 取到的区域。</div>
+      <div class="mapnote short" id="mapNote">虚线框是一页原件，蓝框是每张 A4 取到的区域；拖动橙色分割线可微调切线（也可用方向键）。</div>
 
       <div class="phead" style="margin-top:8px"><h2>输出预览</h2><span id="pdfInfo">—</span></div>
       <div class="pdfbox">

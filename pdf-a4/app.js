@@ -4,9 +4,11 @@
   var $ = function (id) { return document.getElementById(id); };
   var state = {
     bytes: null, fileName: '', srcDoc: null, box: null,
-    mode: 'columns', userTouched: false,
+    mode: 'columns', userTouched: false, rowCuts: null,
     result: null, blobUrl: null, revokeTimer: null
   };
+  var mapBounds = { x: null, y: null };   // 示意图上当前切线（百分比数组）
+  var drag = null;                        // 正在拖动的分割线
 
   function setStatus(text, kind) {
     var el = $('status');
@@ -28,13 +30,14 @@
       pages: $('pages').value.trim() || null
     };
     if (state.mode === 'columns') {
-      opts.mode = 'columns'; opts.cuts = $('cuts').value; opts.rows = 1;
+      opts.mode = 'columns'; opts.cuts = $('cuts').value; opts.rows = 1; opts.rowCuts = null;
     } else if (state.mode === 'split') {
-      opts.mode = 'columns'; opts.cuts = '0,50,100'; opts.rows = 1;
+      opts.mode = 'columns'; opts.cuts = '0,50,100'; opts.rows = 1; opts.rowCuts = null;
     } else if (state.mode === 'grid') {
       opts.mode = 'grid'; opts.cols = $('cols').value; opts.rows = $('rows').value;
+      opts.rowCuts = state.rowCuts;
     } else {
-      opts.mode = 'fit';
+      opts.mode = 'fit'; opts.rowCuts = null;
     }
     return opts;
   }
@@ -45,6 +48,108 @@
     });
     $('cutsField').style.display = state.mode === 'columns' ? '' : 'none';
     $('gridField').style.display = state.mode === 'grid' ? '' : 'none';
+  }
+
+  function evenCuts(n) {
+    var a = [];
+    for (var i = 0; i <= n; i++) a.push(100 * i / n);
+    return a;
+  }
+
+  // 拖动时不重建示意图（会丢 pointer capture），只改现有蓝框的位置和尺寸
+  function applyTilesLive() {
+    if (!state.box) return;
+    var tiles = A4Core.makeTiles(state.box, A4Core.normalizeOptions(readOptions()));
+    var nodes = $('map').querySelectorAll('.tile');
+    tiles.forEach(function (t, i) {
+      var n = nodes[i]; if (!n) return;
+      n.style.left = (t.cx / state.box.w * 100) + '%';
+      n.style.width = (t.cw / state.box.w * 100) + '%';
+      n.style.bottom = (t.cy / state.box.h * 100) + '%';
+      n.style.height = (t.ch / state.box.h * 100) + '%';
+      var pxW = (t.cw / state.box.w) * $('map').clientWidth;
+      n.innerHTML = (i + 1) + (pxW >= 62 ? '<small>' + Math.round(t.cw / A4Core.MM) + '×' +
+        Math.round(t.ch / A4Core.MM) + 'mm</small>' : '');
+    });
+  }
+
+  function applyCut(axis, arr, line) {
+    if (axis === 'x') { mapBounds.x = arr; $('cuts').value = arr.join(','); }
+    else { mapBounds.y = arr; state.rowCuts = arr.slice(); }
+    if (line) {
+      var i = parseInt(line.dataset.index, 10);
+      line.style[axis === 'x' ? 'left' : 'top'] = arr[i] + '%';
+      var grip = line.querySelector('.grip');
+      if (grip) grip.textContent = arr[i].toFixed(1) + '%';
+    }
+    state.userTouched = true;
+    applyTilesLive();
+  }
+
+  function clampCut(arr, i, raw) {
+    var lo = arr[i - 1] + 1, hi = arr[i + 1] - 1;   // 相邻块至少留 1%
+    if (hi < lo) lo = hi = (lo + hi) / 2;
+    return Math.round(Math.max(lo, Math.min(hi, raw)) * 10) / 10;
+  }
+
+  function onCutDown(e) {
+    var line = e.currentTarget;
+    var axis = line.dataset.axis, i = parseInt(line.dataset.index, 10);
+    var arr = axis === 'x' ? mapBounds.x : mapBounds.y;
+    if (!arr) return;
+    drag = { line: line, axis: axis, i: i, arr: arr.slice(), pointerId: e.pointerId };
+    line.classList.add('dragging');
+    try { line.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  }
+
+  function onCutMove(e) {
+    if (!drag) return;
+    var rect = $('map').getBoundingClientRect();
+    var raw = drag.axis === 'x'
+      ? (e.clientX - rect.left) / rect.width * 100
+      : (e.clientY - rect.top) / rect.height * 100;
+    drag.arr[drag.i] = clampCut(drag.arr, drag.i, raw);
+    applyCut(drag.axis, drag.arr, drag.line);
+  }
+
+  function onCutUp(e) {
+    if (!drag) return;
+    drag.line.classList.remove('dragging');
+    try { drag.line.releasePointerCapture(drag.pointerId); } catch (_) {}
+    drag = null;
+    schedule();   // 松手后才重新生成 PDF，拖动过程中只动示意图
+  }
+
+  function onCutKey(e) {
+    var delta = 0;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') delta = -0.5;
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') delta = 0.5;
+    else return;
+    e.preventDefault();
+    var line = e.currentTarget;
+    var axis = line.dataset.axis, i = parseInt(line.dataset.index, 10);
+    var arr = (axis === 'x' ? mapBounds.x : mapBounds.y).slice();
+    arr[i] = clampCut(arr, i, arr[i] + delta);
+    applyCut(axis, arr, line);
+    schedule();
+  }
+
+  function addCutLines(axis, values, map) {
+    if (!values) return;
+    for (var i = 1; i < values.length - 1; i++) {
+      var line = document.createElement('div');
+      line.className = 'cut-line ' + (axis === 'x' ? 'v' : 'h');
+      line.style[axis === 'x' ? 'left' : 'top'] = values[i] + '%';
+      line.dataset.axis = axis;
+      line.dataset.index = String(i);
+      line.tabIndex = 0;
+      line.title = '拖动调整切线；方向键以 0.5% 步进微调';
+      line.innerHTML = '<div class="bar"></div><div class="grip">' + values[i].toFixed(1) + '%</div>';
+      line.addEventListener('pointerdown', onCutDown);
+      line.addEventListener('keydown', onCutKey);
+      map.appendChild(line);
+    }
   }
 
   function renderMap(opts, info) {
@@ -67,16 +172,30 @@
       d.style.width = (t.cw / box.w * 100) + '%';
       d.style.bottom = (t.cy / box.h * 100) + '%';
       d.style.height = (t.ch / box.h * 100) + '%';
-      d.innerHTML = (i + 1) + '<small>' + Math.round(t.cw / A4Core.MM) + '×' +
-        Math.round(t.ch / A4Core.MM) + 'mm</small>';
+      var pxW = (t.cw / box.w) * map.clientWidth;
+      d.innerHTML = (i + 1) + (pxW >= 62 ? '<small>' + Math.round(t.cw / A4Core.MM) + '×' +
+        Math.round(t.ch / A4Core.MM) + 'mm</small>' : '');
       map.appendChild(d);
     });
+    // 竖线调分栏，横线调网格行；拖动线时不重建 DOM，松手后才重新生成
+    var xLines = null, yLines = null;
+    if (state.mode === 'columns') xLines = o.cuts;
+    else if (state.mode === 'grid') {
+      xLines = o.cuts || evenCuts(o.cols);
+      if (o.rows > 1) yLines = o.rowCuts || evenCuts(o.rows);
+    }
+    mapBounds = { x: xLines ? xLines.slice() : null, y: yLines ? yLines.slice() : null };
+    addCutLines('x', xLines, map);
+    addCutLines('y', yLines, map);
+
     $('mapInfo').textContent = fmtSize(box.w) + ' × ' + fmtSize(box.h) +
       (box.rot ? ' · 原件带 ' + box.rot + '° 旋转' : '');
-    $('mapNote').textContent = pageCount > 1
+    var note = pageCount > 1
       ? '共 ' + pageCount + ' 页原件，每页切成 ' + perPage + ' 块 → ' + (pageCount * perPage) +
         ' 张 A4；页序按原件顺序展开（图示为第 1 页，圈内数字是每页内的顺序）。'
       : '虚线框代表一页原件，蓝框是每张 A4 取到的区域；圈内数字即输出页序。';
+    if (xLines || yLines) note += ' 拖动橙色分割线（或方向键）可微调切线。';
+    $('mapNote').textContent = note;
   }
 
   function setPreview(bytes) {
@@ -142,6 +261,7 @@
       state.srcDoc = doc;
       state.box = box;
       state.result = null;
+      state.rowCuts = null;
 
       $('fileInfo').textContent = file.name + ' · ' + doc.getPageCount() + ' 页 · ' +
         (bytes.length / 1048576).toFixed(2) + ' MB · 每页 ' + fmtSize(box.w) + ' × ' + fmtSize(box.h);
@@ -176,6 +296,7 @@
     var b = e.target.closest('button'); if (!b) return;
     state.mode = b.getAttribute('data-mode');
     state.userTouched = true;
+    state.rowCuts = null;   // 换模式后行切线回到等分
     syncModeUI();
     if (state.mode === 'fit' && $('paper').value === 'A4' && state.box && state.box.w > state.box.h) {
       $('paper').value = 'A4-landscape';
@@ -191,9 +312,17 @@
     schedule();
   });
   ['cuts', 'cols', 'rows', 'paper', 'scale', 'marginMm', 'overlapMm', 'pages'].forEach(function (id) {
-    $(id).addEventListener('input', function () { state.userTouched = true; schedule(); });
-    $(id).addEventListener('change', function () { state.userTouched = true; schedule(); });
+    function changed() {
+      state.userTouched = true;
+      if (id === 'rows') state.rowCuts = null;   // 改行数后重回等分
+      schedule();
+    }
+    $(id).addEventListener('input', changed);
+    $(id).addEventListener('change', changed);
   });
+  window.addEventListener('pointermove', onCutMove);
+  window.addEventListener('pointerup', onCutUp);
+  window.addEventListener('pointercancel', onCutUp);
   $('download').addEventListener('click', function () {
     if (!state.blobUrl) return;
     var a = document.createElement('a');

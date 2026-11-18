@@ -27,29 +27,36 @@
 
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
+  // 解析百分比切线（字符串或数组），总是补 0 / 100 并排序
+  function parsePercents(value) {
+    var arr = null;
+    if (value != null) {
+      if (typeof value === 'string') {
+        arr = value.split(/[,，\s]+/).map(Number).filter(function (n) { return isFinite(n); });
+      } else if (Array.isArray(value)) {
+        arr = value.map(Number).filter(function (n) { return isFinite(n); });
+      }
+    }
+    if (!arr || arr.length < 2) return null;
+    arr = arr.map(function (n) { return clamp(n, 0, 100); }).sort(function (a, b) { return a - b; });
+    if (arr[0] > 0) arr.unshift(0);
+    if (arr[arr.length - 1] < 100) arr.push(100);
+    return arr;
+  }
+
   function normalizeOptions(opts) {
     opts = opts || {};
     var paper = PAPERS[opts.paper || 'A4'] || opts.paper;
     if (!Array.isArray(paper) || paper.length !== 2) paper = PAPERS.A4.slice();
     var mode = opts.mode || 'columns';
     if (['columns', 'grid', 'fit', 'split'].indexOf(mode) < 0) mode = 'columns';
-    var rows = clamp(parseInt(opts.rows, 10) || 1, 1, 12);
-    var cuts = null;
-    if (opts.cuts != null) {
-      if (typeof opts.cuts === 'string') {
-        cuts = opts.cuts.split(/[,，\s]+/).map(Number).filter(function (n) { return isFinite(n); });
-      } else if (Array.isArray(opts.cuts)) {
-        cuts = opts.cuts.map(Number).filter(function (n) { return isFinite(n); });
-      }
-      if (!cuts || cuts.length < 2) cuts = null;
-    }
-    if (cuts) {
-      cuts = cuts.map(function (n) { return clamp(n, 0, 100); }).sort(function (a, b) { return a - b; });
-      if (cuts[0] > 0) cuts.unshift(0);
-      if (cuts[cuts.length - 1] < 100) cuts.push(100);
-    }
+    var cuts = parsePercents(opts.cuts);
+    var rowCuts = parsePercents(opts.rowCuts);   // 从上边缘算起的百分比
     var cols = clamp(parseInt(opts.cols, 10) || (cuts ? cuts.length - 1 : 2), 1, 12);
-    if (mode === 'fit') { cols = 1; rows = 1; cuts = null; }
+    var rows = clamp(parseInt(opts.rows, 10) || (rowCuts ? rowCuts.length - 1 : 1), 1, 12);
+    if (cuts) cols = cuts.length - 1;
+    if (rowCuts) rows = rowCuts.length - 1;
+    if (mode === 'fit') { cols = 1; rows = 1; cuts = null; rowCuts = null; }
     return {
       paper: paper,
       paperName: opts.paper || 'A4',
@@ -57,6 +64,7 @@
       cols: cols,
       rows: rows,
       cuts: cuts,
+      rowCuts: rowCuts,
       margin: clamp(Number(opts.margin) || 0, 0, 60),   // pt
       overlap: clamp(Number(opts.overlap) || 0, 0, 40), // pt
       scale: opts.scale || 'fit',
@@ -79,13 +87,22 @@
     return out;
   }
 
+  // 行边界（左下原点比例）：自定义 rowCuts 是从上往下算的，转成从下往上并升序
+  function rowFractions(o) {
+    if (o.rowCuts) {
+      return o.rowCuts.map(function (n) { return 1 - n / 100; }).reverse();
+    }
+    var out = [];
+    for (var i = 0; i <= o.rows; i++) out.push(i / o.rows);
+    return out;
+  }
+
   // 返回「显示坐标系」（左下原点）下的一串矩形，顺序：从上到下、从左到右
   function makeTiles(box, o) {
-    var xs = fractions(o);
+    var xs = fractions(o), ys = rowFractions(o);
     var tiles = [];
-    for (var r = 0; r < o.rows; r++) {
-      var rowH = box.h / o.rows;
-      var cy = box.h - (r + 1) * rowH;
+    for (var r = 0; r < ys.length - 1; r++) {
+      var cy = ys[r] * box.h, rowH = (ys[r + 1] - ys[r]) * box.h;
       for (var c = 0; c < xs.length - 1; c++) {
         var cx = xs[c] * box.w;
         var cw = (xs[c + 1] - xs[c]) * box.w;
@@ -210,7 +227,7 @@
       info: {
         paper: o.paperName, paperSize: [W, H],
         mode: o.mode, cols: o.cols, rows: o.rows,
-        cuts: o.cuts, margin: o.margin, overlap: o.overlap, scale: o.scale,
+        cuts: o.cuts, rowCuts: o.rowCuts, margin: o.margin, overlap: o.overlap, scale: o.scale,
         sourcePages: sourcePages, outputPages: outputPages,
         sourceCount: sourcePages.length, outputCount: outputPages.length
       }
@@ -235,6 +252,7 @@
     PAPERS: PAPERS, MM: MM,
     convert: convert, suggest: suggest,
     normalizeOptions: normalizeOptions, makeTiles: makeTiles,
-    displayBox: displayBox, transform: transform, parsePageRange: parsePageRange
+    displayBox: displayBox, transform: transform, parsePageRange: parsePageRange,
+    parsePercents: parsePercents
   };
 });
