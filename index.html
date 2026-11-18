@@ -5,286 +5,219 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="referrer" content="no-referrer" />
   <title>Static Tools</title>
-  <style>
-    :root {
-      --bg: #f6f8fb;
-      --card: #ffffff;
-      --border: #e6e9ef;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --accent: #2563eb;
-      --accent-soft: #eff4ff;
-      --shadow: 0 1px 3px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.05);
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
-    .head { padding-bottom: 4px; }
-    .head h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: .5px; }
-    .head .sub { margin: 0 0 24px; color: var(--muted); font-size: 15px; }
-
-    .tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 28px;
-      flex-wrap: wrap;
-    }
-    .tab {
-      appearance: none;
-      border: 1px solid var(--border);
-      background: var(--card);
-      color: var(--muted);
-      font: inherit;
-      font-size: 15px;
-      font-weight: 600;
-      padding: 9px 18px;
-      border-radius: 999px;
-      cursor: pointer;
-      transition: all .15s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .tab:hover { border-color: var(--accent); color: var(--accent); }
-    .tab.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-      box-shadow: 0 6px 16px rgba(37,99,235,.18);
-    }
-    .tab .cnt {
-      font-size: 12px;
-      font-weight: 700;
-      min-width: 20px;
-      height: 20px;
-      padding: 0 6px;
-      border-radius: 999px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .tab.active .cnt { background: rgba(255,255,255,.22); color: #fff; }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 20px;
-    }
-    .tool {
-      display: block;
-      text-decoration: none;
-      color: inherit;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: var(--shadow);
-      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-    }
-    .tool:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 12px 32px rgba(37,99,235,.12); }
-    .tool .ico {
-      width: 52px; height: 52px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px; font-weight: 700; color: #fff;
-      background: linear-gradient(135deg, #2563eb, #7c3aed);
-      margin-bottom: 16px;
-    }
-    .tool h3 { margin: 0 0 6px; font-size: 18px; }
-    .tool p { margin: 0; color: var(--muted); font-size: 14px; }
-  </style>
+  <link rel="stylesheet" href="./assets/pure-min.css" />
+  <link rel="stylesheet" href="./assets/grids-responsive-min.css" />
+  <link rel="stylesheet" href="./assets/site.css" />
   <script src="/version-check.js" defer></script>
 </head>
-<body>
-  <header class="wrap head">
-    <h1>Static Tools</h1>
-    <p class="sub">实用小工具 · 小游戏 · 学习助手，全部纯静态、免费、双击即用。</p>
-    <nav class="tabs" role="tablist" aria-label="分类切换">
-      <button class="tab active" data-cat="tool" role="tab" aria-selected="true">工具 <span class="cnt">7</span></button>
-      <button class="tab" data-cat="game" role="tab" aria-selected="false">游戏 <span class="cnt">7</span></button>
-      <button class="tab" data-cat="edu" role="tab" aria-selected="false">教育 <span class="cnt">7</span></button>
-    </nav>
-  </header>
+<body class="st-page">
+  <div class="st-wrap">
+    <header>
+      <h1 class="st-heading">Static Tools</h1>
+      <p class="st-subtitle">实用小工具 · 小游戏 · 学习助手，全部纯静态、免费、双击即用。</p>
+      <nav class="st-tabs" role="tablist" aria-label="分类切换">
+        <button class="st-tab" data-cat="tool" role="tab" aria-selected="true">工具 <span class="st-tab-count">0</span></button>
+        <button class="st-tab" data-cat="game" role="tab" aria-selected="false">游戏 <span class="st-tab-count">0</span></button>
+        <button class="st-tab" data-cat="edu" role="tab" aria-selected="false">教育 <span class="st-tab-count">0</span></button>
+      </nav>
+    </header>
 
-  <main class="wrap">
-    <section class="grid" id="grid">
+    <section class="pure-g st-tools" id="grid">
       <!-- 工具 -->
-      <a class="tool" data-cat="tool" href="./icons-generator/">
-        <div class="ico">字</div>
-        <h3>ICO 文字图标生成器</h3>
-        <p>多层文字（含中文）组合生成 .ico，支持字号、颜色、透明度、位置、背景与圆角。</p>
-      </a>
-
-      <a class="tool" data-cat="tool" href="./photo-layout/">
-        <div class="ico">拼</div>
-        <h3>照片排版 · 拼版打印</h3>
-        <p>把多张照片拼到一张纸：证件照排版（一寸 / 二寸 / 护照）、九宫格拼图，可选纸张尺寸与 DPI 后导出或直接打印。</p>
-      </a>
-
-      <a class="tool" data-cat="tool" href="./formatter/">
-        <div class="ico">{}</div>
-        <h3>代码格式化工具</h3>
-        <p>格式化 / 压缩 JSON、HTML、XML，支持自动检测类型与缩进配置。</p>
-      </a>
-
-      <a class="tool" data-cat="tool" href="./clsf-viewer/">
-        <div class="ico">&#9881;</div>
-        <h3>CLSF 刀轨预览</h3>
-        <p>解析 NX CLSF 刀轨文件，3D 可视化 GOTO / CIRCLE / CYCLE 运动路径，支持动画回放与运动类型筛选。</p>
-      </a>
-
-      <a class="tool" data-cat="tool" href="./text-compare/">
-        <div class="ico">&lt;&gt;</div>
-        <h3>文本对比工具</h3>
-        <p>行级 / 词级差异对比，内置 JavaScript、JSON、HTML、CSS、Python、SQL 等代码高亮，支持统一与并排视图。</p>
-      </a>
-
-      <a class="tool" data-cat="tool" href="./china-holidays/">
-        <div class="ico">假</div>
-        <h3>中国节假日</h3>
-        <p>月历展示法定放假与调休补班情况，默认显示当月，可切换查看任意月份。数据来自 timor.tech 免费节假日 API。</p>
-      </a>
-
-      <a class="tool" data-cat="tool" href="./pdf-a4/">
-        <div class="ico">页</div>
-        <h3>PDF 分页 · 适配 A4 打印</h3>
-        <p>把 A3 横向 / 三栏试卷按栏切成一张张 A4（保持原字号），或整页等比缩到 A4；矢量裁剪、文字可选中，全程本地处理不上传。</p>
-      </a>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="tool">
+        <a class="st-tool" href="./icons-generator/">
+          <span class="st-tool-icon">字</span>
+          <h3 class="st-tool-title">ICO 文字图标生成器</h3>
+          <p class="st-tool-desc">多层文字（含中文）组合生成 .ico，支持字号、颜色、透明度、位置、背景与圆角。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="tool">
+        <a class="st-tool" href="./photo-layout/">
+          <span class="st-tool-icon">拼</span>
+          <h3 class="st-tool-title">照片排版 · 拼版打印</h3>
+          <p class="st-tool-desc">把多张照片拼到一张纸：证件照排版（一寸 / 二寸 / 护照）、九宫格拼图，可选纸张尺寸与 DPI 后导出或直接打印。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="tool">
+        <a class="st-tool" href="./formatter/">
+          <span class="st-tool-icon">{}</span>
+          <h3 class="st-tool-title">代码格式化工具</h3>
+          <p class="st-tool-desc">格式化 / 压缩 JSON、HTML、XML，支持自动检测类型与缩进配置。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="tool">
+        <a class="st-tool" href="./clsf-viewer/">
+          <span class="st-tool-icon">&#9881;</span>
+          <h3 class="st-tool-title">CLSF 刀轨预览</h3>
+          <p class="st-tool-desc">解析 NX CLSF 刀轨文件，3D 可视化 GOTO / CIRCLE / CYCLE 运动路径，支持动画回放与运动类型筛选。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="tool">
+        <a class="st-tool" href="./text-compare/">
+          <span class="st-tool-icon">&lt;&gt;</span>
+          <h3 class="st-tool-title">文本对比工具</h3>
+          <p class="st-tool-desc">行级 / 词级差异对比，内置 JavaScript、JSON、HTML、CSS、Python、SQL 等代码高亮，支持统一与并排视图。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="tool">
+        <a class="st-tool" href="./china-holidays/">
+          <span class="st-tool-icon">假</span>
+          <h3 class="st-tool-title">中国节假日</h3>
+          <p class="st-tool-desc">月历展示法定放假与调休补班情况，默认显示当月，可切换查看任意月份。数据来自 timor.tech 免费节假日 API。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="tool">
+        <a class="st-tool" href="./pdf-a4/">
+          <span class="st-tool-icon">页</span>
+          <h3 class="st-tool-title">PDF 分页 · 适配 A4 打印</h3>
+          <p class="st-tool-desc">把 A3 横向 / 三栏试卷按栏切成一张张 A4（保持原字号），或整页等比缩到 A4；矢量裁剪、文字可选中，全程本地处理不上传。</p>
+        </a>
+      </div>
 
       <!-- 游戏 -->
-      <a class="tool" data-cat="game" href="./maze/">
-        <div class="ico">&#9672;</div>
-        <h3>迷宫大冒险</h3>
-        <p>键盘 / 触屏操控角色走出迷宫，7 档难度（含迷雾与最短通关挑战），自动计时计步与本地最佳记录。</p>
-      </a>
-
-      <a class="tool" data-cat="game" href="./pvz/">
-        <div class="ico">&#127793;</div>
-        <h3>植物大战僵尸</h3>
-        <p>种向日葵攒阳光、摆射手打僵尸，16 种植物 + 7 类僵尸、6 波进攻与割草机兜底，撑过「一大波」即获胜。</p>
-      </a>
-
-      <a class="tool" data-cat="game" href="./geometry-td/">
-        <div class="ico">守</div>
-        <h3>几何塔防</h3>
-        <p>霓虹风几何塔防：4 种炮塔（脉冲/狙击/寒冰/激光）可升级出售，20 波敌人递进（含 Boss），粒子特效 + 音效 + 倍速，纯前端单文件。</p>
-      </a>
-
-      <a class="tool" data-cat="game" href="./geo-defense/">
-        <div class="ico">◈</div>
-        <h3>几何防线 GEO DEFENSE</h3>
-        <p>12 张地图 × 30 种武器的单文件几何塔防：左侧单体、上方群攻、右侧减速/辅助/无人机三端武器栏，15 种怪物（含飞行/跳跃/相位机制）与 10 个 BOSS，轨道卫星天基轰击、无人机母舰出战，Web Audio 合成音效可开关，含升级出售、瞄准模式切换与武器协同。</p>
-      </a>
-
-      <a class="tool" data-cat="game" href="./neon-bastion/">
-        <div class="ico">✦</div>
-        <h3>霓虹堡垒</h3>
-        <p>未来风塔防战场：8 张地图、4 档难度与 5 种炮塔组合，守住能量核心并完成 20 波进攻。</p>
-      </a>
-
-      <a class="tool" data-cat="game" href="./neon-bastion-op/">
-        <div class="ico">⬢</div>
-        <h3>霓虹堡垒：超载协议</h3>
-        <p>全面重制的霓虹塔防：12 战区、13 座可升 3 级炮塔、19 种敌人与 3 个 Boss、30 波 + 无尽模式、4 个主动技能，辉光粒子与像素级特效。</p>
-      </a>
-
-      <a class="tool" data-cat="game" href="./pink-stack/">
-        <div class="ico">▦</div>
-        <h3>粉色方块：上涌危机</h3>
-        <p>在不断上升的粉色方块与碎屑带中旋转、移动并消行，看看能否撑过第五关。</p>
-      </a>
-
-      <a class="tool" data-cat="game" href="./plant-defense/">
-        <div class="ico">&#127775;</div>
-        <h3>植物保卫战 · 后院防线</h3>
-        <p>僵尸从右侧墓地出发穿越五条草坪冲进屋子，种下向日葵攒阳光、布置植物守住后院，撑过第 10 波总攻即获胜。</p>
-      </a>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="game">
+        <a class="st-tool" href="./maze/">
+          <span class="st-tool-icon">&#9672;</span>
+          <h3 class="st-tool-title">迷宫大冒险</h3>
+          <p class="st-tool-desc">键盘 / 触屏操控角色走出迷宫，7 档难度（含迷雾与最短通关挑战），自动计时计步与本地最佳记录。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="game">
+        <a class="st-tool" href="./pvz/">
+          <span class="st-tool-icon">&#127793;</span>
+          <h3 class="st-tool-title">植物大战僵尸</h3>
+          <p class="st-tool-desc">种向日葵攒阳光、摆射手打僵尸，16 种植物 + 7 类僵尸、6 波进攻与割草机兜底，撑过「一大波」即获胜。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="game">
+        <a class="st-tool" href="./geometry-td/">
+          <span class="st-tool-icon">守</span>
+          <h3 class="st-tool-title">几何塔防</h3>
+          <p class="st-tool-desc">霓虹风几何塔防：4 种炮塔（脉冲/狙击/寒冰/激光）可升级出售，20 波敌人递进（含 Boss），粒子特效 + 音效 + 倍速，纯前端单文件。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="game">
+        <a class="st-tool" href="./geo-defense/">
+          <span class="st-tool-icon">◈</span>
+          <h3 class="st-tool-title">几何防线 GEO DEFENSE</h3>
+          <p class="st-tool-desc">12 张地图 × 30 种武器的单文件几何塔防：左侧单体、上方群攻、右侧减速/辅助/无人机三端武器栏，15 种怪物（含飞行/跳跃/相位机制）与 10 个 BOSS，轨道卫星天基轰击、无人机母舰出战，Web Audio 合成音效可开关，含升级出售、瞄准模式切换与武器协同。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="game">
+        <a class="st-tool" href="./neon-bastion/">
+          <span class="st-tool-icon">✦</span>
+          <h3 class="st-tool-title">霓虹堡垒</h3>
+          <p class="st-tool-desc">未来风塔防战场：8 张地图、4 档难度与 5 种炮塔组合，守住能量核心并完成 20 波进攻。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="game">
+        <a class="st-tool" href="./neon-bastion-op/">
+          <span class="st-tool-icon">⬢</span>
+          <h3 class="st-tool-title">霓虹堡垒：超载协议</h3>
+          <p class="st-tool-desc">全面重制的霓虹塔防：12 战区、13 座可升 3 级炮塔、19 种敌人与 3 个 Boss、30 波 + 无尽模式、4 个主动技能，辉光粒子与像素级特效。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="game">
+        <a class="st-tool" href="./pink-stack/">
+          <span class="st-tool-icon">▦</span>
+          <h3 class="st-tool-title">粉色方块：上涌危机</h3>
+          <p class="st-tool-desc">在不断上升的粉色方块与碎屑带中旋转、移动并消行，看看能否撑过第五关。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="game">
+        <a class="st-tool" href="./plant-defense/">
+          <span class="st-tool-icon">&#127775;</span>
+          <h3 class="st-tool-title">植物保卫战 · 后院防线</h3>
+          <p class="st-tool-desc">僵尸从右侧墓地出发穿越五条草坪冲进屋子，种下向日葵攒阳光、布置植物守住后院，撑过第 10 波总攻即获胜。</p>
+        </a>
+      </div>
 
       <!-- 教育 -->
-      <a class="tool" data-cat="edu" href="./clock-learning/">
-        <div class="ico">钟</div>
-        <h3>认识时钟 · 时间练习</h3>
-        <p>给小学生练习认钟表：随机出题，自己读出时和分，答错播放指针动画一步步讲解。</p>
-      </a>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="edu">
+        <a class="st-tool" href="./clock-learning/">
+          <span class="st-tool-icon">钟</span>
+          <h3 class="st-tool-title">认识时钟 · 时间练习</h3>
+          <p class="st-tool-desc">给小学生练习认钟表：随机出题，自己读出时和分，答错播放指针动画一步步讲解。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="edu">
+        <a class="st-tool" href="./word-pronunciation/">
+          <span class="st-tool-icon">📖</span>
+          <h3 class="st-tool-title">英文单词发音练习</h3>
+          <p class="st-tool-desc">小学生英语单词跟读：真人美音/英音与浏览器合成语音可选，跟着音标驱动的口型动画（正脸看唇形、侧脸看舌头）练发音，内置 3–6 年级分级词库。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="edu">
+        <a class="st-tool" href="./length-units/">
+          <span class="st-tool-icon">📏</span>
+          <h3 class="st-tool-title">认识长度单位</h3>
+          <p class="st-tool-desc">带动画教小学生认识毫米/厘米/分米/米/千米：缩放剧场感受各量级差距、1 米尺拆解看 ×10、单位换算与闯关小测验。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="edu">
+        <a class="st-tool" href="./length-scale/">
+          <span class="st-tool-icon">📏</span>
+          <h3 class="st-tool-title">长度有多大？· 三维长度探险</h3>
+          <p class="st-tool-desc">给小学生理解长度：从毫米到千米，每个量级都用一个会自转的 3D 立方体作单位，旁边站一个常见物体（蚂蚁 / 指甲 / 铅笔 / 小学生 / 校车 / 足球场 / 高山）对比，可上下切换并带过渡动画。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="edu">
+        <a class="st-tool" href="./number-line-animation/">
+          <span class="st-tool-icon">轴</span>
+          <h3 class="st-tool-title">数轴动线段 · 动画讲解</h3>
+          <p class="st-tool-desc">七年级数轴动点题：两条动线段 PQ、MN 的运动过程实时演示，重合部分高亮、CQ/PM 尺寸线、重合长度 L(t) 曲线，配三问分段讨论详解与关键时刻一键跳转。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="edu">
+        <a class="st-tool" href="./five-digit-count/">
+          <span class="st-tool-icon">计</span>
+          <h3 class="st-tool-title">五位数计数 · 动画讲解</h3>
+          <p class="st-tool-desc">「不能被 5 整除、数字不重复的五位数有多少个」分步填格动画：可切换个位 / 万位 / 中间三种填位顺序对比，数字池实时划掉禁用/已用数字，乘法原理逐格生成 8×8×8×7×6=21504，附排除法对照、易错点与 5 道自测题。</p>
+        </a>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 st-tool-cell" data-cat="edu">
+        <a class="st-tool" href="./absolute-chain/">
+          <span class="st-tool-icon">绝</span>
+          <h3 class="st-tool-title">绝对值连等式 · 动画讲解</h3>
+          <p class="st-tool-desc">2027 个绝对值全相等、求 x₁−2x₂−3x₃：默认先用「只有 3 个数」的小题目把每步算成具体数字（七年级友好），看懂后再一键切到原题严谨版；含凑 0 挑战、三句话复盘、奇偶实验台、分数验算与两组自测题。</p>
+        </a>
+      </div>
 
-      <a class="tool" data-cat="edu" href="./word-pronunciation/">
-        <div class="ico">📖</div>
-        <h3>英文单词发音练习</h3>
-        <p>小学生英语单词跟读：真人美音/英音与浏览器合成语音可选，跟着音标驱动的口型动画（正脸看唇形、侧脸看舌头）练发音，内置 3–6 年级分级词库。</p>
-      </a>
-
-      <a class="tool" data-cat="edu" href="./length-units/">
-        <div class="ico">📏</div>
-        <h3>认识长度单位</h3>
-        <p>带动画教小学生认识毫米/厘米/分米/米/千米：缩放剧场感受各量级差距、1 米尺拆解看 ×10、单位换算与闯关小测验。</p>
-      </a>
-
-      <a class="tool" data-cat="edu" href="./length-scale/">
-        <div class="ico">📏</div>
-        <h3>长度有多大？· 三维长度探险</h3>
-        <p>给小学生理解长度：从毫米到千米，每个量级都用一个会自转的 3D 立方体作单位，旁边站一个常见物体（蚂蚁 / 指甲 / 铅笔 / 小学生 / 校车 / 足球场 / 高山）对比，可上下切换并带过渡动画。</p>
-      </a>
-
-      <a class="tool" data-cat="edu" href="./number-line-animation/">
-        <div class="ico">轴</div>
-        <h3>数轴动线段 · 动画讲解</h3>
-        <p>七年级数轴动点题：两条动线段 PQ、MN 的运动过程实时演示，重合部分高亮、CQ/PM 尺寸线、重合长度 L(t) 曲线，配三问分段讨论详解与关键时刻一键跳转。</p>
-      </a>
-
-      <a class="tool" data-cat="edu" href="./five-digit-count/">
-        <div class="ico">计</div>
-        <h3>五位数计数 · 动画讲解</h3>
-        <p>「不能被 5 整除、数字不重复的五位数有多少个」分步填格动画：可切换个位 / 万位 / 中间三种填位顺序对比，数字池实时划掉禁用/已用数字，乘法原理逐格生成 8×8×8×7×6=21504，附排除法对照、易错点与 5 道自测题。</p>
-      </a>
-
-      <a class="tool" data-cat="edu" href="./absolute-chain/">
-        <div class="ico">绝</div>
-        <h3>绝对值连等式 · 动画讲解</h3>
-        <p>2027 个绝对值全相等、求 x₁−2x₂−3x₃：默认先用「只有 3 个数」的小题目把每步算成具体数字（七年级友好），看懂后再一键切到原题严谨版；含凑 0 挑战、三句话复盘、奇偶实验台、分数验算与两组自测题。</p>
-      </a>
-
-      <!-- 新增工具：复制本卡片，加上 data-cat="tool|game|edu" 并放入对应文件夹的 index.html 即可 -->
+      <!-- 新增工具：复制上面任意一张 .st-tool-cell 卡片，改 data-cat（tool|game|edu）、图标、标题、描述、链接即可 -->
     </section>
-  </main>
+  </div>
 
   <script>
     (function () {
-      var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
-      var tools = Array.prototype.slice.call(document.querySelectorAll('.tool'));
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.st-tab'));
+      var cells = Array.prototype.slice.call(document.querySelectorAll('.st-tool-cell'));
       tabs.forEach(function (tab) {
         var cat = tab.getAttribute('data-cat');
-        var count = tools.filter(function (tool) {
-          return tool.getAttribute('data-cat') === cat;
+        var count = cells.filter(function (cell) {
+          return cell.getAttribute('data-cat') === cat;
         }).length;
-        var badge = tab.querySelector('.cnt');
+        var badge = tab.querySelector('.st-tab-count');
         if (badge) badge.textContent = count;
       });
       function show(cat) {
-        tools.forEach(function (t) {
-          t.style.display = (t.getAttribute('data-cat') === cat) ? '' : 'none';
+        cells.forEach(function (cell) {
+          cell.style.display = (cell.getAttribute('data-cat') === cat) ? '' : 'none';
         });
-        tabs.forEach(function (b) {
-          var on = b.getAttribute('data-cat') === cat;
-          b.classList.toggle('active', on);
-          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        tabs.forEach(function (tab) {
+          var on = tab.getAttribute('data-cat') === cat;
+          tab.classList.toggle('is-active', on);
+          tab.setAttribute('aria-selected', on ? 'true' : 'false');
         });
       }
-      tabs.forEach(function (b) {
-        b.addEventListener('click', function () {
-          var cat = b.getAttribute('data-cat');
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          var cat = tab.getAttribute('data-cat');
           show(cat);
           history.replaceState(null, '', '#' + cat);
         });
       });
       var h = (location.hash || '').replace('#', '');
-      var valid = tabs.some(function (b) { return b.getAttribute('data-cat') === h; });
+      var valid = tabs.some(function (tab) { return tab.getAttribute('data-cat') === h; });
       show(valid ? h : 'tool');
     })();
   </script>

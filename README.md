@@ -4,8 +4,13 @@
 
 ```
 .
-├── index.html              # 根目录导航页（首页）
+├── index.html              # 根目录导航页（首页，Pure CSS + 共享样式）
 ├── README.md               # 本说明
+├── assets/                 # 全站共享资源（本地内置，无 CDN）
+│   ├── pure-min.css        # Pure CSS 3.1.0（Yahoo，BSD）
+│   ├── grids-responsive-min.css  # Pure 响应式栅格
+│   ├── site.css            # 共享设计系统：st-* 类名 + 设计变量
+│   └── tool-template.html  # 新工具页标准模板（复制即用）
 ├── icons-generator/        # 工具一：ICO 文字图标生成器
 │   ├── index.html
 │   ├── style.css
@@ -52,6 +57,41 @@
 ```
 
 > 新增工具：在根目录建一个带 `index.html` 的文件夹（如 `qr-generator/`），然后在根目录 `index.html` 复制一张导航卡片链接过去即可。
+
+## 统一设计系统（新增工具必读）
+
+全站样式基于 **Pure CSS 3.1.0**（本地内置在 `assets/`，不依赖 CDN），共享层是 `assets/site.css`。
+所有共享 class 都以 `st-` 开头，不会和工具自己的样式重名；工具特有样式仍写在各自目录里。
+
+**新增一个工具的标准做法（给 AI 或人手都适用）：**
+
+1. 复制 `assets/tool-template.html` 到 `新工具名/index.html`，改标题、文案和逻辑。
+   模板已引入 Pure 栅格、共享样式、`version-check.js`，并带「← 返回工具箱」。
+2. 公共样式只需这三行（**必须用相对路径 `../assets/...`，本地和线上都能打开**）：
+
+   ```html
+   <link rel="stylesheet" href="../assets/pure-min.css" />
+   <link rel="stylesheet" href="../assets/grids-responsive-min.css" />
+   <link rel="stylesheet" href="../assets/site.css" />
+   ```
+
+3. 有特殊样式时，在工具目录建 `style.css`，并在上面三行**之后**引入。
+4. 在根目录 `index.html` 复制一张 `.st-tool-cell` 卡片，改 `data-cat`（`tool` / `game` / `edu`）、图标、标题、描述与链接；分类数量会自动统计。
+
+**常用共享类名速查（优先复用，少写新 CSS）：**
+
+| 用途 | 类名 |
+| --- | --- |
+| 页面外壳 | `st-page`、`st-wrap`、`st-topbar`、`st-back`、`st-footer` |
+| 两栏 / 卡片 | `pure-g` + `pure-u-1 pure-u-md-1-2`、`st-card`、`st-cols`、`st-stack` |
+| 按钮 | `st-btn`、`st-btn-primary`、`st-btn-sm`、`st-actions`、`st-segment` |
+| 表单 | `st-field`、`st-control` / `st-input` / `st-select` / `st-textarea`、`st-check`、`st-hint` |
+| 状态 | `st-badge`、`st-note`、`st-note-warn`、`st-note-danger`、`st-empty` |
+| 首页卡片 | `st-tools`、`st-tool-cell`、`st-tool`、`st-tool-icon`、`st-tool-title`、`st-tool-desc` |
+| 工具函数 | `st-muted`、`st-mono`、`st-hidden` |
+
+颜色、圆角、阴影统一用 `assets/site.css` 里的 CSS 变量（`--st-*`），需要换主题只改这一处。
+老工具页保留原有内联样式，此层只作为基座，不影响既有视觉。
 
 ## 本地开发预览
 
