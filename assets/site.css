@@ -101,8 +101,9 @@
 /* ---------- 栅格工具卡片（配合 Pure .pure-g） ---------- */
 /* Pure 的 pure-u-* 用百分比宽度且默认 content-box，加内边距必须同步改 box-sizing */
 .st-col { box-sizing: border-box; padding: 0 10px; }
-.st-tools { margin: 0 -10px; }
-.st-tool-cell { padding: 10px; box-sizing: border-box; }
+/* flex 让同一行的卡片等高（Pure 原生 inline-block 栅格做不到） */
+.st-tools { margin: 0 -10px; display: flex; flex-wrap: wrap; align-items: stretch; }
+.st-tool-cell { display: flex; padding: 10px; box-sizing: border-box; }
 
 .st-tool {
   display: block;
