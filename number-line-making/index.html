@@ -4,21 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>数轴动线段动画 · 制作过程</title>
+  <link rel="stylesheet" href="/shared/theme.css" />
+  <script src="/version-check.js" defer></script>
   <style>
+    /* 标准设计 token 来自 /shared/theme.css；以下为页面专有色 */
     :root{
-      --bg:#f6f8fb; --card:#fff; --border:#e6e9ef; --text:#1f2937;
-      --muted:#6b7280; --accent:#2563eb; --accent2:#7c3aed;
-      --green:#16a34a; --orange:#ea580c; --shadow:0 1px 3px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.05);
+      --accent2:#7c3aed;
+      --green:#16a34a; --orange:#ea580c;
     }
     *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-      line-height:1.7;}
     .wrap{max-width:880px;margin:0 auto;padding:40px 22px 80px}
-    .back{display:inline-flex;align-items:center;gap:6px;color:var(--accent);text-decoration:none;
-      font-size:14px;margin-bottom:18px}
-    .back:hover{text-decoration:underline}
-    h1{font-size:28px;margin:0 0 6px}
     .sub{color:var(--muted);font-size:15px;margin:0 0 28px}
     .card{background:var(--card);border:1px solid var(--border);border-radius:16px;
       padding:24px 26px;box-shadow:var(--shadow);margin-bottom:22px}
@@ -55,9 +50,12 @@
   </style>
 </head>
 <body>
+  <header class="site-topbar">
+    <a class="brand" href="../"><span class="arrow">←</span> Static Tools</a>
+    <h1 class="title">数轴动线段动画 · 制作过程</h1>
+    <span class="cat">教育</span>
+  </header>
   <div class="wrap">
-    <a class="back" href="../index.html">← 返回工具站首页</a>
-    <h1>数轴动线段动画 · 制作过程</h1>
     <p class="sub">这一页记录 <a href="../number-line-animation/">《数轴动线段 · 动画讲解》</a> 是怎么做出来的：原始提示词、原始题目图片、用到的工具与关键步骤。</p>
 
     <!-- 1. 原始提示词 -->

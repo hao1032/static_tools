@@ -5,34 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="referrer" content="no-referrer" />
   <title>Static Tools</title>
+  <link rel="stylesheet" href="/shared/theme.css" />
   <style>
-    :root {
-      --bg: #f6f8fb;
-      --card: #ffffff;
-      --border: #e6e9ef;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --accent: #2563eb;
-      --accent-soft: #eff4ff;
-      --shadow: 0 1px 3px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.05);
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
-    .head { padding-bottom: 4px; }
-    .head h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: .5px; }
-    .head .sub { margin: 0 0 24px; color: var(--muted); font-size: 15px; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+    .head h1 { margin: 0 0 6px; font-size: var(--fs-title); font-weight: 700; letter-spacing: .3px; }
+    .head .sub { margin: 0 0 28px; color: var(--muted); font-size: 15px; }
 
     .tabs {
       display: flex;
-      gap: 10px;
-      margin-bottom: 28px;
+      gap: 8px;
       flex-wrap: wrap;
     }
     .tab {
@@ -40,11 +21,10 @@
       border: 1px solid var(--border);
       background: var(--card);
       color: var(--muted);
-      font: inherit;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
-      padding: 9px 18px;
-      border-radius: 999px;
+      padding: 7px 16px;
+      border-radius: var(--radius-pill);
       cursor: pointer;
       transition: all .15s ease;
       display: inline-flex;
@@ -84,7 +64,7 @@
       color: inherit;
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: var(--radius-lg);
       padding: 24px;
       box-shadow: var(--shadow);
       transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
@@ -97,15 +77,18 @@
       background: linear-gradient(135deg, #2563eb, #7c3aed);
       margin-bottom: 16px;
     }
-    .tool h3 { margin: 0 0 6px; font-size: 18px; }
-    .tool p { margin: 0; color: var(--muted); font-size: 14px; }
+    .tool h3 { margin: 0 0 6px; font-size: var(--fs-heading); }
+    .tool p { margin: 0; color: var(--muted); font-size: var(--fs-body); }
+
+    @media (max-width: 560px) {
+      .site-topbar { height: auto; min-height: var(--topbar-h); flex-wrap: wrap; padding: 10px 16px; }
+    }
   </style>
   <script src="/version-check.js" defer></script>
 </head>
 <body>
-  <header class="wrap head">
-    <h1>Static Tools</h1>
-    <p class="sub">实用小工具 · 小游戏 · 学习助手，全部纯静态、免费、双击即用。</p>
+  <header class="site-topbar">
+    <a class="brand" href="/">Static Tools</a>
     <nav class="tabs" role="tablist" aria-label="分类切换">
       <button class="tab active" data-cat="tool" role="tab" aria-selected="true">工具 <span class="cnt">6</span></button>
       <button class="tab" data-cat="game" role="tab" aria-selected="false">游戏 <span class="cnt">7</span></button>
@@ -114,6 +97,10 @@
   </header>
 
   <main class="wrap">
+    <section class="head">
+      <h1>Static Tools</h1>
+      <p class="sub">实用小工具 · 小游戏 · 学习助手，全部纯静态、免费、双击即用。</p>
+    </section>
     <section class="grid" id="grid">
       <!-- 工具 -->
       <a class="tool" data-cat="tool" href="./icons-generator/">

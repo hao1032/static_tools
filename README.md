@@ -6,6 +6,11 @@
 .
 ├── index.html              # 根目录导航页（首页）
 ├── README.md               # 本说明
+├── shared/
+│   └── theme.css           # 全站共享设计系统（设计 token + 统一顶栏 + 基础组件），见下文「全站设计系统」
+├── version-check.js        # 更新提示脚本（部署缓存对策，见「部署与缓存」）
+├── _headers                # Cloudflare Pages 缓存头（no-cache）
+├── restart-server.bat      # 一键重启本地预览服务器（Windows）
 ├── icons-generator/        # 工具一：ICO 文字图标生成器
 │   ├── index.html
 │   ├── style.css
@@ -46,7 +51,59 @@
     └── index.html          # 单文件：三种填位顺序对比 / 数字池 / 乘法原理 / 排除法对照 / 自测题
 ```
 
-> 新增工具：在根目录建一个带 `index.html` 的文件夹（如 `qr-generator/`），然后在根目录 `index.html` 复制一张导航卡片链接过去即可。
+> 新增工具：在根目录建一个带 `index.html` 的文件夹（如 `qr-generator/`），然后在根目录 `index.html` 复制一张导航卡片链接过去即可。**页面样式请按下一节「全站设计系统」接入 `shared/theme.css` 与统一顶栏。**
+
+## 全站设计系统（`shared/theme.css`）
+
+全站共享一份设计系统，所有页面（含游戏页）都应在**本地样式之前**引入它：
+
+```html
+<link rel="stylesheet" href="/shared/theme.css" />
+<link rel="stylesheet" href="./style.css" />
+```
+
+### 提供的内容
+
+- **设计 token**（`:root` CSS 变量）：色板 `--bg: #f6f8fb` / `--card` / `--border: #e6e9ef` / `--text: #1f2937` / `--muted: #6b7280` / `--accent: #2563eb` / `--accent-soft: #eff4ff` / `--violet` / `--shadow`；圆角阶梯 `--radius-sm: 8px`（按钮）/ `--radius: 12px`（卡片）/ `--radius-lg: 16px`（大卡片）/ `--radius-pill: 999px`（药丸标签）；字号阶梯 `--fs-title`（主标题 26px）/ `--fs-heading`（区块标题 18px）/ `--fs-body`（正文 14px）/ `--fs-small`；统一字体栈 `--font`；顶栏高度 `--topbar-h: 56px`。
+- **全局基础样式**：`box-sizing`、`body` 默认字体 / 背景 / 行高 1.6、`button/input` 继承字体、`prefers-reduced-motion` 处理。低特异性，放在页面样式之前，页面可覆盖。
+- **统一顶栏 `.site-topbar`**（吸顶毛玻璃，三种变体）：
+  - 默认浅色（工具 / 教育页 / 首页）
+  - `.on-dark` 深色半透明 + 发光 hover（霓虹 / 科技类游戏页）
+  - `.on-paper` 浅纸色（植物保卫战等卡通风页面）
+- **通用组件类**（可选，可覆盖）：`.t-card` / `.t-btn`（primary / ghost）/ `.t-pill` / `.t-page-head`。
+
+### 顶栏结构
+
+所有子页面顶栏结构固定（首页例外，顶栏右侧是分类标签页）：
+
+```html
+<header class="site-topbar">          <!-- 深色游戏页加 on-dark，卡通页加 on-paper -->
+  <a class="brand" href="../"><span class="arrow">←</span> Static Tools</a>
+  <h1 class="title">页面标题</h1>       <!-- 可选，自动占满中间空间 -->
+  <span class="cat">工具 / 游戏 / 教育</span>  <!-- 分类徽章，≤560px 自动隐藏 -->
+</header>
+```
+
+页面主标题放顶栏 `.title` 后，正文里不要再重复一个同级的 `<h1>`（可以有更小级的区块标题）。
+
+### 新增页面接入规范
+
+**浅色工具 / 教育页（3 步）：**
+
+1. `<head>` 里按上面的顺序引入 `shared/theme.css`，**不要**在页面里重新定义 `--bg / --accent` 等标准 token；页面专有色（如状态色、diff 色）单独放 `:root`。
+2. 按上面的结构插入统一顶栏。
+3. `</head>` 前加 `<script src="/version-check.js" defer></script>`（作用见「部署与缓存」）。
+
+**全屏游戏页（额外注意布局补偿）：**
+
+- 顶栏占流吸顶 56px。全屏舞台（`position: fixed/absolute; inset: 0` 或依赖 `100vh` / `window.innerHeight` 计算）必须扣除顶栏高度，例如 `inset: 56px 0 0 0`、`height: calc(100% - 56px)`，画布尺寸计算里扣 `document.querySelector('.site-topbar').offsetHeight`，否则会出现溢出或被顶栏遮挡。
+- 保留游戏主题氛围（霓虹 / 卡通 / 街机配色、特例字体只用于游戏内容区），只对齐顶栏、全局字体栈（`var(--font)`）与按钮圆角（`var(--radius-sm)`）。
+- 顶栏变体选 `.on-dark`（深色主题）或 `.on-paper`（卡通浅色主题）；不用变体也可，但深色背景上必须用其一保证可读性。
+- 游戏脚本**不要**依赖顶栏内部 DOM（`.brand` / `.title` 是纯展示节点）。
+
+### 全局改风格
+
+调全站观感（换主色、字号、圆角）只改 `shared/theme.css` 一处，全部页面生效；页面局部覆盖优先级始终更高。
 
 ## 本地开发预览
 
@@ -295,6 +352,7 @@ window.WORD_BANK = {
 ## 技术说明
 
 - 纯 HTML / CSS / 原生 JavaScript，无框架、无第三方依赖。
+- **全站共享设计系统**：`shared/theme.css` 定义唯一的设计 token、字体栈、圆角阶梯与统一顶栏，所有页面共用（详见「全站设计系统」）。改全局风格只需改这一个文件。
 - **全站唯一的网络请求**：`word-pronunciation` 工具在选「真人发音」时会向有道词典发音接口请求音频，只发送要朗读的单词/例句文本；其余工具零请求。
 - ICO 采用标准 **PNG-in-ICO** 封装（ICONDIR + ICONDIRENTRY + PNG 数据，小端字节序），Windows 与浏览器均兼容。
 - 坐标 / 字号 / 圆角基于 256×256 虚拟画布定义，导出时按比例缩放到各目标尺寸。

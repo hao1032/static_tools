@@ -1,0 +1,261 @@
+/* =========================================================
+   shared/theme.css — 全站共享设计系统
+   引入方式：在页面 </head> 前加
+     <link rel="stylesheet" href="/shared/theme.css" />
+   注意：请放在本页面自己的 style.css / <style> **之前**，
+   页面局部样式可以覆盖这里的默认值。
+
+   修改本文件 = 全站 21 个页面同步生效（部署到 Cloudflare
+   Pages 后由根目录 _headers 控制 no-cache 校验）。
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   1. 设计 Token（全站唯一定义处，各页只引用 var(--xxx)）
+   --------------------------------------------------------- */
+:root {
+  /* 色板 */
+  --bg: #f6f8fb;                 /* 页面背景 */
+  --card: #ffffff;               /* 卡片 / 面板背景 */
+  --border: #e6e9ef;             /* 细边框 */
+  --text: #1f2937;               /* 正文色 */
+  --muted: #6b7280;              /* 次要文字 */
+  --accent: #2563eb;             /* 主色 */
+  --accent-strong: #1d4ed8;      /* 主色 hover / 按下 */
+  --accent-soft: #eff4ff;        /* 主色浅底（徽标 / 选中态） */
+  --violet: #7c3aed;             /* 辅助紫（图标渐变第二色） */
+
+  /* 圆角阶梯 */
+  --radius-sm: 8px;              /* 按钮 / 小控件 */
+  --radius: 12px;                /* 卡片 / 面板 */
+  --radius-lg: 16px;             /* 大卡片 */
+  --radius-pill: 999px;          /* 药丸标签 */
+
+  /* 阴影 */
+  --shadow: 0 1px 3px rgba(16, 24, 40, .06), 0 8px 24px rgba(16, 24, 40, .05);
+  --shadow-hover: 0 12px 32px rgba(37, 99, 235, .12);
+
+  /* 字体（全站唯一定义处；游戏页主题字体只允许出现在内容区） */
+  --font: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* 字号阶梯 */
+  --fs-title: 26px;              /* 页面主标题 */
+  --fs-heading: 18px;            /* 区块标题 */
+  --fs-body: 14px;               /* 正文 */
+  --fs-small: 12px;              /* 说明 / 徽标 */
+
+  /* 顶栏 */
+  --topbar-h: 56px;
+}
+
+/* ---------------------------------------------------------
+   2. 基础重置（低特异性，页面局部样式可覆盖）
+   --------------------------------------------------------- */
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+}
+
+h1, h2, h3, h4, h5, h6 { font-family: var(--font); line-height: 1.3; }
+
+button, input, select, textarea { font: inherit; }
+
+a { color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+/* ---------------------------------------------------------
+   3. 统一顶栏 .site-topbar（浅色变体，默认）
+   结构：
+   <header class="site-topbar">
+     <a class="brand" href="/">← Static Tools</a>
+     <span class="cat">工具</span>
+   </header>
+   --------------------------------------------------------- */
+.site-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  width: 100%;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 clamp(16px, 4vw, 32px);
+  background: rgba(255, 255, 255, .82);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+
+.site-topbar .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+  transition: color .15s ease, transform .15s ease;
+}
+
+.site-topbar .brand:hover {
+  color: var(--accent-strong);
+  transform: translateX(-2px);
+}
+
+.site-topbar .brand .arrow { font-size: 16px; font-weight: 400; }
+
+.site-topbar .cat {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--muted);
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  white-space: nowrap;
+}
+
+/* 页面标题（可选，放在 brand 与 cat 之间，自动占满中间空间） */
+.site-topbar .title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fs-heading);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 560px) {
+  .site-topbar { height: auto; min-height: var(--topbar-h); flex-wrap: wrap; padding: 10px clamp(16px, 4vw, 32px); }
+  .site-topbar .title { font-size: 15px; }
+  .site-topbar .cat { display: none; }
+}
+
+/* 深色变体：游戏页（霓虹 / 科技 / 街机等深色主题）加 .on-dark */
+.site-topbar.on-dark {
+  background: rgba(10, 14, 23, .75);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom-color: rgba(255, 255, 255, .08);
+}
+
+.site-topbar.on-dark .brand { color: #e5e7eb; }
+.site-topbar.on-dark .brand:hover {
+  color: #ffffff;
+  text-shadow: 0 0 12px currentColor;
+}
+
+.site-topbar.on-dark .title { color: #e5e7eb; }
+
+.site-topbar.on-dark .cat {
+  color: #9ca3af;
+  background: rgba(255, 255, 255, .08);
+}
+
+/* 浅纸色变体：卡通风游戏页（如植物保卫战）加 .on-paper */
+.site-topbar.on-paper {
+  background: rgba(244, 236, 216, .9);
+  border-bottom-color: rgba(31, 41, 55, .12);
+}
+.site-topbar.on-paper .brand { color: #2f6d3a; }
+.site-topbar.on-paper .brand:hover { color: #245429; }
+.site-topbar.on-paper .cat { color: #6b5b3e; background: rgba(31, 41, 55, .06); }
+
+/* ---------------------------------------------------------
+   4. 通用组件类（页面可选用，可被页面局部样式覆盖）
+   --------------------------------------------------------- */
+
+/* 卡片 */
+.t-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* 按钮 */
+.t-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all .15s ease;
+}
+.t-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.t-btn-primary {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.t-btn-primary:hover {
+  color: #fff;
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, .18);
+}
+
+.t-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--accent);
+}
+.t-btn-ghost:hover { background: var(--accent-soft); }
+
+.t-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 药丸标签 */
+.t-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: var(--fs-small);
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* 页面主标题区（顶栏下方的标题块，可选） */
+.t-page-head { padding: 24px 0 8px; }
+.t-page-head h1 {
+  margin: 0 0 6px;
+  font-size: var(--fs-title);
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+.t-page-head .sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+}

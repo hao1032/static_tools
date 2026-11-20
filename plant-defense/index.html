@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>植物保卫战 · 后院防线</title>
+<link rel="stylesheet" href="/shared/theme.css" />
 <style>
   :root {
     --ink: #21301f;
@@ -15,21 +16,22 @@
     margin: 0;
     min-height: 100%;
     background: radial-gradient(1200px 700px at 50% -10%, #6fa3d8 0%, #3c6b9c 45%, #1d3550 100%);
-    font-family: "Trebuchet MS", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-family: var(--font);
     color: #fff;
     overflow: hidden;
   }
   #app {
     position: fixed;
-    inset: 0;
+    inset: 56px 0 0 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: "Trebuchet MS", "PingFang SC", "Microsoft YaHei", sans-serif;
   }
   #stage {
     position: relative;
-    width: min(100vw, 177.78vh);
-    height: min(56.25vw, 100vh);
+    width: min(100vw, calc(177.78vh - 99.6px));
+    height: min(56.25vw, calc(100vh - 56px));
     filter: drop-shadow(0 24px 60px rgba(0,0,0,.45));
     touch-action: none;
   }
@@ -122,8 +124,14 @@
     z-index: 4;
   }
 </style>
+<script src="/version-check.js" defer></script>
 </head>
 <body>
+<header class="site-topbar on-paper">
+  <a class="brand" href="../"><span class="arrow">←</span> Static Tools</a>
+  <h1 class="title">植物保卫战 · 后院防线</h1>
+  <span class="cat">游戏</span>
+</header>
 <div id="app">
   <div id="stage">
     <canvas id="game"></canvas>

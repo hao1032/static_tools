@@ -1,39 +1,9 @@
+/* 页面特有 token（其余设计 token 来自 /shared/theme.css） */
 :root {
-  --bg: #f6f8fb;
-  --card: #ffffff;
-  --border: #e6e9ef;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --accent: #2563eb;
-  --accent-soft: #eff4ff;
   --bad: #dc2626;
-  --shadow: 0 1px 3px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.05);
 }
 
-* { box-sizing: border-box; }
 [hidden] { display: none !important; }
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.55;
-  -webkit-text-size-adjust: 100%;
-}
-
-/* 顶部栏 */
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 24px;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-}
-.topbar h1 { font-size: 18px; margin: 0; font-weight: 600; }
-.back { color: var(--muted); text-decoration: none; font-size: 14px; white-space: nowrap; }
-.back:hover { color: var(--accent); }
 
 /* 布局：左预览 / 右参数 / 底部整行列表 */
 .layout {

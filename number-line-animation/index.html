@@ -4,23 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>数轴上的两条动线段 PQ、MN · 动画讲解</title>
+<link rel="stylesheet" href="/shared/theme.css" />
 <style>
+  /* 标准设计 token 来自 /shared/theme.css；以下为旧变量别名映射 + 页面专有色 */
   :root{
-    --bg:#f4f6f9; --card:#ffffff; --ink:#0f172a; --ink2:#475569; --ink3:#8a97a8;
-    --line:#e5e9f0; --line2:#eef1f6;
-    --blue:#2563eb; --bluebg:#eaf0ff;
+    --ink:var(--text); --ink2:var(--muted); --ink3:#8a97a8;
+    --line:var(--border); --line2:#eef1f6;
+    --blue:var(--accent); --bluebg:var(--accent-soft);
     --orange:#ea580c; --orangebg:#fff1e7;
     --red:#dc2626; --redbg:#fdecec;
     --teal:#0f766e; --tealbg:#e6f4f2;
     --violet:#7c3aed; --violetbg:#f1ecfe;
     --green:#15803d; --greenbg:#e8f6ec;
-    --r:14px;
+    --r:var(--radius);
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{
-    background:var(--bg); color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
     -webkit-font-smoothing:antialiased; line-height:1.7;
   }
   .wrap{max-width:1320px;margin:0 auto;padding:34px 30px 80px}
@@ -139,8 +139,14 @@
     .controls{gap:9px}
   }
 </style>
+<script src="/version-check.js" defer></script>
 </head>
 <body>
+<header class="site-topbar">
+  <a class="brand" href="../"><span class="arrow">←</span> Static Tools</a>
+  <h1 class="title">数轴动线段 · 动画讲解</h1>
+  <span class="cat">教育</span>
+</header>
 <div class="wrap">
 
   <header class="hero">

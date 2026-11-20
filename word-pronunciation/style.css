@@ -1,20 +1,13 @@
 /* 英文单词发音练习 —— 样式
- * 变量、顶栏、卡片、按钮、选项区沿用 clock-learning 的规范，保持整个工具箱观感一致。
+ * 设计 token / 全局基础样式 / 统一顶栏来自 /shared/theme.css，保持全站观感一致。
  */
 
+/* 页面特有 token */
 :root {
-  --bg: #f6f8fb;
-  --card: #ffffff;
-  --border: #e6e9ef;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --accent: #2563eb;
-  --accent-soft: #eff4ff;
   --ok: #16a34a;
   --ok-soft: #f0fdf4;
   --bad: #dc2626;
   --warn: #b45309;
-  --shadow: 0 1px 3px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.05);
 
   /* 口型调色板 */
   --skin: #ffd9b8;
@@ -29,30 +22,7 @@
   --palate: #f0b49a;
 }
 
-* { box-sizing: border-box; }
 [hidden] { display: none !important; }
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.55;
-  -webkit-text-size-adjust: 100%;
-}
-
-/* 顶部栏 */
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 24px;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-}
-.topbar h1 { font-size: 18px; margin: 0; font-weight: 600; }
-.back { color: var(--muted); text-decoration: none; font-size: 14px; white-space: nowrap; }
-.back:hover { color: var(--accent); }
 
 /* 布局：左（舞台 + 卡片/词表） / 右（进度） / 底部整行（选项） */
 .layout {

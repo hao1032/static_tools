@@ -4,29 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>五位数计数 · 动画讲解</title>
+<link rel="stylesheet" href="/shared/theme.css" />
 <style>
+  /* 标准设计 token 来自 /shared/theme.css；以下为旧变量别名映射 + 页面专有色 */
   :root{
-    --bg:#f4f6f9; --card:#ffffff; --ink:#0f172a; --ink2:#475569; --ink3:#8a97a8;
-    --line:#e5e9f0; --line2:#eef1f6;
-    --blue:#2563eb; --bluebg:#eaf0ff;
+    --ink:var(--text); --ink2:var(--muted); --ink3:#8a97a8;
+    --line:var(--border); --line2:#eef1f6;
+    --blue:var(--accent); --bluebg:var(--accent-soft);
     --orange:#ea580c; --orangebg:#fff1e7;
     --red:#dc2626; --redbg:#fdecec;
     --green:#15803d; --greenbg:#e8f6ec;
     --violet:#7c3aed; --violetbg:#f1ecfe;
-    --r:14px;
+    --r:var(--radius);
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{
-    background:var(--bg); color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
     -webkit-font-smoothing:antialiased; line-height:1.7;
   }
   .wrap{max-width:1280px;margin:0 auto;padding:30px 30px 80px}
-  .crumb{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--ink3);margin-bottom:18px}
-  .crumb a{color:var(--blue);text-decoration:none}
-  .crumb a:hover{text-decoration:underline}
-  .crumb span{padding:2px 10px;border-radius:999px;background:var(--violetbg);color:var(--violet);font-weight:600}
   .hero h1{font-size:30px;margin:0 0 10px;letter-spacing:.4px}
   .hero .q{margin:0 0 6px;font-size:17px;color:var(--ink)}
   .hero .q b{color:var(--red);background:var(--redbg);padding:1px 8px;border-radius:7px;margin:0 2px}
@@ -225,12 +221,17 @@
     .total{font-size:22px;min-width:76px}
   }
 </style>
+<script src="/version-check.js" defer></script>
 </head>
 <body>
+<header class="site-topbar">
+  <a class="brand" href="../"><span class="arrow">←</span> Static Tools</a>
+  <h1 class="title">五位数计数 · 动画讲解</h1>
+  <span class="cat">教育</span>
+</header>
 <div class="wrap">
 
   <header class="hero">
-    <div class="crumb"><a href="../">← 返回首页</a><span>教育 · 计数与乘法原理</span></div>
     <h1>有多少个这样的五位数？</h1>
     <p class="q">条件：<b>不能被 5 整除</b>，<b>不能有重复数字</b>。</p>
     <p class="sub">五个格子，一步一步填；可以切换填位顺序，看看先填前面或中间会发生什么。点「自动播放」可以一口气看完。</p>

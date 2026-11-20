@@ -4,20 +4,21 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>长度有多大？· 三维长度探险</title>
+<link rel="stylesheet" href="/shared/theme.css" />
+<script src="/version-check.js" defer></script>
 <style>
+  /* 标准设计 token 来自 /shared/theme.css；以下为 3D 场景专有色 + 旧变量别名 */
   :root {
     --cube-face: rgba(56, 132, 255, .82);
     --cube-edge: #ffffff;
-    --ink: #1f2937;
+    --ink: var(--text);
     --panel: rgba(255,255,255,.82);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; margin: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-    color: var(--ink);
     overflow: hidden;
-    background: #e3f2fd;
+    background: var(--bg);
     user-select: none;
   }
 
@@ -28,13 +29,11 @@
     background: linear-gradient(180deg, #e3f2fd 0%, #bbdefb 100%);
   }
 
-  /* 顶部标题 */
-  .topbar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 5;
-    padding: 16px 20px 0; text-align: center; pointer-events: none;
+  /* 页面提示（统一顶栏见 /shared/theme.css） */
+  .hint {
+    position: fixed; top: calc(var(--topbar-h) + 10px); left: 16px; z-index: 5;
+    margin: 0; font-size: 13px; color: #455a6b; pointer-events: none;
   }
-  .topbar h1 { margin: 0; font-size: 22px; letter-spacing: 1px; }
-  .topbar p { margin: 2px 0 0; font-size: 13px; color: #455a6b; }
 
   /* 3D 舞台 */
   .stage {
@@ -196,7 +195,7 @@
     .scene { transform: scale(.78); }
     .ladder { right: 8px; }
     .ladder button { min-width: 60px; padding: 6px 8px; font-size: 12px; }
-    .topbar h1 { font-size: 18px; }
+    .hint { display: none; }
     .hud .name { font-size: 24px; }
   }
 </style>
@@ -204,10 +203,12 @@
 <body>
   <div id="bg"></div>
 
-  <div class="topbar">
-    <h1>📏 长度有多大？</h1>
-    <p>点「▲ 更大」或「▼ 更小」改变量级，看看 1 个长度单位到底有多大</p>
-  </div>
+  <header class="site-topbar">
+    <a class="brand" href="../"><span class="arrow">←</span> Static Tools</a>
+    <h1 class="title">长度有多大？· 三维长度探险</h1>
+    <span class="cat">教育</span>
+  </header>
+  <p class="hint">点「▲ 更大」或「▼ 更小」改变量级，看看 1 个长度单位到底有多大</p>
 
   <div class="stage">
     <div class="scene" id="scene">

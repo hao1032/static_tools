@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>几何防线 GEO DEFENSE · 几何塔防</title>
+<link rel="stylesheet" href="/shared/theme.css" />
 <style>
 /* 《几何防线 GEO DEFENSE》样式 */
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-user-select: none; user-select: none; }
@@ -11,8 +12,8 @@
   --bg: #070a12; --panel: rgba(13, 17, 28, 0.92); --line: rgba(148, 163, 184, 0.22);
   --txt: #e2e8f0; --dim: #94a3b8; --gold: #fbbf24; --red: #f87171; --green: #4ade80; --blue: #7dd3fc;
 }
-html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; color: var(--txt); }
-#app { position: absolute; inset: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); font-family: var(--font); color: var(--txt); }
+#app { position: absolute; inset: 56px 0 0 0; }
 canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; z-index: 0; }
 .hidden { display: none !important; }
 
@@ -26,7 +27,7 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
 .stat.gold b { color: var(--gold); }
 .stat.lives b { color: var(--red); }
 .stat.wave b { color: var(--blue); }
-.hud-btn { background: rgba(30, 41, 59, 0.8); border: 1px solid var(--line); color: var(--txt); font-size: 13px; padding: 5px 11px; border-radius: 4px; cursor: pointer; transition: all .15s; }
+.hud-btn { background: rgba(30, 41, 59, 0.8); border: 1px solid var(--line); color: var(--txt); font-size: 13px; padding: 5px 11px; border-radius: var(--radius-sm); cursor: pointer; transition: all .15s; }
 .hud-btn:hover { border-color: var(--blue); color: var(--blue); }
 .hud-btn.on { background: rgba(125, 211, 252, 0.18); border-color: var(--blue); color: var(--blue); }
 .hud-btn.warn { color: var(--gold); border-color: rgba(251, 191, 36, 0.4); }
@@ -171,8 +172,14 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
 #tooltip .tt-stats { color: var(--txt); font-size: 11px; margin-top: 4px; line-height: 1.7; }
 
 </style>
+<script src="/version-check.js" defer></script>
 </head>
 <body>
+<header class="site-topbar on-dark">
+  <a class="brand" href="../"><span class="arrow">←</span> Static Tools</a>
+  <h1 class="title">几何防线 GEO DEFENSE</h1>
+  <span class="cat">游戏</span>
+</header>
 <div id="app">
   <canvas id="cv"></canvas>
 
@@ -2689,7 +2696,9 @@ function $(id) { return document.getElementById(id); }
  * 保证任何窗口尺寸下战场完整可见、不被 UI 遮挡或拦截点击。 */
 function fitCanvas() {
   var zoneL = SIDE_W, zoneR = window.innerWidth - RSIDE_W;
-  var zoneT = HUD_H + INFOBAR_H + TOPBAR_H, zoneB = window.innerHeight;
+  var zoneT = HUD_H + INFOBAR_H + TOPBAR_H;
+  var siteTb = document.querySelector('.site-topbar');
+  var zoneB = window.innerHeight - (siteTb ? siteTb.offsetHeight : 0);
   var s = Math.min((zoneR - zoneL) / (WORLD_W - FIELD_X), (zoneB - zoneT) / (WORLD_H - FIELD_Y));
   var w = WORLD_W * s, h = WORLD_H * s;
   var minL = zoneL - FIELD_X * s, maxL = zoneR - WORLD_W * s;   // 左界：不遮战场 / 不超右缘

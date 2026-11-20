@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>迷宫大冒险</title>
+<link rel="stylesheet" href="/shared/theme.css" />
 <style>
   :root{
     --bg:#0a0e17; --panel:#121a2b; --panel2:#0f1726; --text:#e8eefc; --muted:#8b9ab5;
@@ -19,11 +20,11 @@
   html,body{height:100%}
   body{
     margin:0; background:var(--bg); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    font-family:var(--font);
     -webkit-font-smoothing:antialiased; touch-action:manipulation;
     display:flex; flex-direction:column; align-items:center;
   }
-  .app{width:100%; max-width:1000px; padding:14px 18px 22px; display:flex; flex-direction:column; gap:12px; min-height:100%}
+  .app{width:100%; max-width:1000px; padding:14px 18px 22px; display:flex; flex-direction:column; gap:12px; min-height:calc(100% - 56px)}
 
   /* ---------- 顶栏 ---------- */
   header{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
@@ -39,7 +40,7 @@
   .diffs{display:flex; gap:6px; flex-wrap:wrap; background:var(--panel); padding:4px; border-radius:12px; border:1px solid var(--line)}
   .diff{
     border:0; background:transparent; color:var(--muted); font:inherit; font-size:13px; font-weight:600;
-    padding:7px 13px; border-radius:9px; cursor:pointer; transition:.18s; white-space:nowrap;
+    padding:7px 13px; border-radius:var(--radius-sm); cursor:pointer; transition:.18s; white-space:nowrap;
   }
   .diff:hover{color:var(--text)}
   .diff.on{background:var(--accent); color:#fff; box-shadow:0 4px 14px rgba(91,140,255,.35)}
@@ -48,7 +49,7 @@
   .actions{display:flex; gap:8px}
   .btn{
     border:1px solid var(--line); background:var(--panel); color:var(--text); font:inherit; font-size:13px; font-weight:600;
-    padding:8px 13px; border-radius:10px; cursor:pointer; transition:.16s; display:inline-flex; align-items:center; gap:6px;
+    padding:8px 13px; border-radius:var(--radius-sm); cursor:pointer; transition:.16s; display:inline-flex; align-items:center; gap:6px;
   }
   .btn:hover{border-color:var(--accent); color:var(--accent)}
   .btn:active{transform:translateY(1px)}
@@ -115,16 +116,18 @@
     .btn{padding:7px 10px}
   }
 </style>
+<script src="/version-check.js" defer></script>
 </head>
 <body>
+<header class="site-topbar">
+  <a class="brand" href="../"><span class="arrow">←</span> Static Tools</a>
+  <h1 class="title">迷宫大冒险</h1>
+  <span class="cat">游戏</span>
+</header>
 <div class="app">
   <header>
     <div class="brand">
-      <div class="logo">◈</div>
-      <div>
-        <h1>迷宫大冒险</h1>
-        <p class="sub" id="subTitle">选择难度，操控角色找到出口</p>
-      </div>
+      <p class="sub" id="subTitle">选择难度，操控角色找到出口</p>
     </div>
     <div class="diffs" id="diffs"></div>
     <div class="actions">
@@ -394,7 +397,8 @@ function resize(){
     others += c.getBoundingClientRect().height + (parseFloat(s.marginTop) || 0) + (parseFloat(s.marginBottom) || 0);
     n++;
   }
-  const availH = Math.max(220, window.innerHeight - others - gap*(n+1)
+  const tbH = (document.querySelector('.site-topbar') || {}).offsetHeight || 0;
+  const availH = Math.max(220, window.innerHeight - tbH - others - gap*(n+1)
                   - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 4);
   const side = Math.round(Math.min(availW, availH, 900));
   cssW = cssH = side;
@@ -413,6 +417,8 @@ function resize(){
 function applyTheme(){
   document.documentElement.setAttribute('data-theme', theme);
   C = PALETTE[theme] || PALETTE.dark;
+  var tb = document.querySelector('.site-topbar');
+  if(tb) tb.classList.toggle('on-dark', theme === 'dark');
   try{ localStorage.setItem(LS+'.theme', theme); }catch(e){}
 }
 
