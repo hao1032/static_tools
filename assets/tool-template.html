@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<!--
+  新工具页标准模板（Pure CSS + 共享样式层）
+  用法：复制本文件到 新工具名/index.html，然后：
+    1. 改 <title> 与页面上的标题、描述
+    2. 在 .st-card 里放自己的控件与内容，优先用 st-* 共享 class
+    3. 需要特定样式时，在新工具目录里建 style.css 并在下面 <link> 之后引入
+    4. 最后在根目录 index.html 复制一张 .st-tool-cell 卡片（data-cat 填 tool/game/edu）
+  注意：公共资源必须用 ../assets/... 相对路径，保证本地与线上都能打开。
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工具名称 · Static Tools</title>
+  <link rel="stylesheet" href="../assets/pure-min.css" />
+  <link rel="stylesheet" href="../assets/grids-responsive-min.css" />
+  <link rel="stylesheet" href="../assets/site.css" />
+  <!-- <link rel="stylesheet" href="./style.css" /> 工具专用样式放最后 -->
+  <script src="/version-check.js" defer></script>
+</head>
+<body class="st-page">
+  <main class="st-wrap">
+    <header class="st-topbar">
+      <a class="st-back" href="../">← 返回工具箱</a>
+      <h1>工具名称</h1>
+      <span class="st-spacer"></span>
+      <span class="st-badge">纯静态 · 本地运行</span>
+    </header>
+
+    <!-- 两栏布局：Pure 栅格；窄屏自动变一列 -->
+    <div class="pure-g">
+      <div class="pure-u-1 pure-u-md-1-2 st-col">
+        <section class="st-card">
+          <h2>设置</h2>
+          <div class="st-field">
+            <label for="demo-select">选项</label>
+            <select id="demo-select" class="st-control">
+              <option>默认值</option>
+              <option>其他值</option>
+            </select>
+          </div>
+          <div class="st-actions">
+            <button class="st-btn st-btn-primary" type="button" id="demo-run">开始</button>
+            <button class="st-btn" type="button" id="demo-reset">重置</button>
+          </div>
+          <p class="st-hint" style="margin-top: 12px;">提示文字写在这里。</p>
+        </section>
+      </div>
+
+      <div class="pure-u-1 pure-u-md-1-2 st-col">
+        <section class="st-card">
+          <div class="st-card-head">
+            <h2>结果</h2>
+            <button class="st-btn st-btn-sm" type="button" id="demo-copy">复制</button>
+          </div>
+          <div id="demo-output" class="st-empty">结果会显示在这里</div>
+        </section>
+      </div>
+    </div>
+
+    <p class="st-footer">全部处理均在本地浏览器完成，数据不会上传。</p>
+  </main>
+
+  <script>
+    // 工具逻辑写在这里
+  </script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <link rel="stylesheet" href="../assets/pure-min.css" />
+  <link rel="stylesheet" href="../assets/grids-responsive-min.css" />
+  <link rel="stylesheet" href="../assets/site.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF 分页 · 适配 A4 打印</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --border: #e6e9ef;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-soft: #eff4ff;
+      --ok: #0f766e;
+      --err: #b91c1c;
+      --shadow: 0 1px 3px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.05);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.6; font-size: 14px;
+    }
+    .topbar {
+      max-width: 1280px; margin: 0 auto; padding: 28px 24px 4px;
+    }
+    .back { color: var(--muted); text-decoration: none; font-size: 13px; }
+    .back:hover { color: var(--accent); }
+    .topbar h1 { margin: 10px 0 4px; font-size: 24px; letter-spacing: .3px; }
+    .topbar p { margin: 0; color: var(--muted); font-size: 13.5px; }
+    .layout {
+      max-width: 1280px; margin: 0 auto; padding: 22px 24px 56px;
+      display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 20px; align-items: start;
+    }
+    .panel {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px; box-shadow: var(--shadow);
+    }
+    .drop {
+      border: 1.5px dashed #c9d4e8; border-radius: 12px; background: #fbfcff;
+      padding: 22px 16px; text-align: center; cursor: pointer; transition: .15s ease;
+    }
+    .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+    .drop .big { font-size: 26px; line-height: 1; color: var(--accent); font-weight: 700; }
+    .drop .t { margin-top: 8px; font-weight: 600; }
+    .drop .s { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+    #file { display: none; }
+    .fileinfo { margin-top: 10px; font-size: 12.5px; color: var(--muted); min-height: 20px; word-break: break-all; }
+    .field { margin-top: 18px; }
+    .field > label, .lbl { display: block; font-size: 12.5px; font-weight: 600; color: #374151; margin-bottom: 7px; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+    .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+    .seg button {
+      flex: 1 1 46%; border: 1px solid var(--border); background: #fff; color: var(--muted);
+      border-radius: 9px; padding: 8px 6px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    }
+    .seg button:hover { border-color: var(--accent); color: var(--accent); }
+    .seg button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    input[type=text], input[type=number], select {
+      width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--border);
+      border-radius: 9px; background: #fff; color: var(--text); font: inherit; font-size: 13px; outline: none;
+    }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.10); }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .presets button {
+      border: 1px solid var(--border); background: #f9fafc; color: var(--muted);
+      border-radius: 7px; padding: 4px 9px; font: inherit; font-size: 12px; cursor: pointer;
+    }
+    .presets button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .status {
+      margin-top: 18px; padding: 11px 12px; border-radius: 10px; background: #f4f8f5;
+      color: var(--ok); font-size: 12.5px; line-height: 1.55; min-height: 42px;
+    }
+    .status.err { background: #fdf1f1; color: var(--err); }
+    .status.idle { background: #f7f8fa; color: var(--muted); }
+    .actions { display: flex; gap: 10px; margin-top: 14px; }
+    .actions button {
+      flex: 1; height: 40px; border-radius: 10px; font: inherit; font-size: 13.5px;
+      font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--text);
+    }
+    .actions .primary { background: var(--accent); border-color: var(--accent); color: #fff; flex: 1.6; }
+    .actions button:disabled { opacity: .45; cursor: not-allowed; }
+    .actions .primary:hover:not(:disabled) { background: #1d4ed8; }
+    details { margin-top: 16px; font-size: 12.5px; color: var(--muted); }
+    details summary { cursor: pointer; font-weight: 600; color: #374151; }
+    details p { margin: 8px 0 0; }
+    details code { background: #f1f4f9; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+    .phead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .phead h2 { margin: 0; font-size: 14px; }
+    .phead span { font-size: 12px; color: var(--muted); }
+    .mapwrap { display: flex; justify-content: center; padding: 14px; background: #f7f9fc; border: 1px solid var(--border); border-radius: 12px; min-height: 130px; }
+    .map { position: relative; background: #fff; border: 1px dashed #aab6c8; box-shadow: 0 2px 10px rgba(16,24,40,.08); }
+    .tile {
+      position: absolute; border: 1.5px solid var(--accent); background: rgba(37,99,235,.07);
+      display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 2px;
+      font-size: 16px; color: var(--accent); font-weight: 700; text-align: center; line-height: 1.1;
+    }
+    .tile small { font-size: 10px; font-weight: 500; opacity: .8; white-space: nowrap; }
+    /* 可拖动的分割线：透明命中区 12px，中间 2px 实线，拖动时高亮 */
+    .cut-line { position: absolute; z-index: 6; touch-action: none; }
+    .cut-line.v { top: 0; bottom: 0; width: 12px; margin-left: -6px; cursor: col-resize; }
+    .cut-line.h { left: 0; right: 0; height: 12px; margin-top: -6px; cursor: row-resize; }
+    .cut-line .bar { position: absolute; background: #f59e0b; box-shadow: 0 0 0 1px rgba(255,255,255,.9); }
+    .cut-line.v .bar { left: 5px; right: 5px; top: 0; bottom: 0; }
+    .cut-line.h .bar { top: 5px; bottom: 5px; left: 0; right: 0; }
+    .cut-line .grip {
+      position: absolute; background: #f59e0b; color: #fff; font-size: 10px; font-weight: 700;
+      padding: 1px 5px; border-radius: 4px; white-space: nowrap; pointer-events: none; line-height: 1.4;
+    }
+    .cut-line.v .grip { left: 50%; top: 5px; transform: translateX(-50%); }
+    .cut-line.h .grip { top: 50%; left: 5px; transform: translateY(-50%); }
+    .cut-line:hover .bar, .cut-line.dragging .bar { background: #d97706; }
+    .cut-line:hover .grip, .cut-line.dragging .grip { background: #d97706; }
+    .cut-line:focus-visible { outline: 2px solid #d97706; outline-offset: 1px; }
+    .mapnote { font-size: 12px; color: var(--muted); margin: 9px 0 20px; }
+    .mapnote.short { margin-bottom: 10px; }
+    .pdfbox {
+      position: relative; height: 620px; border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; background: #525659;
+    }
+    .pdfbox iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .empty {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: #d7dce4; font-size: 13px; background: #525659; pointer-events: none; text-align: center; padding: 20px;
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .pdfbox { height: 500px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="back" href="../">← 返回工具首页</a>
+    <h1>PDF 分页 · 适配 A4 打印</h1>
+    <p>把 A3 / 横版 / 拼版试卷切成一张张 A4，或整页等比缩小。文字仍为矢量，可选中、可无损放大；全程在浏览器本地完成，文件不上传。</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <div class="drop" id="drop">
+        <div class="big">＋</div>
+        <div class="t">选择 PDF 文件，或拖到这里</div>
+        <div class="s">支持多页、带旋转的 PDF · 无需联网</div>
+      </div>
+      <input type="file" id="file" accept="application/pdf,.pdf" />
+      <div class="fileinfo" id="fileInfo"></div>
+
+      <div class="field">
+        <label>处理方式</label>
+        <div class="seg" id="modeSeg">
+          <button data-mode="columns" class="on">按栏切分</button>
+          <button data-mode="fit">整页缩放</button>
+          <button data-mode="split">对开两页</button>
+          <button data-mode="grid">网格切分</button>
+        </div>
+      </div>
+
+      <div class="field" id="cutsField">
+        <label>分栏切线（占页宽 %，避开文字的空白处）</label>
+        <input type="text" id="cuts" value="0,34,65,100" spellcheck="false" />
+        <div class="presets" id="presets">
+          <button data-cuts="0,34,65,100">三栏试卷 34/65</button>
+          <button data-cuts="0,33.33,66.67,100">三等分</button>
+          <button data-cuts="0,50,100">对开 50</button>
+          <button data-cuts="0,25,50,75,100">四等分</button>
+        </div>
+        <div class="hint">切线画在栏间空白上，题目不会被拦腰切断。也可以直接拖动右侧示意图上的橙色分割线微调，松手即重新生成。</div>
+      </div>
+
+      <div class="row2" id="gridField" style="display:none">
+        <div><label class="lbl">列数</label><input type="number" id="cols" value="2" min="1" max="12" /></div>
+        <div><label class="lbl">行数</label><input type="number" id="rows" value="1" min="1" max="12" /></div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label class="lbl">目标纸张</label>
+          <select id="paper">
+            <option value="A4">A4 竖向 210×297mm</option>
+            <option value="A4-landscape">A4 横向 297×210mm</option>
+            <option value="A5">A5 竖向 148×210mm</option>
+            <option value="B5">B5 竖向 176×250mm</option>
+            <option value="Letter">Letter 竖向</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">缩放</label>
+          <select id="scale">
+            <option value="fit">适应纸张（默认）</option>
+            <option value="1:1">1:1 保持原尺寸</option>
+            <option value="fill">铺满纸张（会裁边）</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div><label class="lbl">页边距 mm</label><input type="number" id="marginMm" value="0" min="0" max="20" step="1" /></div>
+        <div><label class="lbl">切块重叠 mm</label><input type="number" id="overlapMm" value="0" min="0" max="12" step="1" /></div>
+      </div>
+
+      <div class="field">
+        <label>源页范围（留空＝全部）</label>
+        <input type="text" id="pages" placeholder="如 1-3,5" spellcheck="false" />
+      </div>
+
+      <div class="status idle" id="status">先选一个 PDF 文件，结果会直接显示在右侧。</div>
+      <div class="actions">
+        <button class="primary" id="download" disabled>下载 A4 PDF</button>
+        <button id="open" disabled>新窗口预览</button>
+      </div>
+
+      <details>
+        <summary>该选哪种方式？</summary>
+        <p><b>按栏切分</b>：A3 横向三栏试卷的推荐做法，每栏变一张 A4 竖版，字号 1:1 不变，左右留白略多，最适合打印做题。</p>
+        <p><b>整页缩放</b>：整页缩到一张 A4 横向，三栏版面完整，但字缩小到约 70%。</p>
+        <p><b>对开两页</b>：A3 横向从中间切成 2 张 A4 竖版；若原页是三栏，中间那栏会被切断，建议改用按栏切分。</p>
+        <p>切线除了手动输入，也能在右侧示意图上拖动橙色分割线：竖线调分栏、横线调网格行（选中「网格切分」且行数 &gt; 1 时出现），拖动时蓝框实时跟着动，松手后重新生成。键盘可用方向键以 0.5% 步进微调。</p>
+        <p>切割用矢量裁剪，不会转图片；源文件里的文字在结果中仍可复制、搜索。</p>
+        <p>也可用同目录的命令行版批量处理：<code>node cli.cjs 输入.pdf -o 输出.pdf --cuts 0,34,65,100</code></p>
+      </details>
+    </section>
+
+    <section class="panel">
+      <div class="phead"><h2>切分示意</h2><span id="mapInfo">等待文件</span></div>
+      <div class="mapwrap"><div class="map" id="map"></div></div>
+      <div class="mapnote short" id="mapNote">虚线框是一页原件，蓝框是每张 A4 取到的区域；拖动橙色分割线可微调切线（也可用方向键）。</div>
+
+      <div class="phead" style="margin-top:8px"><h2>输出预览</h2><span id="pdfInfo">—</span></div>
+      <div class="pdfbox">
+        <iframe id="frame" title="输出 PDF 预览"></iframe>
+        <div class="empty" id="empty">上传 PDF 后，这里显示转换结果<br />（预览空白时点「新窗口预览」）</div>
+      </div>
+      <div class="mapnote">预览使用浏览器自带的 PDF 查看器；若这里一直空白，点左侧「新窗口预览」。</div>
+    </section>
+  </main>
+
+  <script src="pdf-lib.min.js"></script>
+  <script src="a4-core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

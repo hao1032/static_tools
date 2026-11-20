@@ -90,9 +90,9 @@
   <header class="site-topbar">
     <a class="brand" href="/">Static Tools</a>
     <nav class="tabs" role="tablist" aria-label="分类切换">
-      <button class="tab active" data-cat="tool" role="tab" aria-selected="true">工具 <span class="cnt">6</span></button>
-      <button class="tab" data-cat="game" role="tab" aria-selected="false">游戏 <span class="cnt">7</span></button>
-      <button class="tab" data-cat="edu" role="tab" aria-selected="false">教育 <span class="cnt">7</span></button>
+      <button class="tab active" data-cat="tool" role="tab" aria-selected="true">工具 <span class="cnt">7</span></button>
+      <button class="tab" data-cat="game" role="tab" aria-selected="false">游戏 <span class="cnt">8</span></button>
+      <button class="tab" data-cat="edu" role="tab" aria-selected="false">教育 <span class="cnt">6</span></button>
     </nav>
   </header>
 
@@ -137,6 +137,12 @@
         <div class="ico">假</div>
         <h3>中国节假日</h3>
         <p>月历展示法定放假与调休补班情况，默认显示当月，可切换查看任意月份。数据来自 timor.tech 免费节假日 API。</p>
+      </a>
+
+      <a class="tool" data-cat="tool" href="./pdf-a4/">
+        <div class="ico">页</div>
+        <h3>PDF 分页 · 适配 A4 打印</h3>
+        <p>把 A3 横向 / 三栏试卷按栏切成一张张 A4（保持原字号），或整页等比缩到 A4；矢量裁剪、文字可选中，全程本地处理不上传。</p>
       </a>
 
       <!-- 游戏 -->
@@ -219,16 +225,16 @@
         <p>七年级数轴动点题：两条动线段 PQ、MN 的运动过程实时演示，重合部分高亮、CQ/PM 尺寸线、重合长度 L(t) 曲线，配三问分段讨论详解与关键时刻一键跳转。</p>
       </a>
 
-      <a class="tool" data-cat="edu" href="./number-line-making/">
-        <div class="ico">源</div>
-        <h3>数轴动线段 · 制作过程</h3>
-        <p>溯源：上面那页动画是怎么做出来的——原始提示词、重建的题目图片，以及用到的工具（Node 验证 / Canvas 动画 / Chromium 自测 / Git 部署）与关键步骤。</p>
-      </a>
-
       <a class="tool" data-cat="edu" href="./five-digit-count/">
         <div class="ico">计</div>
         <h3>五位数计数 · 动画讲解</h3>
         <p>「不能被 5 整除、数字不重复的五位数有多少个」分步填格动画：可切换个位 / 万位 / 中间三种填位顺序对比，数字池实时划掉禁用/已用数字，乘法原理逐格生成 8×8×8×7×6=21504，附排除法对照、易错点与 5 道自测题。</p>
+      </a>
+
+      <a class="tool" data-cat="edu" href="./absolute-chain/">
+        <div class="ico">绝</div>
+        <h3>绝对值连等式 · 动画讲解</h3>
+        <p>2027 个绝对值全相等、求 x₁−2x₂−3x₃：默认先用「只有 3 个数」的小题目把每步算成具体数字（七年级友好），看懂后再一键切到原题严谨版；含凑 0 挑战、三句话复盘、奇偶实验台、分数验算与两组自测题。</p>
       </a>
 
       <!-- 新增工具：复制本卡片，加上 data-cat="tool|game|edu" 并放入对应文件夹的 index.html 即可 -->

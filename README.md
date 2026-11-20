@@ -4,13 +4,18 @@
 
 ```
 .
-├── index.html              # 根目录导航页（首页）
+├── index.html              # 根目录导航页（首页，共享设计系统 + 统一顶栏）
 ├── README.md               # 本说明
 ├── shared/
 │   └── theme.css           # 全站共享设计系统（设计 token + 统一顶栏 + 基础组件），见下文「全站设计系统」
 ├── version-check.js        # 更新提示脚本（部署缓存对策，见「部署与缓存」）
 ├── _headers                # Cloudflare Pages 缓存头（no-cache）
 ├── restart-server.bat      # 一键重启本地预览服务器（Windows）
+├── assets/                 # 并行模板用的共享资源（本地内置，无 CDN；pdf-a4 / absolute-chain 等新工具使用，待统一到 shared/theme.css）
+│   ├── pure-min.css        # Pure CSS 3.1.0（Yahoo，BSD）
+│   ├── grids-responsive-min.css  # Pure 响应式栅格
+│   ├── site.css            # 模板设计系统：st-* 类名 + 设计变量
+│   └── tool-template.html  # 新工具页标准模板（复制即用）
 ├── icons-generator/        # 工具一：ICO 文字图标生成器
 │   ├── index.html
 │   ├── style.css
@@ -33,9 +38,6 @@
 │   └── app.js
 ├── number-line-animation/  # 工具八：数轴动线段 · 动画讲解
 │   └── index.html          # 单文件，canvas 实时绘制数轴与 L(t) 曲线
-└── number-line-making/     # 工具九：数轴动线段 · 制作过程（溯源）
-    ├── index.html          # 单文件，记录提示词 / 题目图片 / 工具 / 步骤
-    └── problem.svg         # 原题示意图（按已验证模型重建）
 └── geometry-td/            # 工具十：几何塔防小游戏
     └── index.html          # 单文件，Canvas 霓虹风塔防，4 塔型 20 波
 └── neon-bastion-op/        # 工具十一：霓虹堡垒 · 超载协议（塔防重制版）
@@ -49,6 +51,14 @@
     └── index.html          # 单文件：12 地图 · 30 武器 · 15 怪物 · 10 BOSS · Web Audio 音效（可开关）
 └── five-digit-count/       # 教育：五位数计数 · 动画讲解
     └── index.html          # 单文件：三种填位顺序对比 / 数字池 / 乘法原理 / 排除法对照 / 自测题
+├── absolute-chain/         # 教育：绝对值连等式 · 动画讲解
+│   └── index.html          # 单文件：3 个数入门版 + 2027 完整版双模式各 8 步动画 / 凑 0 挑战 / 奇偶实验台 / 分数验算 / 两组自测题
+└── pdf-a4/                 # 工具：PDF 分页 · 适配 A4 打印
+    ├── index.html          # 上传 / 模式 / 参数 / 切分示意 / PDF 预览
+    ├── app.js              # 交互与预览（浏览器本地处理）
+    ├── a4-core.js          # 分页核心（浏览器 + Node 共用）
+    ├── pdf-lib.min.js      # 本地内置 pdf-lib 1.17.1（无 CDN）
+    └── cli.cjs             # Node 命令行版，可批量转换
 ```
 
 > 新增工具：在根目录建一个带 `index.html` 的文件夹（如 `qr-generator/`），然后在根目录 `index.html` 复制一张导航卡片链接过去即可。**页面样式请按下一节「全站设计系统」接入 `shared/theme.css` 与统一顶栏。**
@@ -105,6 +115,41 @@
 
 调全站观感（换主色、字号、圆角）只改 `shared/theme.css` 一处，全部页面生效；页面局部覆盖优先级始终更高。
 
+## 统一设计系统（新增工具必读）
+
+全站样式基于 **Pure CSS 3.1.0**（本地内置在 `assets/`，不依赖 CDN），共享层是 `assets/site.css`。
+所有共享 class 都以 `st-` 开头，不会和工具自己的样式重名；工具特有样式仍写在各自目录里。
+
+**新增一个工具的标准做法（给 AI 或人手都适用）：**
+
+1. 复制 `assets/tool-template.html` 到 `新工具名/index.html`，改标题、文案和逻辑。
+   模板已引入 Pure 栅格、共享样式、`version-check.js`，并带「← 返回工具箱」。
+2. 公共样式只需这三行（**必须用相对路径 `../assets/...`，本地和线上都能打开**）：
+
+   ```html
+   <link rel="stylesheet" href="../assets/pure-min.css" />
+   <link rel="stylesheet" href="../assets/grids-responsive-min.css" />
+   <link rel="stylesheet" href="../assets/site.css" />
+   ```
+
+3. 有特殊样式时，在工具目录建 `style.css`，并在上面三行**之后**引入。
+4. 在根目录 `index.html` 复制一张 `.st-tool-cell` 卡片，改 `data-cat`（`tool` / `game` / `edu`）、图标、标题、描述与链接；分类数量会自动统计。
+
+**常用共享类名速查（优先复用，少写新 CSS）：**
+
+| 用途 | 类名 |
+| --- | --- |
+| 页面外壳 | `st-page`、`st-wrap`、`st-topbar`、`st-back`、`st-footer` |
+| 两栏 / 卡片 | `pure-g` + `pure-u-1 pure-u-md-1-2`、`st-card`、`st-cols`、`st-stack` |
+| 按钮 | `st-btn`、`st-btn-primary`、`st-btn-sm`、`st-actions`、`st-segment` |
+| 表单 | `st-field`、`st-control` / `st-input` / `st-select` / `st-textarea`、`st-check`、`st-hint` |
+| 状态 | `st-badge`、`st-note`、`st-note-warn`、`st-note-danger`、`st-empty` |
+| 首页卡片 | `st-tools`、`st-tool-cell`、`st-tool`、`st-tool-icon`、`st-tool-title`、`st-tool-desc` |
+| 工具函数 | `st-muted`、`st-mono`、`st-hidden` |
+
+颜色、圆角、阴影统一用 `assets/site.css` 里的 CSS 变量（`--st-*`），需要换主题只改这一处。
+老工具页保留原有内联样式，此层只作为基座，不影响既有视觉。
+
 ## 本地开发预览
 
 本站点为纯静态页面，无需构建。但由于 `clsf-viewer` 等工具使用了 **ES 模块**（`import` / `importmap`），浏览器安全策略禁止在 `file://` 协议下加载模块，因此必须通过 **HTTP 本地服务器** 预览，不能直接双击 `index.html` 打开。
@@ -144,11 +189,12 @@ npx http-server -p 8765
 | 照片排版 · 拼版打印 | <http://localhost:8765/photo-layout/> |
 | 英文单词发音练习 | <http://localhost:8765/word-pronunciation/> |
 | 数轴动线段 · 动画讲解 | <http://localhost:8765/number-line-animation/> |
-| 数轴动线段 · 制作过程 | <http://localhost:8765/number-line-making/> |
 | 几何塔防 | <http://localhost:8765/geometry-td/> |
 | 霓虹堡垒 · 超载协议 | <http://localhost:8765/neon-bastion-op/> |
 | 几何防线 GEO DEFENSE | <http://localhost:8765/geo-defense/> |
 | 五位数计数 · 动画讲解 | <http://localhost:8765/five-digit-count/> |
+| 绝对值连等式 · 动画讲解 | <http://localhost:8765/absolute-chain/> |
+| PDF 分页 · 适配 A4 打印 | <http://localhost:8765/pdf-a4/> |
 
 > 启动服务器时如果提示端口被占用，可用 `--bind 0.0.0.0` 或换一个端口（如 `8080`），并相应更新访问地址。
 >
@@ -349,10 +395,30 @@ window.WORD_BANK = {
 
 > 口型按音标推算，不是波形对齐；用于示意发音部位，不等于录音本身。
 
+## PDF 分页 · 适配 A4 打印（`pdf-a4/`）
+
+把 A3 横向 / 拼版 PDF 变成能直接在 A4 纸上打印的版本，全部在本地完成，文件不上传。
+
+- **按栏切分**（推荐给三栏试卷）：按栏间空白切开，每栏一张 A4 竖版，字号 1:1 不变。切线可在右侧示意图上**直接拖动橙色分割线**微调（方向键 0.5% 步进），也可用百分比输入；内置「三栏试卷 34/65」「三等分」「对开 50」「四等分」预设。
+- **整页缩放**：整页等比缩到一张 A4 横向，版面完整，字约为原来的 70%。
+- **对开 / 网格**：A3 横向对开成 2 张 A4 竖版，或自定义 N 列 × M 行。
+- 支持页边距、切块重叠、源页范围、A4/A5/B5/Letter 与横竖方向；右侧切分示意可拖动分割线（竖线调分栏、网格模式的横线调行），蓝框随拖动实时变化，松手后重新生成；旁边是转换后的 PDF 预览。
+- 切割用矢量裁剪（`clip` + 变换矩阵），源页以 Form XObject 嵌入，文字仍可选中、复制、无损放大，不会变成位图。
+
+也可直接用命令行版批量处理（与网页版共用 `a4-core.js`）：
+
+```bash
+node pdf-a4/cli.cjs 试卷.pdf -o 试卷_A4.pdf --mode columns --cuts 0,34,65,100
+node pdf-a4/cli.cjs 试卷.pdf -o 试卷_A4横.pdf --mode fit --paper A4-landscape
+```
+
+`--pages 1-3,5`、`--rows 2`、`--margin 14`、`--scale 1:1`、`--info` 等参数见 `cli.cjs` 文件头。实现上手工补偿了 pdf-lib 忽略 `/Rotate` 的问题，并在 `clip` 后补 `endPath`（否则 macOS 预览器不应用裁剪）。
+
 ## 技术说明
 
-- 纯 HTML / CSS / 原生 JavaScript，无框架、无第三方依赖。
-- **全站共享设计系统**：`shared/theme.css` 定义唯一的设计 token、字体栈、圆角阶梯与统一顶栏，所有页面共用（详见「全站设计系统」）。改全局风格只需改这一个文件。
+- 纯 HTML / CSS / 原生 JavaScript，无框架、无 CDN；`pdf-a4` 内置一份本地 `pdf-lib.min.js`（513 KB，仅该工具使用）。
+- **全站共享设计系统**：`shared/theme.css` 定义唯一的设计 token、字体栈、圆角阶梯与统一顶栏，绝大多数页面共用（详见「全站设计系统」）。改全局风格只需改这一个文件。
+- **模板系统待统一**：`pdf-a4` / `absolute-chain` 两个较新工具基于 `assets/site.css`（st-* 类名 + Pure CSS）模板构建，尚未迁移到 `shared/theme.css` 顶栏，为后续待办。
 - **全站唯一的网络请求**：`word-pronunciation` 工具在选「真人发音」时会向有道词典发音接口请求音频，只发送要朗读的单词/例句文本；其余工具零请求。
 - ICO 采用标准 **PNG-in-ICO** 封装（ICONDIR + ICONDIRENTRY + PNG 数据，小端字节序），Windows 与浏览器均兼容。
 - 坐标 / 字号 / 圆角基于 256×256 虚拟画布定义，导出时按比例缩放到各目标尺寸。
