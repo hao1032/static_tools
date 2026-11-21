@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="适合初一的数轴动线段慢讲动画：一次只看一件事，逐步理解往返、距离相等和重合减速。">
+  <title>数轴动线段 · 初一慢讲版</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <link rel="stylesheet" href="./style.css">
+  <script src="../version-check.js" defer></script>
+  <script src="./model.js" defer></script>
+  <script src="./lessons.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <header class="site-topbar">
+    <a class="brand" href="../#edu"><span class="arrow">←</span> Static Tools</a>
+    <h1 class="title">数轴动线段 · 初一慢讲版</h1>
+    <span class="cat">七年级数学</span>
+  </header>
+
+  <main class="page">
+    <div class="intro">
+      <div><span class="eyebrow">跟着看 · 停下来想 · 再算一小步</span><h2>先看懂它怎么动。</h2><p>把长题目拆开，一次只解决一件事。看懂了，再点下一步。</p></div>
+      <button class="quiet" id="problem-open" aria-expanded="false" aria-controls="problem">查看完整题目 ↗</button>
+    </div>
+
+    <section id="problem" class="problem" hidden>
+      <h2>题目</h2>
+      <p>数轴上 A、B、C 分别表示 −20、−8、16。初始时 Q 与 A 重合，N 与 B 重合；P 在 Q 左边，M 在 N 左边，PQ＝2，MN＝4。</p>
+      <p>MN 以每秒 1 个单位向右运动，PQ 同时以每秒 3 个单位向右运动。Q 到 C 时，PQ 立即以原速返回；Q 回到 A 时，两条线段同时停止。运动中两条线段长度保持不变。设运动时间为 t 秒。</p>
+      <figure class="problem-diagram">
+        <figcaption>题目配图 · 出发时的位置（t＝0）</figcaption>
+        <div class="problem-axis-scroll" tabindex="0" role="region" aria-label="题目初始数轴，小屏幕可左右滑动查看">
+          <svg class="problem-axis" viewBox="0 0 960 164" role="img" aria-labelledby="problem-axis-title problem-axis-desc">
+            <title id="problem-axis-title">题目中的初始数轴</title>
+            <desc id="problem-axis-desc">从左到右依次为 P、A（与 Q 重合）、M、B（与 N 重合）、原点 0、C。A 表示负20，B 表示负8，C 表示16。P 在 Q 左边2个单位，M 在 N 左边4个单位，各点按数值比例绘制。</desc>
+            <defs><marker id="problem-axis-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#52636b"/></marker></defs>
+            <path d="M36 90H920" fill="none" stroke="#52636b" stroke-width="2" marker-end="url(#problem-axis-arrow)"/>
+            <path d="M106 90H142" fill="none" stroke="#e16b37" stroke-width="6"/>
+            <path d="M286 90H358" fill="none" stroke="#397ac9" stroke-width="6"/>
+            <path d="M106 81V94M142 81V94M286 81V94M358 81V94M502 81V94M790 81V94" fill="none" stroke="#52636b" stroke-width="2"/>
+            <path d="M142 44V74" fill="none" stroke="#a9b6af" stroke-width="1.5" stroke-dasharray="3 4"/>
+            <g font-size="27" text-anchor="middle" fill="#233c47">
+              <text x="106" y="67" fill="#c26135">P</text>
+              <text x="142" y="34">A(Q)</text>
+              <text x="286" y="67" fill="#397ac9">M</text>
+              <text x="358" y="67">B(N)</text>
+              <text x="790" y="67">C</text>
+              <text x="142" y="130">−20</text>
+              <text x="358" y="130">−8</text>
+              <text x="502" y="130">0</text>
+              <text x="790" y="130">16</text>
+            </g>
+          </svg>
+        </div>
+        <p class="problem-axis-note">Q 与 A 重合，N 与 B 重合。图中各点都在同一条数轴上；小屏幕可左右滑动查看。</p>
+      </figure>
+      <ol><li>t＝20 时，M、Q 分别表示什么数？</li><li>整个过程中，CQ＝PM 时，M 表示什么数？</li><li>增加规则：两条线段有重合部分时，速度均为原来的一半；重合消失后恢复原速。重合长度为 1.5 时，t 是多少？</li></ol>
+    </section>
+
+    <nav class="chapters" aria-label="讲解章节" id="chapters"></nav>
+
+    <div class="lesson-layout">
+      <section class="theater" aria-label="数轴动画">
+        <div class="stage-header"><span id="scene-tag" class="scene-tag">先看懂题</span><div class="clock"><span class="clock-label">运动时间</span><strong id="time-value">0</strong><span>秒</span></div></div>
+        <div class="legend"><span><i class="dot pq"></i>短尺 PQ · 长 2</span><span><i class="dot mn"></i>长尺 MN · 长 4</span><span id="legend-overlap" hidden><i class="dot overlap"></i>重合部分</span></div>
+        <svg id="stage" viewBox="0 0 960 330" role="img" aria-label="两条线段在数轴上的位置"></svg>
+        <p class="stage-note" id="stage-note">上下错开画，是为了看清；两条线段其实都在同一条数轴上。</p>
+        <div class="readouts" id="readouts">
+          <div class="readout orange"><div class="point-values"><span>P</span><strong id="p-value">−22</strong><span>Q</span><strong id="q-value">−20</strong></div><span class="speed" id="pq-speed"></span><span class="speed-mode" id="pq-mode"></span></div>
+          <div class="readout blue"><div class="point-values"><span>M</span><strong id="m-value">−12</strong><span>N</span><strong id="n-value">−8</strong></div><span class="speed" id="mn-speed"></span><span class="speed-mode" id="mn-mode"></span></div>
+        </div>
+        <p class="number-note">播放时数值取近似值，暂停可看准确数值。</p>
+
+        <section class="zoom-panel" id="zoom-panel" hidden aria-label="重合部分放大图">
+          <div class="zoom-heading"><strong>放大看：究竟哪一段重合？</strong><span id="overlap-value">重合长度 <strong id="overlap-number">0</strong></span></div>
+          <svg id="zoom" viewBox="0 0 820 205" role="img" aria-label="两条线段及重合部分的放大图"></svg>
+          <p id="zoom-note"></p>
+        </section>
+
+        <section class="distance-panel" id="distance-panel" hidden aria-label="比较两段距离">
+          <div class="distance-row"><b>CQ</b><div class="distance-track"><span id="cq-bar"></span></div><strong id="cq-value"></strong></div>
+          <div class="distance-row"><b>PM</b><div class="distance-track"><span id="pm-bar"></span></div><strong id="pm-value"></strong></div>
+          <p id="distance-note"></p>
+        </section>
+
+        <div class="scrubber"><label for="time-slider">拖动，自己观察 <span id="time-range">0—24 秒</span></label><input id="time-slider" type="range" min="0" max="24" step="0.01" value="0"><div class="timeline-labels" id="timeline-labels"></div></div>
+        <div class="animation-controls"><button class="play-btn" id="play">▶ 播放这一小步</button><button class="quiet" id="replay" aria-label="从头重播当前步骤">↺ 重看</button><label class="speed-label">播放速度 <select id="speed" aria-label="动画播放速度"><option value="0.5">慢一点</option><option value="1" selected>正常</option><option value="2">快一点</option></select></label></div>
+        <p class="scrub-hint" id="scrub-hint">每一小步播完都会停下来，等你看懂。</p>
+      </section>
+
+      <section class="explanation" aria-label="当前步骤讲解">
+        <div class="step-top"><span id="step-count"></span><button class="quiet" id="speak" aria-pressed="false">♬ 朗读本步</button></div>
+        <div id="lesson-copy" aria-live="polite"></div>
+        <div id="mini-check" class="mini-check" hidden></div>
+        <div class="step-nav"><button class="quiet" id="prev">← 上一步</button><button class="next-btn" id="next">看懂了，下一步 →</button></div>
+        <div class="step-dots" id="step-dots" aria-label="本章步骤"></div>
+      </section>
+    </div>
+
+    <section id="milestones" class="milestones" hidden><div class="section-top"><h2>四次重合 1.5，点一下看现场</h2><span>第（3）问 · 实际运动时间</span></div><div id="milestone-buttons"></div><p>中间整条短尺都在长尺里面时，重合长度是 2。经过这一段，才会再次缩到 1.5。</p></section>
+    <details class="recap"><summary>学完再打开：三问答案与解题笔记</summary><div id="recap-content"></div></details>
+    <footer>不着急记公式。先说清“谁在谁的哪边”，再用 路程＝速度 × 时间。</footer>
+  </main>
+</body>
+</html>
