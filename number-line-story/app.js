@@ -7,9 +7,9 @@
     const rounded = Math.round(value * 1000) / 1000;
     return String(Object.is(rounded, -0) ? 0 : rounded).replace('-', '−');
   };
-  const liveFmt = value => {
-    const rounded = Math.round(value * 10) / 10;
-    return (Object.is(rounded, -0) ? 0 : rounded).toFixed(1).replace('-', '−');
+  const displayNumber = value => {
+    const rounded = Math.sign(value) * Math.round((Math.abs(value) + Number.EPSILON) * 100) / 100;
+    return (Object.is(rounded, -0) ? 0 : rounded).toFixed(2).replace('-', '−');
   };
   const setText = (id, value) => {
     const node = $(id);
@@ -20,10 +20,91 @@
   let frame = null, playing = false, playback = null, lastFrame = null, speaking = false;
   let lastNumberFrame = -Infinity;
   let numberState = null;
+  let fullState = 'off', reading = null, fullCompleted = false;
   let speechToken = 0, checkAnswer = null;
   const chapter = () => chapters[chapterIndex];
   const step = () => chapter().steps[stepIndex];
   const isSlow = () => Boolean(chapter().slowed);
+  const totalSteps = chapters.reduce((total, item) => total + item.steps.length, 0);
+
+  function updateFullControls() {
+    $('play-all').textContent = fullState === 'playing' ? 'Ⅱ 暂停完整动画' : fullState === 'paused' ? '▶ 继续完整动画' : fullCompleted ? '↺ 重播完整动画' : '▶ 播放完整动画';
+    $('play-all').setAttribute('aria-pressed', String(fullState === 'playing'));
+  }
+
+  function fullHint() {
+    const index = chapters.slice(0, chapterIndex).reduce((total, item) => total + item.steps.length, 0) + stepIndex + 1;
+    return `完整播放 · 第 ${index} / ${totalSteps} 步${reading ? ' · 留一点时间看讲解，稍后自动继续。' : ' · 播完自动进入下一步。'}`;
+  }
+
+  function cancelFullPlayback() {
+    fullState = 'off';
+    fullCompleted = false;
+    reading = null;
+    stopPlayback();
+    updateFullControls();
+  }
+
+  function pauseFullPlayback() {
+    fullState = 'paused';
+    stopPlayback();
+    updateFullControls();
+    $('scrub-hint').textContent = '完整动画已暂停，点击“继续完整动画”从这里接着看。';
+  }
+
+  function readingDuration() {
+    const length = $('lesson-copy').textContent.replace(/\s/g, '').length;
+    return Math.max(5000, Math.min(18000, length * 100));
+  }
+
+  function waitForNextStep(duration) {
+    reading = { elapsed: 0, duration };
+    lastFrame = null;
+    $('scrub-hint').textContent = fullHint();
+    frame = requestAnimationFrame(tick);
+  }
+
+  function playFullStep() {
+    if (reading) {
+      lastFrame = null;
+      $('scrub-hint').textContent = fullHint();
+      frame = requestAnimationFrame(tick);
+    } else if (step().from === step().to) {
+      updateScene(step().to);
+      waitForNextStep(readingDuration());
+    } else {
+      playStep();
+      $('scrub-hint').textContent = fullHint();
+    }
+  }
+
+  function toggleFullPlayback() {
+    if (fullState === 'playing') { pauseFullPlayback(); return; }
+    const restart = fullCompleted;
+    stopPlayback();
+    if (restart) loadStep(0, 0, false);
+    fullCompleted = false;
+    fullState = 'playing';
+    stopSpeech();
+    updateFullControls();
+    playFullStep();
+  }
+
+  function advanceFullPlayback() {
+    reading = null;
+    if (stepIndex + 1 < chapter().steps.length) loadStep(chapterIndex, stepIndex + 1, false, true);
+    else if (chapterIndex + 1 < chapters.length) loadStep(chapterIndex + 1, 0, false, true);
+    else {
+      fullState = 'off';
+      fullCompleted = true;
+      frame = null;
+      lastFrame = null;
+      updateFullControls();
+      $('scrub-hint').textContent = '完整动画已播放完。可以重播，也可以用 ← → 回看每一步。';
+      return;
+    }
+    playFullStep();
+  }
 
   function svgText(x, y, text, color = '#718089', size = 17, weight = 400, anchor = 'middle') {
     return `<text x="${x}" y="${y}" fill="${color}" font-size="${size}" font-weight="${weight}" text-anchor="${anchor}">${text}</text>`;
@@ -57,7 +138,7 @@
         let result = `<path d="M${x(a)} ${ya}V${y}M${x(b)} ${yb}V${y}" fill="none" stroke="${color}" stroke-width="1.2" stroke-dasharray="3 4" opacity=".5"/>`;
         result += `<path d="M${left} ${y - 5}v10m0 -5H${right}m0 -5v10" fill="none" stroke="${color}" stroke-width="2"/>`;
         result += `<rect x="${middle - 75}" y="${y - 24}" width="150" height="21" fill="white" opacity=".94" rx="4"/>`;
-        return result + svgText(middle - 15, y - 8, label, color, 15, 600, 'end') + svgText(middle - 7, y - 8, (playing ? liveFmt : fmt)(value), color, 15, 600, 'start');
+        return result + svgText(middle - 15, y - 8, label, color, 15, 600, 'end') + svgText(middle - 7, y - 8, displayNumber(value), color, 15, 600, 'start');
       };
       svg += dimension(state.q, 16, 25, 'CQ', numberState.cq, '#8e79bc', 105, 232);
       svg += dimension(state.p, state.m, 132, 'PM', numberState.pm, '#b38b4a', 105, 168);
@@ -101,9 +182,9 @@
     if (state.overlap > 0.00001) {
       svg += `<line x1="${x(state.left)}" y1="155" x2="${x(state.right)}" y2="155" stroke="${ol}" stroke-width="7" stroke-linecap="round"/><path d="M${x(state.left)} 145v20M${x(state.right)} 145v20" stroke="${ol}" stroke-width="2"/>`;
       const middle = (x(state.left) + x(state.right)) / 2;
-      svg += svgText(middle - 12, 190, '重合', ol, 18, 650, 'end') + svgText(middle - 4, 190, (playing ? liveFmt : fmt)(numberState.overlap), ol, 18, 650, 'start');
+      svg += svgText(middle - 12, 190, '重合', ol, 18, 650, 'end') + svgText(middle - 4, 190, displayNumber(numberState.overlap), ol, 18, 650, 'start');
     } else {
-      svg += svgText(410, 170, '重合长度 0', '#8b9b91', 16, 500);
+      svg += svgText(410, 170, '重合长度 0.00', '#8b9b91', 16, 500);
     }
     svg += '</g>';
     // A two-unit scale makes the visual lengths independently checkable.
@@ -126,23 +207,22 @@
     $('time-slider').value = state.t;
     drawStage(state, refreshNumbers);
     if (refreshNumbers) {
-      const display = playing ? liveFmt : fmt;
-      setText('time-value', display(state.t));
-      for (const point of ['p', 'q', 'm', 'n']) setText(`${point}-value`, display(state[point]));
+      setText('time-value', displayNumber(state.t));
+      for (const point of ['p', 'q', 'm', 'n']) setText(`${point}-value`, displayNumber(state[point]));
       if (step().zoom) {
-        setText('overlap-number', display(state.overlap));
+        setText('overlap-number', displayNumber(state.overlap));
         $('zoom').setAttribute('aria-label', `重合部分长${fmt(state.overlap)}，短尺长2，长尺长4`);
       }
       if (step().distances) {
-        setText('cq-value', display(state.cq));
-        setText('pm-value', display(state.pm));
+        setText('cq-value', displayNumber(state.cq));
+        setText('pm-value', displayNumber(state.pm));
         const equal = Math.abs(state.cq - state.pm) < 0.0001;
         setText('distance-note', equal ? '一样长了！这就是 CQ＝PM。' : state.cq > state.pm ? '现在 CQ 比 PM 长。' : '现在 PM 比 CQ 长。');
       }
     }
     const direction = state.vq > 0 ? '向右' : state.vq < 0 ? '向左' : '停止';
-    setText('pq-speed', `${direction} · 每秒 ${fmt(Math.abs(state.vq))} 格`);
-    setText('mn-speed', `${state.vm === 0 ? '停止' : '向右'} · 每秒 ${fmt(state.vm)} 格`);
+    setText('pq-speed', `${direction} · 每秒 ${displayNumber(Math.abs(state.vq))} 格`);
+    setText('mn-speed', `${state.vm === 0 ? '停止' : '向右'} · 每秒 ${displayNumber(state.vm)} 格`);
     const speedMode = state.vm === 0 ? '运动结束' : state.vm === 0.5 ? '重合中 · 速度减半' : '原速运动';
     setText('pq-mode', speedMode);
     setText('mn-mode', speedMode);
@@ -165,6 +245,14 @@
   }
 
   function tick(stamp) {
+    if (fullState === 'playing' && reading) {
+      if (lastFrame === null) lastFrame = stamp;
+      reading.elapsed += Math.min(100, stamp - lastFrame) * Number($('speed').value);
+      lastFrame = stamp;
+      if (reading.elapsed >= reading.duration) advanceFullPlayback();
+      else frame = requestAnimationFrame(tick);
+      return;
+    }
     if (!playing) return;
     if (lastFrame === null) lastFrame = stamp;
     const dt = Math.min(100, stamp - lastFrame);
@@ -177,7 +265,8 @@
     updateScene(playback.from + (playback.to - playback.from) * ratio, refreshNumbers);
     if (ratio === 1) {
       stopPlayback();
-      $('scrub-hint').textContent = '这一小步看完了。可以重看，也可以点“下一步”。';
+      if (fullState === 'playing') waitForNextStep(Math.max(3000, readingDuration() - playback.duration));
+      else $('scrub-hint').textContent = '这一小步看完了。可以重看，也可以点“下一步”。';
     } else frame = requestAnimationFrame(tick);
   }
 
@@ -225,7 +314,8 @@
     }));
   }
 
-  function loadStep(c, s, animate = true) {
+  function loadStep(c, s, animate = true, keepFullPlayback = false) {
+    if (!keepFullPlayback) cancelFullPlayback();
     stopPlayback();
     stopSpeech();
     chapterIndex = c;
@@ -262,15 +352,20 @@
   }
 
   function seek(time) {
-    stopPlayback();
+    cancelFullPlayback();
     updateScene(time);
     $('scrub-hint').textContent = '自由观察中。右边讲解仍是本步内容；点“重看”可回到本步演示。';
   }
 
   $('chapters').innerHTML = chapters.map((c, i) => `<button class="chapter" data-chapter="${i}"><span class="num">${i === 0 ? '○' : i}</span><span><strong>${c.title}</strong><small>${c.subtitle}</small></span></button>`).join('');
   $('chapters').querySelectorAll('button').forEach(b => b.addEventListener('click', () => loadStep(Number(b.dataset.chapter), 0)));
-  $('play').addEventListener('click', () => playStep());
-  $('replay').addEventListener('click', () => { stopPlayback(); updateScene(step().from); playStep(true); });
+  $('play').addEventListener('click', () => {
+    if (fullState === 'playing') { pauseFullPlayback(); return; }
+    if (fullState === 'paused') cancelFullPlayback();
+    playStep();
+  });
+  $('play-all').addEventListener('click', toggleFullPlayback);
+  $('replay').addEventListener('click', () => { cancelFullPlayback(); updateScene(step().from); playStep(true); });
   $('time-slider').addEventListener('input', event => seek(Number(event.target.value)));
   $('next').addEventListener('click', () => {
     if (stepIndex + 1 < chapter().steps.length) loadStep(chapterIndex, stepIndex + 1);
@@ -281,6 +376,13 @@
   $('prev').addEventListener('click', () => {
     if (stepIndex > 0) loadStep(chapterIndex, stepIndex - 1);
     else if (chapterIndex > 0) loadStep(chapterIndex - 1, chapters[chapterIndex - 1].steps.length - 1);
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing || event.repeat) return;
+    if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="textbox"], [role="combobox"], .problem-axis-scroll')) return;
+    event.preventDefault();
+    $(event.key === 'ArrowLeft' ? 'prev' : 'next').click();
   });
   $('problem-open').addEventListener('click', () => {
     $('problem').hidden = !$('problem').hidden;
@@ -313,8 +415,12 @@
     $('speak').setAttribute('aria-pressed', 'true');
     window.speechSynthesis.speak(utterance);
   });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { stopPlayback(); stopSpeech(); } });
-  window.addEventListener('pagehide', () => { stopPlayback(); stopSpeech(); });
+  function pauseWhenHidden() {
+    if (fullState === 'playing') pauseFullPlayback(); else stopPlayback();
+    stopSpeech();
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pauseWhenHidden(); });
+  window.addEventListener('pagehide', pauseWhenHidden);
   window.addEventListener('hashchange', () => {
     const match = location.hash.match(/^#(\d+)-(\d+)$/);
     if (match && chapters[Number(match[1]) - 1]?.steps[Number(match[2]) - 1]) loadStep(Number(match[1]) - 1, Number(match[2]) - 1, false);

@@ -63,18 +63,18 @@
 
     <div class="lesson-layout">
       <section class="theater" aria-label="数轴动画">
-        <div class="stage-header"><span id="scene-tag" class="scene-tag">先看懂题</span><div class="clock"><span class="clock-label">运动时间</span><strong id="time-value">0</strong><span>秒</span></div></div>
+        <div class="stage-header"><span id="scene-tag" class="scene-tag">先看懂题</span><div class="clock"><span class="clock-label">运动时间</span><strong id="time-value">0.00</strong><span>秒</span></div></div>
         <div class="legend"><span><i class="dot pq"></i>短尺 PQ · 长 2</span><span><i class="dot mn"></i>长尺 MN · 长 4</span><span id="legend-overlap" hidden><i class="dot overlap"></i>重合部分</span></div>
         <svg id="stage" viewBox="0 0 960 330" role="img" aria-label="两条线段在数轴上的位置"></svg>
         <p class="stage-note" id="stage-note">上下错开画，是为了看清；两条线段其实都在同一条数轴上。</p>
         <div class="readouts" id="readouts">
-          <div class="readout orange"><div class="point-values"><span>P</span><strong id="p-value">−22</strong><span>Q</span><strong id="q-value">−20</strong></div><span class="speed" id="pq-speed"></span><span class="speed-mode" id="pq-mode"></span></div>
-          <div class="readout blue"><div class="point-values"><span>M</span><strong id="m-value">−12</strong><span>N</span><strong id="n-value">−8</strong></div><span class="speed" id="mn-speed"></span><span class="speed-mode" id="mn-mode"></span></div>
+          <div class="readout orange"><div class="point-values"><span>P</span><strong id="p-value">−22.00</strong><span>Q</span><strong id="q-value">−20.00</strong></div><span class="speed" id="pq-speed"></span><span class="speed-mode" id="pq-mode"></span></div>
+          <div class="readout blue"><div class="point-values"><span>M</span><strong id="m-value">−12.00</strong><span>N</span><strong id="n-value">−8.00</strong></div><span class="speed" id="mn-speed"></span><span class="speed-mode" id="mn-mode"></span></div>
         </div>
-        <p class="number-note">播放时数值取近似值，暂停可看准确数值。</p>
+        <p class="number-note">数值统一保留两位小数（四舍五入）。</p>
 
         <section class="zoom-panel" id="zoom-panel" hidden aria-label="重合部分放大图">
-          <div class="zoom-heading"><strong>放大看：究竟哪一段重合？</strong><span id="overlap-value">重合长度 <strong id="overlap-number">0</strong></span></div>
+          <div class="zoom-heading"><strong>放大看：究竟哪一段重合？</strong><span id="overlap-value">重合长度 <strong id="overlap-number">0.00</strong></span></div>
           <svg id="zoom" viewBox="0 0 820 205" role="img" aria-label="两条线段及重合部分的放大图"></svg>
           <p id="zoom-note"></p>
         </section>
@@ -86,7 +86,7 @@
         </section>
 
         <div class="scrubber"><label for="time-slider">拖动，自己观察 <span id="time-range">0—24 秒</span></label><input id="time-slider" type="range" min="0" max="24" step="0.01" value="0"><div class="timeline-labels" id="timeline-labels"></div></div>
-        <div class="animation-controls"><button class="play-btn" id="play">▶ 播放这一小步</button><button class="quiet" id="replay" aria-label="从头重播当前步骤">↺ 重看</button><label class="speed-label">播放速度 <select id="speed" aria-label="动画播放速度"><option value="0.5">慢一点</option><option value="1" selected>正常</option><option value="2">快一点</option></select></label></div>
+        <div class="animation-controls"><button class="play-btn" id="play">▶ 播放这一小步</button><button class="play-btn play-all" id="play-all" aria-pressed="false" title="从当前步骤连续播放到全部讲解结束">▶ 播放完整动画</button><button class="quiet" id="replay" aria-label="从头重播当前步骤">↺ 重看</button><label class="speed-label">播放速度 <select id="speed" aria-label="动画播放速度"><option value="0.5">慢一点</option><option value="1" selected>正常</option><option value="2">快一点</option></select></label></div>
         <p class="scrub-hint" id="scrub-hint">每一小步播完都会停下来，等你看懂。</p>
       </section>
 
@@ -94,7 +94,8 @@
         <div class="step-top"><span id="step-count"></span><button class="quiet" id="speak" aria-pressed="false">♬ 朗读本步</button></div>
         <div id="lesson-copy" aria-live="polite"></div>
         <div id="mini-check" class="mini-check" hidden></div>
-        <div class="step-nav"><button class="quiet" id="prev">← 上一步</button><button class="next-btn" id="next">看懂了，下一步 →</button></div>
+        <div class="step-nav"><button class="quiet" id="prev" aria-keyshortcuts="ArrowLeft" title="上一小步（键盘 ←）">← 上一步</button><button class="next-btn" id="next" aria-keyshortcuts="ArrowRight" title="下一小步（键盘 →）">看懂了，下一步 →</button></div>
+        <p class="keyboard-hint">键盘 <kbd>←</kbd> 上一步　<kbd>→</kbd> 下一步</p>
         <div class="step-dots" id="step-dots" aria-label="本章步骤"></div>
       </section>
     </div>
