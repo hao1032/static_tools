@@ -365,7 +365,13 @@
     playStep();
   });
   $('play-all').addEventListener('click', toggleFullPlayback);
-  $('replay').addEventListener('click', () => { cancelFullPlayback(); updateScene(step().from); playStep(true); });
+  function replayStep() {
+    cancelFullPlayback();
+    updateScene(step().from);
+    playStep(true);
+  }
+  $('replay').addEventListener('click', replayStep);
+  $('replay-step').addEventListener('click', replayStep);
   $('time-slider').addEventListener('input', event => seek(Number(event.target.value)));
   $('next').addEventListener('click', () => {
     if (stepIndex + 1 < chapter().steps.length) loadStep(chapterIndex, stepIndex + 1);
@@ -378,11 +384,12 @@
     else if (chapterIndex > 0) loadStep(chapterIndex - 1, chapters[chapterIndex - 1].steps.length - 1);
   });
   document.addEventListener('keydown', event => {
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    const replay = event.key === ' ';
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && !replay) return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing || event.repeat) return;
     if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="textbox"], [role="combobox"], .problem-axis-scroll')) return;
     event.preventDefault();
-    $(event.key === 'ArrowLeft' ? 'prev' : 'next').click();
+    $(replay ? 'replay-step' : event.key === 'ArrowLeft' ? 'prev' : 'next').click();
   });
   $('problem-open').addEventListener('click', () => {
     $('problem').hidden = !$('problem').hidden;

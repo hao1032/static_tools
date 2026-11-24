@@ -89,7 +89,8 @@ select { border: 1px solid #e1e7e2; background: #fff; border-radius: 6px; paddin
 .formula { background: #f4f7f5; border-left: 3px solid #88a895; padding: 13px 16px; margin: 20px 0; font-size: 18px; line-height: 1.8; color: #285840; border-radius: 0 7px 7px 0; font-weight: 650; overflow-wrap: anywhere; }
 .formula small { display: block; color: #728379; font-size: 12px; font-weight: 400; }
 .takeaway { color: #547451 !important; background: #f6f8ef; padding: 11px 14px; border-radius: 8px; font-size: 13px !important; }
-.step-nav { display: flex; gap: 9px; justify-content: space-between; margin-top: auto; padding-top: 24px; }
+.step-nav { display: flex; flex-wrap: wrap; gap: 9px; justify-content: space-between; margin-top: auto; padding-top: 24px; }
+.step-nav .next-btn { margin-left: auto; }
 .next-btn { border: 0; background: #336f53; color: #fff; padding: 11px 15px; border-radius: 8px; font-size: 13px; font-weight: 600; }
 .next-btn:hover { background: #265e43; }
 .step-dots { display: flex; justify-content: center; gap: 6px; padding-top: 22px; flex-wrap: wrap; }

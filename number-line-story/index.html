@@ -86,7 +86,7 @@
         </section>
 
         <div class="scrubber"><label for="time-slider">拖动，自己观察 <span id="time-range">0—24 秒</span></label><input id="time-slider" type="range" min="0" max="24" step="0.01" value="0"><div class="timeline-labels" id="timeline-labels"></div></div>
-        <div class="animation-controls"><button class="play-btn" id="play">▶ 播放这一小步</button><button class="play-btn play-all" id="play-all" aria-pressed="false" title="从当前步骤连续播放到全部讲解结束">▶ 播放完整动画</button><button class="quiet" id="replay" aria-label="从头重播当前步骤">↺ 重看</button><label class="speed-label">播放速度 <select id="speed" aria-label="动画播放速度"><option value="0.5">慢一点</option><option value="1" selected>正常</option><option value="2">快一点</option></select></label></div>
+        <div class="animation-controls"><button class="play-btn" id="play">▶ 播放这一小步</button><button class="play-btn play-all" id="play-all" aria-pressed="false" title="从当前步骤连续播放到全部讲解结束">▶ 播放完整动画</button><button class="quiet" id="replay" aria-label="从头重播当前步骤" aria-keyshortcuts="Space" title="重看本步（空格键）">↺ 重看</button><label class="speed-label">播放速度 <select id="speed" aria-label="动画播放速度"><option value="0.5">慢一点</option><option value="1" selected>正常</option><option value="2">快一点</option></select></label></div>
         <p class="scrub-hint" id="scrub-hint">每一小步播完都会停下来，等你看懂。</p>
       </section>
 
@@ -94,8 +94,8 @@
         <div class="step-top"><span id="step-count"></span><button class="quiet" id="speak" aria-pressed="false">♬ 朗读本步</button></div>
         <div id="lesson-copy" aria-live="polite"></div>
         <div id="mini-check" class="mini-check" hidden></div>
-        <div class="step-nav"><button class="quiet" id="prev" aria-keyshortcuts="ArrowLeft" title="上一小步（键盘 ←）">← 上一步</button><button class="next-btn" id="next" aria-keyshortcuts="ArrowRight" title="下一小步（键盘 →）">看懂了，下一步 →</button></div>
-        <p class="keyboard-hint">键盘 <kbd>←</kbd> 上一步　<kbd>→</kbd> 下一步</p>
+        <div class="step-nav"><button class="quiet" id="prev" aria-keyshortcuts="ArrowLeft" title="上一小步（键盘 ←）">← 上一步</button><button class="quiet" id="replay-step" aria-keyshortcuts="Space" title="从头重播当前步骤（空格键）">↺ 重看本步</button><button class="next-btn" id="next" aria-keyshortcuts="ArrowRight" title="下一小步（键盘 →）">看懂了，下一步 →</button></div>
+        <p class="keyboard-hint">键盘 <kbd>←</kbd> 上一步　<kbd>→</kbd> 下一步　<kbd>空格</kbd> 重看本步</p>
         <div class="step-dots" id="step-dots" aria-label="本章步骤"></div>
       </section>
     </div>
